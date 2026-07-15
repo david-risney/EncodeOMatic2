@@ -273,7 +273,48 @@ function onConfigClick(e) {
     desc.textContent = cfg.description;
 
     let input;
-    if (cfg.type === 'select' && cfg.options) {
+    if (cfg.type === 'bytes') {
+      // Show a file picker for binary data configs
+      const wrapper = document.createElement('div');
+      wrapper.className = 'config-file-picker';
+      const fileNameDisplay = document.createElement('span');
+      fileNameDisplay.className = 'config-file-name';
+      const currentName = pipe.getConfig('fileName')?.value;
+      fileNameDisplay.textContent = currentName || 'No file selected';
+      const fileBtn = document.createElement('button');
+      fileBtn.type = 'button';
+      fileBtn.className = 'btn btn-sm';
+      fileBtn.textContent = '📁 Choose File';
+      // _pendingBytes is used to track the new file chosen in the dialog
+      const state = { base64: cfg.value, fileName: currentName || '' };
+      fileBtn.addEventListener('click', () => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.onchange = async () => {
+          const file = fileInput.files[0];
+          if (!file) return;
+          const buffer = await file.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          let binary = '';
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          state.base64 = btoa(binary);
+          state.fileName = file.name;
+          fileNameDisplay.textContent = file.name;
+        };
+        fileInput.click();
+      });
+      wrapper.appendChild(fileNameDisplay);
+      wrapper.appendChild(fileBtn);
+      input = wrapper;
+      inputs.set(cfg.name, { input, type: cfg.type, state });
+      field.appendChild(label);
+      field.appendChild(input);
+      field.appendChild(desc);
+      fields.appendChild(field);
+      continue;
+    } else if (cfg.type === 'select' && cfg.options) {
       input = document.createElement('select');
       for (const opt of cfg.options) {
         const o = document.createElement('option');
@@ -309,11 +350,18 @@ function onConfigClick(e) {
   dialog.addEventListener('close', function handler() {
     dialog.removeEventListener('close', handler);
     if (dialog.returnValue === 'ok') {
-      for (const [name, { input, type }] of inputs) {
+      for (const [name, { input, type, state }] of inputs) {
         let value;
         if (type === 'boolean') value = input.checked;
         else if (type === 'number') value = Number(input.value);
-        else value = input.value;
+        else if (type === 'bytes') {
+          pipe.setConfig(name, state.base64);
+          // Also update the paired fileName config if it exists
+          if (name === 'fileData' && pipe.getConfig('fileName') !== undefined) {
+            pipe.setConfig('fileName', state.fileName);
+          }
+          continue;
+        } else value = input.value;
         pipe.setConfig(name, value);
       }
       // Re-run from this pipe

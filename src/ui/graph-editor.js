@@ -295,6 +295,42 @@ class GraphEditor extends HTMLElement {
         }
       });
       inputArea.appendChild(textarea);
+    } else if (pipe.constructor.typeName === 'FileInputPipe') {
+      inputArea = document.createElement('div');
+      inputArea.className = 'pipe-input-area pipe-file-area';
+      const fileNameEl = document.createElement('div');
+      fileNameEl.className = 'pipe-file-name';
+      fileNameEl.textContent = pipe.getConfig('fileName')?.value || 'No file selected';
+      fileNameEl.title = pipe.getConfig('fileName')?.value || '';
+      const fileBtn = document.createElement('button');
+      fileBtn.className = 'btn btn-sm';
+      fileBtn.textContent = '📁 Choose File';
+      fileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.onchange = async () => {
+          const file = fileInput.files[0];
+          if (!file) return;
+          const buffer = await file.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          let binary = '';
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          const base64 = btoa(binary);
+          pipe.setConfig('fileName', file.name);
+          pipe.setConfig('fileData', base64);
+          fileNameEl.textContent = file.name;
+          fileNameEl.title = file.name;
+          if (this._graph) {
+            this._graph.processFrom(pipe.id).catch(console.error);
+          }
+        };
+        fileInput.click();
+      });
+      inputArea.appendChild(fileNameEl);
+      inputArea.appendChild(fileBtn);
     }
 
     el.appendChild(topPorts);
