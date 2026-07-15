@@ -122,7 +122,7 @@ function onGraphEvent(event) {
 }
 
 function refreshDataViews() {
-  for (const view of [...dataViews.values()]) {
+  for (const view of dataViews.values()) {
     refreshDataView(view);
   }
 }
@@ -700,7 +700,7 @@ function onClear() {
     editor.removePipeElement(id);
   }
   editor.updateConnections();
-  for (const id of [...dataViews.keys()]) removeDataView(id);
+  for (const id of dataViews.keys()) removeDataView(id);
 
   // Clear URL state
   const url = new URL(window.location.href);
