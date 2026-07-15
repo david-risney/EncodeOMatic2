@@ -24,16 +24,9 @@
     <div class="graph-panel">
       <graph-editor id="graph-editor"></graph-editor>
     </div>
-    <div class="data-panel" id="data-panel">
-      <div class="data-panel-header">
-        <span id="data-panel-title" class="data-panel-title">Select a pipe port to view data</span>
-        <div class="data-panel-controls">
-          <button id="btn-view-text" class="btn btn-sm active" title="View as text">Text</button>
-          <button id="btn-view-hex" class="btn btn-sm" title="View as hex">Hex</button>
-        </div>
-      </div>
-      <data-viewer id="data-viewer"></data-viewer>
-    </div>
+    <aside class="data-panel" id="data-panel" aria-label="Node data views" hidden>
+      <div id="data-view-stack" class="data-view-stack"></div>
+    </aside>
   </div>
 
   <!-- Add Pipe Dialog -->

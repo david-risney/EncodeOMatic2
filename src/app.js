@@ -24,15 +24,26 @@ graph.setWorkerPool(workerPool);
 /** @type {import('./ui/graph-editor.js').GraphEditor} */
 const editor = document.getElementById('graph-editor');
 
-/** @type {import('./ui/data-viewer.js').DataViewer} */
-const dataViewer = document.getElementById('data-viewer');
+const dataPanel = document.getElementById('data-panel');
+const dataViewStack = document.getElementById('data-view-stack');
 
-const dataPanelTitle = document.getElementById('data-panel-title');
-const btnViewText = document.getElementById('btn-view-text');
-const btnViewHex  = document.getElementById('btn-view-hex');
-
-let viewMode = 'text'; // 'text' | 'hex'
-let selectedPort = null; // {pipeId, portName, portType}
+/** @type {Map<string, {
+ *   pipeId: string,
+ *   portName: string,
+ *   portType: string,
+ *   pinned: boolean,
+ *   minimized: boolean,
+ *   mode: 'text'|'hex',
+ *   element: HTMLElement,
+ *   title: HTMLElement,
+ *   viewer: import('./ui/data-viewer.js').DataViewer,
+ *   pinButton: HTMLButtonElement,
+ *   minimizeButton: HTMLButtonElement,
+ *   textButton: HTMLButtonElement,
+ *   hexButton: HTMLButtonElement
+ * }>} */
+const dataViews = new Map();
+let selectedPipeId = null;
 
 /** The connection action popover element. @type {HTMLElement|null} */
 let _connActionPopover = null;
@@ -80,10 +91,6 @@ async function init() {
   document.getElementById('btn-clear').addEventListener('click', onClear);
   document.getElementById('btn-zoom-fit').addEventListener('click', () => editor.fitView());
 
-  // Data view toggle
-  btnViewText.addEventListener('click', () => setViewMode('text'));
-  btnViewHex.addEventListener('click',  () => setViewMode('hex'));
-
   // Graph editor events
   editor.addEventListener('pipe-port-click',   onPortClick);
   editor.addEventListener('pipe-config-click', onConfigClick);
@@ -105,35 +112,153 @@ async function init() {
 // ── Graph events ─────────────────────────────────────────────────
 
 function onGraphEvent(event) {
+  if (event.type === 'pipe-removed') {
+    removeDataView(event.pipeId);
+    return;
+  }
   if (event.type === 'pipe-processed' || event.type === 'processed') {
-    refreshDataViewer();
+    refreshDataViews();
   }
 }
 
-function refreshDataViewer() {
-  if (!selectedPort) return;
-  const pipe = graph.pipes.get(selectedPort.pipeId);
-  if (!pipe) return;
+function refreshDataViews() {
+  for (const view of dataViews.values()) {
+    refreshDataView(view);
+  }
+}
 
+function refreshDataView(view) {
+  const pipe = graph.pipes.get(view.pipeId);
+  if (!pipe) {
+    removeDataView(view.pipeId);
+    return;
+  }
   let data;
-  if (selectedPort.portType === 'output') {
-    data = pipe.getOutputData(selectedPort.portName);
+  if (view.portType === 'output') {
+    data = pipe.getOutputData(view.portName);
   } else {
-    data = pipe.getInputData(selectedPort.portName);
+    data = pipe.getInputData(view.portName);
   }
 
-  dataViewer.setData(data, selectedPort.portName);
-  dataPanelTitle.textContent =
-    `${pipe.displayName} · ${selectedPort.portType}: ${selectedPort.portName}` +
+  view.viewer.setData(data, view.portName);
+  view.title.textContent =
+    `${pipe.displayName} · ${view.portType}: ${view.portName}` +
     (data ? ` (${data.length} bytes)` : ' (no data)');
+}
+
+function createDataView(pipeId, portName, portType) {
+  const element = document.createElement('section');
+  element.className = 'data-view';
+
+  const header = document.createElement('div');
+  header.className = 'data-panel-header';
+  const title = document.createElement('span');
+  title.className = 'data-panel-title';
+  const controls = document.createElement('div');
+  controls.className = 'data-panel-controls';
+
+  const textButton = document.createElement('button');
+  textButton.className = 'btn btn-sm active';
+  textButton.textContent = 'Text';
+  textButton.title = 'View as text';
+  const hexButton = document.createElement('button');
+  hexButton.className = 'btn btn-sm';
+  hexButton.textContent = 'Hex';
+  hexButton.title = 'View as hex';
+  const pinButton = document.createElement('button');
+  pinButton.className = 'btn btn-sm';
+  pinButton.textContent = 'Pin';
+  pinButton.title = 'Keep this view open';
+  pinButton.setAttribute('aria-pressed', 'false');
+  const minimizeButton = document.createElement('button');
+  minimizeButton.className = 'btn btn-sm';
+  minimizeButton.textContent = 'Minimize';
+  minimizeButton.title = 'Minimize this view';
+  minimizeButton.setAttribute('aria-pressed', 'false');
+  minimizeButton.hidden = true;
+
+  controls.append(textButton, hexButton, pinButton, minimizeButton);
+  header.append(title, controls);
+  const viewer = document.createElement('data-viewer');
+  element.append(header, viewer);
+  dataViewStack.appendChild(element);
+
+  const view = {
+    pipeId, portName, portType,
+    pinned: false,
+    minimized: false,
+    mode: 'text',
+    element, title, viewer,
+    pinButton, minimizeButton, textButton, hexButton,
+  };
+  textButton.addEventListener('click', () => setViewMode(view, 'text'));
+  hexButton.addEventListener('click', () => setViewMode(view, 'hex'));
+  pinButton.addEventListener('click', () => togglePinned(view));
+  minimizeButton.addEventListener('click', () => toggleMinimized(view));
+  dataViews.set(pipeId, view);
+  updateDataPanelVisibility();
+  return view;
+}
+
+function showDataView(pipeId, portName, portType) {
+  if (selectedPipeId && selectedPipeId !== pipeId) {
+    const previous = dataViews.get(selectedPipeId);
+    if (previous && !previous.pinned) removeDataView(selectedPipeId);
+  }
+
+  selectedPipeId = pipeId;
+  let view = dataViews.get(pipeId);
+  if (!view) {
+    view = createDataView(pipeId, portName, portType);
+  } else {
+    view.portName = portName;
+    view.portType = portType;
+    if (view.minimized) toggleMinimized(view);
+  }
+  refreshDataView(view);
+}
+
+function removeDataView(pipeId) {
+  const view = dataViews.get(pipeId);
+  if (!view) return;
+  view.element.remove();
+  dataViews.delete(pipeId);
+  if (selectedPipeId === pipeId) selectedPipeId = null;
+  updateDataPanelVisibility();
+}
+
+function updateDataPanelVisibility() {
+  dataPanel.hidden = dataViews.size === 0;
+}
+
+function togglePinned(view) {
+  const wasPinned = view.pinned;
+  if (wasPinned && view.pipeId !== selectedPipeId) {
+    removeDataView(view.pipeId);
+    return;
+  }
+  if (wasPinned && view.minimized) toggleMinimized(view);
+  view.pinned = !wasPinned;
+  view.pinButton.classList.toggle('active', view.pinned);
+  view.pinButton.setAttribute('aria-pressed', String(view.pinned));
+  view.pinButton.title = view.pinned ? 'Allow this view to close' : 'Keep this view open';
+  view.minimizeButton.hidden = !view.pinned;
+}
+
+function toggleMinimized(view) {
+  view.minimized = !view.minimized;
+  view.element.classList.toggle('minimized', view.minimized);
+  view.minimizeButton.classList.toggle('active', view.minimized);
+  view.minimizeButton.setAttribute('aria-pressed', String(view.minimized));
+  view.minimizeButton.textContent = view.minimized ? 'Restore' : 'Minimize';
+  view.minimizeButton.title = view.minimized ? 'Restore this view' : 'Minimize this view';
 }
 
 // ── Port click ───────────────────────────────────────────────────
 
 function onPortClick(e) {
   const { pipeId, portName, portType } = e.detail;
-  selectedPort = { pipeId, portName, portType };
-  refreshDataViewer();
+  showDataView(pipeId, portName, portType);
 }
 
 // ── Pipe select ──────────────────────────────────────────────────
@@ -145,8 +270,7 @@ function onPipeSelect(e) {
   if (!pipe) return;
   const outName = pipe.defaultOutputName;
   if (outName) {
-    selectedPort = { pipeId, portName: outName, portType: 'output' };
-    refreshDataViewer();
+    showDataView(pipeId, outName, 'output');
   }
 }
 
@@ -384,11 +508,11 @@ function onConfigClick(e) {
 
 // ── View mode ────────────────────────────────────────────────────
 
-function setViewMode(mode) {
-  viewMode = mode;
-  btnViewText.classList.toggle('active', mode === 'text');
-  btnViewHex.classList.toggle('active', mode === 'hex');
-  dataViewer.setMode(mode);
+function setViewMode(view, mode) {
+  view.mode = mode;
+  view.textButton.classList.toggle('active', mode === 'text');
+  view.hexButton.classList.toggle('active', mode === 'hex');
+  view.viewer.setMode(mode);
 }
 
 // ── Add Pipe dialog ───────────────────────────────────────────────
@@ -576,9 +700,7 @@ function onClear() {
     editor.removePipeElement(id);
   }
   editor.updateConnections();
-  selectedPort = null;
-  dataViewer.setData(null, '');
-  dataPanelTitle.textContent = 'Select a pipe port to view data';
+  for (const id of Array.from(dataViews.keys())) removeDataView(id);
 
   // Clear URL state
   const url = new URL(window.location.href);
