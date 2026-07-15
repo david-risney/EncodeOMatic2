@@ -28,6 +28,8 @@
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   --data-panel-height: 240px;
   --screen-edge-gap: 12px;
+  --dialog-max-width: calc(100vw - (var(--screen-edge-gap) * 2));
+  --dialog-max-height: calc(100dvh - (var(--screen-edge-gap) * 2));
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -464,9 +466,9 @@ data-viewer {
   color: var(--color-text);
   box-shadow: var(--shadow);
   padding: 0;
-  width: min(500px, calc(100vw - (var(--screen-edge-gap) * 2)));
+  width: min(500px, var(--dialog-max-width));
   min-width: 280px;
-  max-width: calc(100vw - (var(--screen-edge-gap) * 2));
+  max-width: var(--dialog-max-width);
   max-height: 80vh;
 }
 
@@ -736,7 +738,7 @@ data-viewer {
   }
 
   .dialog {
-    max-height: min(80dvh, calc(100dvh - (var(--screen-edge-gap) * 2)));
+    max-height: min(80dvh, var(--dialog-max-height));
   }
 
   .dialog-form h2,
