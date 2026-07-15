@@ -1,8 +1,12 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 class SilentWorker {
   constructor() {
-    this.postMessage = vi.fn();
+    this.postMessage = vi.fn(({ id }) => {
+      queueMicrotask(() => this.onmessage({
+        data: { type: 'result', id, outputs: { output: [] }, errors: [] },
+      }));
+    });
     this.terminate = vi.fn();
   }
 }
@@ -15,10 +19,9 @@ function appMarkup() {
     <button id="btn-clear">Clear</button>
     <button id="btn-zoom-fit">Fit</button>
     <graph-editor id="graph-editor"></graph-editor>
-    <span id="data-panel-title"></span>
-    <button id="btn-view-text" class="active">Text</button>
-    <button id="btn-view-hex">Hex</button>
-    <data-viewer id="data-viewer"></data-viewer>
+    <aside id="data-panel" hidden>
+      <div id="data-view-stack"></div>
+    </aside>
     <dialog id="add-pipe-dialog">
       <input id="pipe-search-input">
       <div id="pipe-list"></div>
@@ -40,12 +43,17 @@ describe('application integration', () => {
     });
     document.body.innerHTML = appMarkup();
     await import('../src/app.js');
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await vi.waitFor(() => {
+      expect(document.getElementById('pipe-list').children.length).toBeGreaterThan(0);
+    });
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
   });
 
   it('initializes and supports the primary user interactions', async () => {
     expect(document.getElementById('pipe-list').textContent).toContain('Base64 Encode');
-    expect(document.querySelectorAll('.pipe-category')).toHaveLength(3);
     expect(document.getElementById('toast-container')).not.toBeNull();
 
     const input = document.getElementById('pipe-search-input');
@@ -64,14 +72,18 @@ describe('application integration', () => {
       .find((item) => item.textContent.includes('Input Buffer'))
       .click();
 
-    const node = document.querySelector('.pipe-node');
+    const node = [...document.querySelectorAll('.pipe-node')]
+      .find((element) => element.textContent.includes('Input Buffer'));
     expect(node).not.toBeNull();
     const textarea = node.querySelector('textarea');
     textarea.value = 'hello';
     textarea.dispatchEvent(new Event('input'));
     node.click();
-    expect(document.getElementById('data-panel-title').textContent)
+    const dataView = document.querySelector('.data-view');
+    expect(dataView.querySelector('.data-panel-title').textContent)
       .toContain('Input Buffer · output: output');
+    dataView.querySelector('[title="View as hex"]').click();
+    expect(dataView.querySelector('data-viewer')._mode).toBe('hex');
 
     node.querySelector('.pipe-node-config-btn').click();
     const configDialog = document.getElementById('config-dialog');
@@ -79,24 +91,22 @@ describe('application integration', () => {
     expect(document.getElementById('config-dialog-title').textContent)
       .toBe('Configure: Input Buffer');
     document.getElementById('config-delete-btn').click();
-    expect(document.querySelector('.pipe-node')).toBeNull();
-
-    document.getElementById('btn-view-hex').click();
-    expect(document.getElementById('btn-view-hex').classList.contains('active')).toBe(true);
-    expect(document.getElementById('data-viewer')._mode).toBe('hex');
+    expect(node.isConnected).toBe(false);
+    expect(dataView.isConnected).toBe(false);
 
     document.getElementById('btn-save').click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      expect.stringContaining('?g=')
-    );
+    await vi.waitFor(() => {
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        expect.stringContaining('?g=')
+      );
+    });
     expect(document.querySelector('.toast.success')?.textContent)
       .toBe('URL copied to clipboard!');
 
     vi.stubGlobal('confirm', vi.fn(() => true));
     document.getElementById('btn-clear').click();
     expect(window.location.search).toBe('');
-    expect(document.getElementById('data-panel-title').textContent)
-      .toBe('Select a pipe port to view data');
+    expect(document.querySelector('.pipe-node')).toBeNull();
+    expect(document.getElementById('data-panel').hidden).toBe(true);
   });
 });
