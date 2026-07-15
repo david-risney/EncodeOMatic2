@@ -50,7 +50,12 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  min-height: 100dvh;
+}
+
+@supports (height: 100dvh) {
+  body {
+    min-height: 100dvh;
+  }
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
@@ -466,7 +471,7 @@ data-viewer {
   color: var(--color-text);
   box-shadow: var(--shadow);
   padding: 0;
-  width: min(500px, var(--dialog-max-width));
+  width: 500px;
   min-width: 280px;
   max-width: var(--dialog-max-width);
   max-height: 80vh;
