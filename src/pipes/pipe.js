@@ -7,6 +7,9 @@
  * Pipes can report errors with optional selection ranges.
  */
 
+export const MIN_INPUT_APPROPRIATENESS = -10;
+export const MAX_INPUT_APPROPRIATENESS = 10;
+
 /** Configuration parameter for a pipe. */
 export class PipeConfig {
   /**

@@ -5,6 +5,10 @@
  */
 
 import { PipeGraph } from './pipes/graph.js';
+import {
+  MIN_INPUT_APPROPRIATENESS,
+  MAX_INPUT_APPROPRIATENESS,
+} from './pipes/pipe.js';
 import { registry, createPipe, getPipesByCategory } from './pipes/registry.js';
 import { WorkerPool } from './worker/worker-pool.js';
 import { saveToUrl, loadFromUrl } from './state.js';
@@ -430,8 +434,8 @@ function renderPipeList(query) {
       ...pipe,
       index,
       appropriateness: Math.max(
-        -10,
-        Math.min(10, pipe.cls.getInputAppropriateness(inputData))
+        MIN_INPUT_APPROPRIATENESS,
+        Math.min(MAX_INPUT_APPROPRIATENESS, pipe.cls.getInputAppropriateness(inputData))
       ),
     }))
     .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
