@@ -231,7 +231,8 @@ function updateDataPanelVisibility() {
 }
 
 function togglePinned(view) {
-  if (view.pinned && view.minimized) toggleMinimized(view);
+  const willClose = view.pinned && view.pipeId !== selectedPipeId;
+  if (view.pinned && view.minimized && !willClose) toggleMinimized(view);
   view.pinned = !view.pinned;
   view.pinButton.classList.toggle('active', view.pinned);
   view.pinButton.setAttribute('aria-pressed', String(view.pinned));
@@ -269,8 +270,6 @@ function onPipeSelect(e) {
   const outName = pipe.defaultOutputName;
   if (outName) {
     showDataView(pipeId, outName, 'output');
-  } else if (pipe.defaultInputName) {
-    showDataView(pipeId, pipe.defaultInputName, 'input');
   }
 }
 
