@@ -26,6 +26,7 @@
   --radius: 6px;
   --radius-lg: 10px;
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --data-panel-height: 240px;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -93,7 +94,7 @@ html, body {
 }
 
 .data-panel {
-  height: 240px;
+  height: var(--data-panel-height);
   flex-shrink: 0;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
@@ -625,7 +626,7 @@ data-viewer {
 /* ── Toast notifications ─────────────────────────────────────── */
 .toast-container {
   position: fixed;
-  bottom: 260px;
+  bottom: calc(var(--data-panel-height) + 20px);
   right: 20px;
   display: flex;
   flex-direction: column;

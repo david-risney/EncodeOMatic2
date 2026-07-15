@@ -104,9 +104,17 @@ export class WorkerPool {
     // Dispatch next queued task
     if (this._queue.length > 0) {
       const next = this._queue.shift();
-      const nextWorker = this._getIdleWorker() ?? worker;
-      this._idle = this._idle.filter(w => w !== nextWorker);
-      this._dispatch(nextWorker, next);
+      // _getIdleWorker() pops the last idle worker (O(1)). If idle is unexpectedly
+      // empty, fall back to the just-completed worker and remove it from idle first.
+      const nextWorker = this._getIdleWorker();
+      if (nextWorker) {
+        this._dispatch(nextWorker, next);
+      } else {
+        // Fallback: reuse the completing worker directly (remove it from idle first)
+        const idx = this._idle.lastIndexOf(worker);
+        if (idx !== -1) this._idle.splice(idx, 1);
+        this._dispatch(worker, next);
+      }
     }
   }
 

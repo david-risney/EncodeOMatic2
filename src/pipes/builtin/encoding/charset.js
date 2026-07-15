@@ -48,11 +48,12 @@ function encodeUtf16(text, littleEndian) {
   for (let i = 0; i < text.length; ) {
     const cp = text.codePointAt(i);
     if (cp > 0xFFFF) {
-      // Encode as surrogate pair
+      // Characters above U+FFFF are stored as surrogate pairs in JS strings
+      // (2 code units), so we advance i by 2 to skip both code units.
       const hi = 0xD800 + ((cp - 0x10000) >> 10);
       const lo = 0xDC00 + ((cp - 0x10000) & 0x3FF);
       units.push(hi, lo);
-      i += 2; // surrogate pair takes 2 JS code units
+      i += 2; // advance past the two JS code units for this code point
     } else {
       units.push(cp);
       i += 1;
