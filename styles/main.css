@@ -43,6 +43,13 @@ html, body {
   font-size: 14px;
 }
 
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 /* ── Header ─────────────────────────────────────────────────── */
 .app-header {
   display: flex;
@@ -51,9 +58,9 @@ html, body {
   padding: 8px 16px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  height: 48px;
   flex-shrink: 0;
   z-index: 10;
+  flex-wrap: wrap;
 }
 
 .app-title {
@@ -69,7 +76,8 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .toolbar-sep {
@@ -83,18 +91,21 @@ html, body {
 .app-body {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 48px);
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
 .graph-panel {
   flex: 1;
+  min-height: 0;
   overflow: hidden;
   position: relative;
 }
 
 .data-panel {
   height: var(--data-panel-height);
+  min-height: 140px;
   flex-shrink: 0;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
@@ -108,6 +119,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 6px 12px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface2);
@@ -118,6 +130,9 @@ html, body {
   font-size: 12px;
   color: var(--color-text-dim);
   font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .data-panel-controls {
@@ -448,7 +463,8 @@ data-viewer {
   color: var(--color-text);
   box-shadow: var(--shadow);
   padding: 0;
-  min-width: 360px;
+  width: min(500px, calc(100vw - 24px));
+  min-width: min(360px, calc(100vw - 24px));
   max-width: 500px;
   max-height: 80vh;
 }
@@ -674,4 +690,79 @@ data-viewer {
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --data-panel-height: 180px;
+  }
+
+  .app-header {
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .app-title {
+    font-size: 16px;
+  }
+
+  .toolbar {
+    width: 100%;
+    gap: 4px;
+  }
+
+  .toolbar-sep {
+    display: none;
+  }
+
+  .btn {
+    padding: 5px 10px;
+  }
+
+  .data-panel {
+    min-height: 120px;
+    height: min(180px, 35dvh);
+    resize: none;
+  }
+
+  .data-panel-header {
+    flex-wrap: wrap;
+  }
+
+  .data-panel-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .dialog {
+    max-height: min(80vh, calc(100dvh - 24px));
+  }
+
+  .dialog-form h2,
+  .pipe-search,
+  .pipe-list,
+  .config-fields,
+  .dialog-footer {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .dialog-footer {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .dialog-footer .btn {
+    flex: 1 1 120px;
+  }
+
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    bottom: calc(var(--data-panel-height) + 12px);
+  }
+
+  .toast {
+    width: 100%;
+  }
 }
