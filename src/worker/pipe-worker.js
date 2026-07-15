@@ -59,12 +59,15 @@ self.onmessage = async ({ data }) => {
   const { id, pipeType, configs, inputs } = data;
 
   const PipeClass = REGISTRY.get(pipeType);
-  if (!PipeClass) {
+  // Validate that PipeClass is a known, safe constructor from our registry
+  // before instantiating it. This prevents unexpected dispatch if somehow
+  // the registry is bypassed.
+  if (typeof PipeClass !== 'function') {
     self.postMessage({
       type: 'result',
       id,
       outputs: {},
-      errors: [{ message: `Unknown pipe type: ${pipeType}`, selections: [] }],
+      errors: [{ message: `Unknown pipe type: ${String(pipeType).slice(0, 64)}`, selections: [] }],
     });
     return;
   }

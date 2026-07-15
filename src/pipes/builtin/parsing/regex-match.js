@@ -50,11 +50,17 @@ export class RegexMatchPipe extends Pipe {
     const data = inputs.get(this.defaultInputName) ?? new Uint8Array(0);
     const text = new TextDecoder().decode(data);
     const pattern = this.getConfig('pattern')?.value ?? '.*';
-    const flags = this.getConfig('flags')?.value ?? 'g';
+    const rawFlags = this.getConfig('flags')?.value ?? 'g';
+
+    // Sanitize flags: keep only valid regex flag characters, deduplicate, ensure 'g'
+    const validFlagChars = new Set('gimsud');
+    const flagSet = new Set([...rawFlags].filter(c => validFlagChars.has(c)));
+    flagSet.add('g'); // matchAll requires global flag
+    const flags = [...flagSet].join('');
 
     let regex;
     try {
-      regex = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g');
+      regex = new RegExp(pattern, flags);
     } catch (e) {
       throw new PipeError(`Invalid regex: ${e.message}`);
     }
