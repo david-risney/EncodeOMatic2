@@ -30,6 +30,7 @@
   --screen-edge-gap: 12px;
   --dialog-max-width: calc(100vw - (var(--screen-edge-gap) * 2));
   --dialog-max-height: calc(100dvh - (var(--screen-edge-gap) * 2));
+  --dialog-height-limit: 80vh;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -471,10 +472,9 @@ data-viewer {
   color: var(--color-text);
   box-shadow: var(--shadow);
   padding: 0;
-  width: 500px;
   min-width: 280px;
-  max-width: var(--dialog-max-width);
-  max-height: 80vh;
+  max-width: min(500px, var(--dialog-max-width));
+  max-height: var(--dialog-height-limit);
 }
 
 .dialog::backdrop {
@@ -703,6 +703,7 @@ data-viewer {
 @media (max-width: 640px) {
   :root {
     --data-panel-height: 180px;
+    --dialog-height-limit: 80dvh;
   }
 
   .app-header {
@@ -729,7 +730,7 @@ data-viewer {
 
   .data-panel {
     min-height: 120px;
-    height: min(180px, 35dvh);
+    height: min(var(--data-panel-height), 35dvh);
     resize: none;
   }
 
@@ -743,7 +744,7 @@ data-viewer {
   }
 
   .dialog {
-    max-height: min(80dvh, var(--dialog-max-height));
+    max-height: min(var(--dialog-height-limit), var(--dialog-max-height));
   }
 
   .dialog-form h2,
