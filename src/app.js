@@ -48,7 +48,7 @@ let _connActionTarget = null;
  *   input: {pipeId: string, portName: string}|null,
  *   output: {pipeId: string, portName: string}|null,
  *   replacedConnection: import('./pipes/graph.js').Connection|null,
- *   inputData?: Uint8Array|null
+ *   sourceData?: Uint8Array|null
  * }|null}
  */
 let _addPipeContext = null;
@@ -422,7 +422,7 @@ function renderPipeList(query) {
   const list = document.getElementById('pipe-list');
   list.innerHTML = '';
   const q = query.toLowerCase();
-  const inputData = _addPipeContext?.inputData ?? null;
+  const inputData = _addPipeContext?.sourceData ?? null;
   const pipes = [...getPipesByCategory().values()]
     .flat()
     .filter(pipe =>
@@ -474,7 +474,7 @@ function openAddPipeDialog(context = null) {
       replacedConnection: null,
     };
   }
-  context.inputData = context.input
+  context.sourceData = context.input
     ? graph.pipes.get(context.input.pipeId)?.getOutputData(context.input.portName) ?? null
     : null;
   _addPipeContext = context;
