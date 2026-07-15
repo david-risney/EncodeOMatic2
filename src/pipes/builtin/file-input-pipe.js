@@ -51,6 +51,9 @@ export class FileInputPipe extends Pipe {
    * call-stack limits with large files.
    * @param {Uint8Array} bytes
    * @returns {string}
+   * @example
+   * const buffer = await file.arrayBuffer();
+   * const base64 = FileInputPipe.bytesToBase64(new Uint8Array(buffer));
    */
   static bytesToBase64(bytes) {
     const chunkSize = 0x8000; // 32 KB chunks to stay within call-stack limits

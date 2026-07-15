@@ -286,8 +286,8 @@ function onConfigClick(e) {
       fileBtn.type = 'button';
       fileBtn.className = 'btn btn-sm';
       fileBtn.textContent = '📁 Choose File';
-      // _pendingBytes is used to track the new file chosen in the dialog
-      const state = { base64: cfg.value, fileName: currentName || '' };
+      // state tracks file data changes made within this dialog session
+      const state = { base64: cfg.value || '', fileName: currentName || '' };
       fileBtn.addEventListener('click', () => {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
@@ -352,7 +352,8 @@ function onConfigClick(e) {
         else if (type === 'number') value = Number(input.value);
         else if (type === 'bytes') {
           pipe.setConfig(name, state.base64);
-          // Also update the paired fileName config if it exists
+          // FileInputPipe convention: the 'fileData' bytes config is paired with
+          // a 'fileName' string config that tracks the human-readable file name.
           if (name === 'fileData' && pipe.getConfig('fileName') !== undefined) {
             pipe.setConfig('fileName', state.fileName);
           }
