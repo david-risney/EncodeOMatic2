@@ -75,11 +75,13 @@ describe('WorkerPool', () => {
   });
 
   it('replaces a failed worker to drain queued work', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const pool = new WorkerPool('/worker.js', 1);
     const first = pool.run('A', {}, {});
     const second = pool.run('B', {}, {});
     FakeWorker.instances[0].onerror({ message: 'failure' });
     await expect(first).rejects.toThrow();
+    expect(error).toHaveBeenCalled();
     expect(FakeWorker.instances).toHaveLength(2);
     FakeWorker.instances[1].onmessage({
       data: { type: 'result', id: 2, outputs: { output: [1] } },

@@ -1,10 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('pipe worker message handler', () => {
   beforeEach(async () => {
     vi.resetModules();
-    self.postMessage = vi.fn();
+    vi.stubGlobal('postMessage', vi.fn());
     await import('../src/worker/pipe-worker.js');
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
   });
 
   it('ignores unrelated messages and rejects unknown pipe types', async () => {
