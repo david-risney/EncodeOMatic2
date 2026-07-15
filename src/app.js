@@ -231,13 +231,13 @@ function updateDataPanelVisibility() {
 }
 
 function togglePinned(view) {
-  const isUnpinning = view.pinned;
-  if (isUnpinning && view.pipeId !== selectedPipeId) {
+  const wasPinned = view.pinned;
+  if (wasPinned && view.pipeId !== selectedPipeId) {
     removeDataView(view.pipeId);
     return;
   }
-  if (isUnpinning && view.minimized) toggleMinimized(view);
-  view.pinned = !isUnpinning;
+  if (wasPinned && view.minimized) toggleMinimized(view);
+  view.pinned = !wasPinned;
   view.pinButton.classList.toggle('active', view.pinned);
   view.pinButton.setAttribute('aria-pressed', String(view.pinned));
   view.pinButton.title = view.pinned ? 'Allow this view to close' : 'Keep this view open';
@@ -245,7 +245,6 @@ function togglePinned(view) {
 }
 
 function toggleMinimized(view) {
-  if (!view.pinned) return;
   view.minimized = !view.minimized;
   view.element.classList.toggle('minimized', view.minimized);
   view.minimizeButton.classList.toggle('active', view.minimized);
