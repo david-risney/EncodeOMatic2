@@ -6,7 +6,7 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 
 - **Visual pipe graph editor** — add, connect, and configure encoding/decoding pipes on a 2D canvas
 - **Live data flow** — see data transform as it flows through the graph in real time
-- **Text and hex views** — inspect data as text or as colorized hex bytes
+- **Text and hex views** — inspect data in a right-side pane, with pinning for comparing nodes
 - **URL state** — share graphs via URL (small graphs embedded in URL; large graphs in IndexedDB with ID in URL)
 - **Worker threads** — pipe processing runs off the main thread using a Web Worker pool
 
@@ -37,8 +37,9 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 2. Drag pipes to reposition them
 3. Drag from an output port (bottom) to an input port (top) to connect pipes
 4. Click a port to view the data flowing through it
-5. Click ⚙ on a pipe to configure it
-6. Click **Save to URL** to copy a shareable URL to your clipboard
+5. Pin data views to keep them open while selecting other nodes; pinned views can be minimized
+6. Click ⚙ on a pipe to configure it
+7. Click **Save to URL** to copy a shareable URL to your clipboard
 
 ## Example: Decode a URL-encoded, Base64-encoded, UTF-8 string
 
