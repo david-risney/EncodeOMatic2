@@ -70,3 +70,14 @@ npx serve .
 ```
 
 Then open `http://localhost:8080` in your browser.
+
+### Tests
+
+Install the development dependencies and run the Vitest/jsdom unit suite:
+
+```sh
+npm install
+npm test
+```
+
+Use `npm run test:watch` while developing.

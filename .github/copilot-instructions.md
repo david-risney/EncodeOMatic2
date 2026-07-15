@@ -1,5 +1,12 @@
 # Copilot instructions
 
+Before completing code changes, run:
+
+```sh
+npm run check
+npm test
+```
+
 ## Screenshots
 
 - Always capture at least one screenshot after implementing a change that can be demonstrated in the rendered application.
