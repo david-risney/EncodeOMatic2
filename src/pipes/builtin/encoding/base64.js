@@ -4,6 +4,8 @@
 
 import { Pipe, PipeError, PortDef } from '../../pipe.js';
 
+const UTF8_DECODER = new TextDecoder('utf-8', { fatal: true });
+
 export class Base64EncodePipe extends Pipe {
   static typeName = 'Base64Encode';
   static typeDescription = 'Base64 Encode';
@@ -32,6 +34,26 @@ export class Base64DecodePipe extends Pipe {
   static typeDescription = 'Base64 Decode';
   static category = 'Encoding';
   static categoryDescription = 'Decode Base64 ASCII text to raw bytes.';
+
+  static getInputAppropriateness(input) {
+    if (input == null) return 0;
+    let b64;
+    try {
+      b64 = UTF8_DECODER.decode(input).trim();
+    } catch {
+      return -10;
+    }
+    if (b64.length === 0) return 0;
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(b64)) {
+      return -10;
+    }
+    try {
+      atob(b64);
+      return 10;
+    } catch {
+      return -10;
+    }
+  }
 
   async process(inputs) {
     const data = inputs.get(this.defaultInputName) ?? new Uint8Array(0);

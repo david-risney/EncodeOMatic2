@@ -37,6 +37,23 @@ export class UrlParserPipe extends Pipe {
   static category = 'Parsing';
   static categoryDescription = 'Parse a URL into its component parts.';
 
+  static getInputAppropriateness(input) {
+    if (input == null || input.length === 0) return 0;
+    let url;
+    try {
+      url = new TextDecoder('utf-8', { fatal: true }).decode(input).trim();
+    } catch {
+      return -10;
+    }
+    if (url.length === 0) return 0;
+    try {
+      new URL(url);
+      return 10;
+    } catch {
+      return -10;
+    }
+  }
+
   constructor() {
     super();
     // Dynamic query parameter ports; rebuilt on each run

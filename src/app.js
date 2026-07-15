@@ -5,9 +5,14 @@
  */
 
 import { PipeGraph } from './pipes/graph.js';
+import {
+  MIN_INPUT_APPROPRIATENESS,
+  MAX_INPUT_APPROPRIATENESS,
+} from './pipes/pipe.js';
 import { registry, createPipe, getPipesByCategory } from './pipes/registry.js';
 import { WorkerPool } from './worker/worker-pool.js';
 import { saveToUrl, loadFromUrl } from './state.js';
+import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
 
@@ -23,22 +28,41 @@ graph.setWorkerPool(workerPool);
 /** @type {import('./ui/graph-editor.js').GraphEditor} */
 const editor = document.getElementById('graph-editor');
 
-/** @type {import('./ui/data-viewer.js').DataViewer} */
-const dataViewer = document.getElementById('data-viewer');
+const dataPanel = document.getElementById('data-panel');
+const dataViewStack = document.getElementById('data-view-stack');
 
-const dataPanelTitle = document.getElementById('data-panel-title');
-const btnViewText = document.getElementById('btn-view-text');
-const btnViewHex  = document.getElementById('btn-view-hex');
-
-let viewMode = 'text'; // 'text' | 'hex'
-let selectedPort = null; // {pipeId, portName, portType}
+/** @type {Map<string, {
+ *   pipeId: string,
+ *   portName: string,
+ *   portType: string,
+ *   pinned: boolean,
+ *   minimized: boolean,
+ *   mode: 'text'|'hex',
+ *   element: HTMLElement,
+ *   title: HTMLElement,
+ *   viewer: import('./ui/data-viewer.js').DataViewer,
+ *   pinButton: HTMLButtonElement,
+ *   minimizeButton: HTMLButtonElement,
+ *   textButton: HTMLButtonElement,
+ *   hexButton: HTMLButtonElement
+ * }>} */
+const dataViews = new Map();
+let selectedPipeId = null;
 
 /** The connection action popover element. @type {HTMLElement|null} */
 let _connActionPopover = null;
 /** The connection whose popover is currently shown. @type {import('./pipes/graph.js').Connection|null} */
 let _connActionTarget = null;
-/** When set, the next addPipe() call inserts the new pipe between these endpoints. @type {import('./pipes/graph.js').Connection|null} */
-let _insertBetweenConn = null;
+/**
+ * The default connections for the pipe being added.
+ * @type {{
+ *   input: {pipeId: string, portName: string}|null,
+ *   output: {pipeId: string, portName: string}|null,
+ *   replacedConnection: import('./pipes/graph.js').Connection|null,
+ *   sourceData?: Uint8Array|null
+ * }|null}
+ */
+let _addPipeContext = null;
 
 // ── Initialize ───────────────────────────────────────────────────
 
@@ -59,16 +83,25 @@ async function init() {
     editor.fitView();
   }
 
+  if (graph.pipes.size === 0) {
+    const inputPipe = createPipe('InputPipe');
+    if (inputPipe) {
+      inputPipe.position.x = 60;
+      inputPipe.position.y = 80;
+      graph.addPipe(inputPipe);
+      editor.addPipeElement(inputPipe);
+      editor.updateConnections();
+      await graph.processFrom(inputPipe.id);
+      editor.fitView();
+    }
+  }
+
   // Wire toolbar buttons
-  document.getElementById('btn-add-pipe').addEventListener('click', openAddPipeDialog);
+  document.getElementById('btn-add-pipe').addEventListener('click', () => openAddPipeDialog());
   document.getElementById('btn-save').addEventListener('click', onSave);
   document.getElementById('btn-load').addEventListener('click', onLoad);
   document.getElementById('btn-clear').addEventListener('click', onClear);
   document.getElementById('btn-zoom-fit').addEventListener('click', () => editor.fitView());
-
-  // Data view toggle
-  btnViewText.addEventListener('click', () => setViewMode('text'));
-  btnViewHex.addEventListener('click',  () => setViewMode('hex'));
 
   // Graph editor events
   editor.addEventListener('pipe-port-click',   onPortClick);
@@ -91,35 +124,153 @@ async function init() {
 // ── Graph events ─────────────────────────────────────────────────
 
 function onGraphEvent(event) {
+  if (event.type === 'pipe-removed') {
+    removeDataView(event.pipeId);
+    return;
+  }
   if (event.type === 'pipe-processed' || event.type === 'processed') {
-    refreshDataViewer();
+    refreshDataViews();
   }
 }
 
-function refreshDataViewer() {
-  if (!selectedPort) return;
-  const pipe = graph.pipes.get(selectedPort.pipeId);
-  if (!pipe) return;
+function refreshDataViews() {
+  for (const view of dataViews.values()) {
+    refreshDataView(view);
+  }
+}
 
+function refreshDataView(view) {
+  const pipe = graph.pipes.get(view.pipeId);
+  if (!pipe) {
+    removeDataView(view.pipeId);
+    return;
+  }
   let data;
-  if (selectedPort.portType === 'output') {
-    data = pipe.getOutputData(selectedPort.portName);
+  if (view.portType === 'output') {
+    data = pipe.getOutputData(view.portName);
   } else {
-    data = pipe.getInputData(selectedPort.portName);
+    data = pipe.getInputData(view.portName);
   }
 
-  dataViewer.setData(data, selectedPort.portName);
-  dataPanelTitle.textContent =
-    `${pipe.displayName} · ${selectedPort.portType}: ${selectedPort.portName}` +
+  view.viewer.setData(data, view.portName);
+  view.title.textContent =
+    `${pipe.displayName} · ${view.portType}: ${view.portName}` +
     (data ? ` (${data.length} bytes)` : ' (no data)');
+}
+
+function createDataView(pipeId, portName, portType) {
+  const element = document.createElement('section');
+  element.className = 'data-view';
+
+  const header = document.createElement('div');
+  header.className = 'data-panel-header';
+  const title = document.createElement('span');
+  title.className = 'data-panel-title';
+  const controls = document.createElement('div');
+  controls.className = 'data-panel-controls';
+
+  const textButton = document.createElement('button');
+  textButton.className = 'btn btn-sm active';
+  textButton.textContent = 'Text';
+  textButton.title = 'View as text';
+  const hexButton = document.createElement('button');
+  hexButton.className = 'btn btn-sm';
+  hexButton.textContent = 'Hex';
+  hexButton.title = 'View as hex';
+  const pinButton = document.createElement('button');
+  pinButton.className = 'btn btn-sm';
+  pinButton.textContent = 'Pin';
+  pinButton.title = 'Keep this view open';
+  pinButton.setAttribute('aria-pressed', 'false');
+  const minimizeButton = document.createElement('button');
+  minimizeButton.className = 'btn btn-sm';
+  minimizeButton.textContent = 'Minimize';
+  minimizeButton.title = 'Minimize this view';
+  minimizeButton.setAttribute('aria-pressed', 'false');
+  minimizeButton.hidden = true;
+
+  controls.append(textButton, hexButton, pinButton, minimizeButton);
+  header.append(title, controls);
+  const viewer = document.createElement('data-viewer');
+  element.append(header, viewer);
+  dataViewStack.appendChild(element);
+
+  const view = {
+    pipeId, portName, portType,
+    pinned: false,
+    minimized: false,
+    mode: 'text',
+    element, title, viewer,
+    pinButton, minimizeButton, textButton, hexButton,
+  };
+  textButton.addEventListener('click', () => setViewMode(view, 'text'));
+  hexButton.addEventListener('click', () => setViewMode(view, 'hex'));
+  pinButton.addEventListener('click', () => togglePinned(view));
+  minimizeButton.addEventListener('click', () => toggleMinimized(view));
+  dataViews.set(pipeId, view);
+  updateDataPanelVisibility();
+  return view;
+}
+
+function showDataView(pipeId, portName, portType) {
+  if (selectedPipeId && selectedPipeId !== pipeId) {
+    const previous = dataViews.get(selectedPipeId);
+    if (previous && !previous.pinned) removeDataView(selectedPipeId);
+  }
+
+  selectedPipeId = pipeId;
+  let view = dataViews.get(pipeId);
+  if (!view) {
+    view = createDataView(pipeId, portName, portType);
+  } else {
+    view.portName = portName;
+    view.portType = portType;
+    if (view.minimized) toggleMinimized(view);
+  }
+  refreshDataView(view);
+}
+
+function removeDataView(pipeId) {
+  const view = dataViews.get(pipeId);
+  if (!view) return;
+  view.element.remove();
+  dataViews.delete(pipeId);
+  if (selectedPipeId === pipeId) selectedPipeId = null;
+  updateDataPanelVisibility();
+}
+
+function updateDataPanelVisibility() {
+  dataPanel.hidden = dataViews.size === 0;
+}
+
+function togglePinned(view) {
+  const wasPinned = view.pinned;
+  if (wasPinned && view.pipeId !== selectedPipeId) {
+    removeDataView(view.pipeId);
+    return;
+  }
+  if (wasPinned && view.minimized) toggleMinimized(view);
+  view.pinned = !wasPinned;
+  view.pinButton.classList.toggle('active', view.pinned);
+  view.pinButton.setAttribute('aria-pressed', String(view.pinned));
+  view.pinButton.title = view.pinned ? 'Allow this view to close' : 'Keep this view open';
+  view.minimizeButton.hidden = !view.pinned;
+}
+
+function toggleMinimized(view) {
+  view.minimized = !view.minimized;
+  view.element.classList.toggle('minimized', view.minimized);
+  view.minimizeButton.classList.toggle('active', view.minimized);
+  view.minimizeButton.setAttribute('aria-pressed', String(view.minimized));
+  view.minimizeButton.textContent = view.minimized ? 'Restore' : 'Minimize';
+  view.minimizeButton.title = view.minimized ? 'Restore this view' : 'Minimize this view';
 }
 
 // ── Port click ───────────────────────────────────────────────────
 
 function onPortClick(e) {
   const { pipeId, portName, portType } = e.detail;
-  selectedPort = { pipeId, portName, portType };
-  refreshDataViewer();
+  showDataView(pipeId, portName, portType);
 }
 
 // ── Pipe select ──────────────────────────────────────────────────
@@ -131,8 +282,7 @@ function onPipeSelect(e) {
   if (!pipe) return;
   const outName = pipe.defaultOutputName;
   if (outName) {
-    selectedPort = { pipeId, portName: outName, portType: 'output' };
-    refreshDataViewer();
+    showDataView(pipeId, outName, 'output');
   }
 }
 
@@ -165,10 +315,14 @@ function initConnActionPopover() {
   addPipeBtn.textContent = 'Add Pipe';
   addPipeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    _insertBetweenConn = _connActionTarget;
+    const conn = _connActionTarget;
     _connActionTarget = null;
     hideConnActionPopover();
-    openAddPipeDialog();
+    openAddPipeDialog({
+      input: conn ? { pipeId: conn.fromPipeId, portName: conn.fromOutput } : null,
+      output: conn ? { pipeId: conn.toPipeId, portName: conn.toInput } : null,
+      replacedConnection: conn,
+    });
   });
 
   popover.appendChild(deleteBtn);
@@ -273,7 +427,43 @@ function onConfigClick(e) {
     desc.textContent = cfg.description;
 
     let input;
-    if (cfg.type === 'select' && cfg.options) {
+    if (cfg.type === 'bytes') {
+      // Show a file picker for binary data configs
+      const wrapper = document.createElement('div');
+      wrapper.className = 'config-file-picker';
+      const fileNameDisplay = document.createElement('span');
+      fileNameDisplay.className = 'config-file-name';
+      const currentName = pipe.getConfig('fileName')?.value;
+      fileNameDisplay.textContent = currentName || 'No file selected';
+      const fileBtn = document.createElement('button');
+      fileBtn.type = 'button';
+      fileBtn.className = 'btn btn-sm';
+      fileBtn.textContent = '📁 Choose File';
+      // state tracks file data changes made within this dialog session
+      const state = { base64: cfg.value || '', fileName: currentName || '' };
+      fileBtn.addEventListener('click', () => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.onchange = async () => {
+          const file = fileInput.files[0];
+          if (!file) return;
+          const buffer = await file.arrayBuffer();
+          state.base64 = FileInputPipe.bytesToBase64(new Uint8Array(buffer));
+          state.fileName = file.name;
+          fileNameDisplay.textContent = file.name;
+        };
+        fileInput.click();
+      });
+      wrapper.appendChild(fileNameDisplay);
+      wrapper.appendChild(fileBtn);
+      input = wrapper;
+      inputs.set(cfg.name, { input, type: cfg.type, state });
+      field.appendChild(label);
+      field.appendChild(input);
+      field.appendChild(desc);
+      fields.appendChild(field);
+      continue;
+    } else if (cfg.type === 'select' && cfg.options) {
       input = document.createElement('select');
       for (const opt of cfg.options) {
         const o = document.createElement('option');
@@ -296,7 +486,7 @@ function onConfigClick(e) {
       input.value = String(cfg.value);
     }
 
-    inputs.set(cfg.name, { input, type: cfg.type });
+    inputs.set(cfg.name, { input, type: cfg.type, state: null });
     field.appendChild(label);
     field.appendChild(input);
     field.appendChild(desc);
@@ -309,11 +499,19 @@ function onConfigClick(e) {
   dialog.addEventListener('close', function handler() {
     dialog.removeEventListener('close', handler);
     if (dialog.returnValue === 'ok') {
-      for (const [name, { input, type }] of inputs) {
+      for (const [name, { input, type, state }] of inputs) {
         let value;
         if (type === 'boolean') value = input.checked;
         else if (type === 'number') value = Number(input.value);
-        else value = input.value;
+        else if (type === 'bytes') {
+          pipe.setConfig(name, state.base64);
+          // FileInputPipe convention: the 'fileData' bytes config is paired with
+          // a 'fileName' string config that tracks the human-readable file name.
+          if (name === 'fileData' && pipe.getConfig('fileName') !== undefined) {
+            pipe.setConfig('fileName', state.fileName);
+          }
+          continue;
+        } else value = input.value;
         pipe.setConfig(name, value);
       }
       // Re-run from this pipe
@@ -326,11 +524,11 @@ function onConfigClick(e) {
 
 // ── View mode ────────────────────────────────────────────────────
 
-function setViewMode(mode) {
-  viewMode = mode;
-  btnViewText.classList.toggle('active', mode === 'text');
-  btnViewHex.classList.toggle('active', mode === 'hex');
-  dataViewer.setMode(mode);
+function setViewMode(view, mode) {
+  view.mode = mode;
+  view.textButton.classList.toggle('active', mode === 'text');
+  view.hexButton.classList.toggle('active', mode === 'hex');
+  view.viewer.setMode(mode);
 }
 
 // ── Add Pipe dialog ───────────────────────────────────────────────
@@ -340,51 +538,48 @@ function initAddPipeDialog() {
   searchInput.addEventListener('input', filterPipeList);
   renderPipeList('');
 
-  // Clear any pending insert-between connection if the dialog closes without adding a pipe.
-  // (In addPipe(), _insertBetweenConn is already cleared before dialog.close() is called,
-  //  so this safely handles the cancel/dismiss case without interfering with normal adds.)
   const dialog = document.getElementById('add-pipe-dialog');
-  dialog.addEventListener('close', () => { _insertBetweenConn = null; });
+  dialog.addEventListener('close', () => { _addPipeContext = null; });
 }
 
 function renderPipeList(query) {
   const list = document.getElementById('pipe-list');
   list.innerHTML = '';
-  const groups = getPipesByCategory();
   const q = query.toLowerCase();
+  const inputData = _addPipeContext?.sourceData ?? null;
+  const pipes = [...getPipesByCategory().values()]
+    .flat()
+    .filter(pipe =>
+      !q ||
+      pipe.typeDescription.toLowerCase().includes(q) ||
+      pipe.typeName.toLowerCase().includes(q) ||
+      pipe.categoryDescription.toLowerCase().includes(q))
+    .map((pipe, index) => ({
+      ...pipe,
+      index,
+      appropriateness: Math.max(
+        MIN_INPUT_APPROPRIATENESS,
+        Math.min(MAX_INPUT_APPROPRIATENESS, pipe.cls.getInputAppropriateness(inputData))
+      ),
+    }))
+    .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
 
-  for (const [category, pipes] of groups) {
-    const filtered = q
-      ? pipes.filter(p =>
-          p.typeDescription.toLowerCase().includes(q) ||
-          p.typeName.toLowerCase().includes(q) ||
-          p.categoryDescription.toLowerCase().includes(q))
-      : pipes;
+  for (const pipe of pipes) {
+    const item = document.createElement('div');
+    item.className = 'pipe-list-item';
 
-    if (filtered.length === 0) continue;
+    const name = document.createElement('div');
+    name.className = 'pipe-list-item-name';
+    name.textContent = pipe.typeDescription;
 
-    const catEl = document.createElement('div');
-    catEl.className = 'pipe-category';
-    catEl.textContent = category;
-    list.appendChild(catEl);
+    const desc = document.createElement('div');
+    desc.className = 'pipe-list-item-desc';
+    desc.textContent = pipe.categoryDescription;
 
-    for (const pipe of filtered) {
-      const item = document.createElement('div');
-      item.className = 'pipe-list-item';
-
-      const name = document.createElement('div');
-      name.className = 'pipe-list-item-name';
-      name.textContent = pipe.typeDescription;
-
-      const desc = document.createElement('div');
-      desc.className = 'pipe-list-item-desc';
-      desc.textContent = pipe.categoryDescription;
-
-      item.appendChild(name);
-      item.appendChild(desc);
-      item.addEventListener('click', () => addPipe(pipe.typeName));
-      list.appendChild(item);
-    }
+    item.appendChild(name);
+    item.appendChild(desc);
+    item.addEventListener('click', () => addPipe(pipe.typeName));
+    list.appendChild(item);
   }
 }
 
@@ -392,9 +587,21 @@ function filterPipeList(e) {
   renderPipeList(e.target.value);
 }
 
-function openAddPipeDialog() {
+function openAddPipeDialog(context = null) {
   const dialog = document.getElementById('add-pipe-dialog');
   const searchInput = document.getElementById('pipe-search-input');
+  if (context == null) {
+    const lastPipe = graph.getLastPipe();
+    context = {
+      input: lastPipe ? { pipeId: lastPipe.id, portName: lastPipe.defaultOutputName } : null,
+      output: null,
+      replacedConnection: null,
+    };
+  }
+  context.sourceData = context.input
+    ? graph.pipes.get(context.input.pipeId)?.getOutputData(context.input.portName) ?? null
+    : null;
+  _addPipeContext = context;
   searchInput.value = '';
   renderPipeList('');
   dialog.showModal();
@@ -404,15 +611,15 @@ function openAddPipeDialog() {
 function addPipe(typeName) {
   const dialog = document.getElementById('add-pipe-dialog');
 
-  // Capture and clear the insert-between connection before closing the dialog,
-  // since dialog.close() fires the 'close' event synchronously.
-  const insertBetween = _insertBetweenConn;
-  _insertBetweenConn = null;
+  // Capture and clear the context before close synchronously fires its handler.
+  const context = _addPipeContext;
+  _addPipeContext = null;
   dialog.close();
 
   const pipe = createPipe(typeName);
   if (!pipe) return;
 
+  const insertBetween = context?.replacedConnection;
   if (insertBetween) {
     // Insert new pipe between the two endpoints of the stored connection
     const conn = insertBetween;
@@ -456,10 +663,10 @@ function addPipe(typeName) {
   }
 
   // Normal case: position to the right of the last pipe
-  const lastPipe = graph.getLastPipe();
-  if (lastPipe) {
-    pipe.position.x = lastPipe.position.x + 200;
-    pipe.position.y = lastPipe.position.y;
+  const inputPipe = context?.input ? graph.pipes.get(context.input.pipeId) : null;
+  if (inputPipe) {
+    pipe.position.x = inputPipe.position.x + 200;
+    pipe.position.y = inputPipe.position.y;
   } else {
     pipe.position.x = 60;
     pipe.position.y = 80;
@@ -468,15 +675,15 @@ function addPipe(typeName) {
   graph.addPipe(pipe);
   editor.addPipeElement(pipe);
 
-  // Auto-connect to last pipe's default output
-  if (lastPipe && pipe.defineInputs().length > 0) {
+  // Auto-connect to the input captured when the dialog was opened.
+  if (inputPipe && context?.input && pipe.defineInputs().length > 0) {
     const conn = graph.connect(
-      lastPipe.id, lastPipe.defaultOutputName,
+      inputPipe.id, context.input.portName,
       pipe.id, pipe.defaultInputName
     );
     if (conn) {
       editor.updateConnections();
-      graph.processFrom(lastPipe.id).catch(console.error);
+      graph.processFrom(inputPipe.id).catch(console.error);
     }
   } else if (typeName === 'InputPipe') {
     // Process immediately for input pipes
@@ -518,9 +725,7 @@ function onClear() {
     editor.removePipeElement(id);
   }
   editor.updateConnections();
-  selectedPort = null;
-  dataViewer.setData(null, '');
-  dataPanelTitle.textContent = 'Select a pipe port to view data';
+  for (const id of Array.from(dataViews.keys())) removeDataView(id);
 
   // Clear URL state
   const url = new URL(window.location.href);
