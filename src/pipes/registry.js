@@ -4,6 +4,7 @@
  */
 
 import { InputPipe }         from './builtin/input-pipe.js';
+import { FileInputPipe }     from './builtin/file-input-pipe.js';
 import { Base64EncodePipe, Base64DecodePipe } from './builtin/encoding/base64.js';
 import { PercentEncodePipe, PercentDecodePipe } from './builtin/encoding/percent.js';
 import { HexEncodePipe, HexDecodePipe }     from './builtin/encoding/hex.js';
@@ -20,6 +21,7 @@ import { RegexMatchPipe }    from './builtin/parsing/regex-match.js';
 /** All built-in pipe classes in the desired display order. */
 const ALL_PIPES = [
   InputPipe,
+  FileInputPipe,
   // Encoding
   Base64EncodePipe,
   Base64DecodePipe,

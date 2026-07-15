@@ -155,6 +155,7 @@ describe('registry', () => {
   it('contains every built-in type and creates instances', () => {
     expect([...registry.keys()]).toEqual([
       'InputPipe',
+      'FileInputPipe',
       'Base64Encode', 'Base64Decode',
       'PercentEncode', 'PercentDecode',
       'HexEncode', 'HexDecode',
