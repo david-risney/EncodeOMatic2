@@ -231,12 +231,13 @@ function updateDataPanelVisibility() {
 }
 
 function togglePinned(view) {
-  if (view.pinned && view.pipeId !== selectedPipeId) {
+  const isUnpinning = view.pinned;
+  if (isUnpinning && view.pipeId !== selectedPipeId) {
     removeDataView(view.pipeId);
     return;
   }
-  if (view.pinned && view.minimized) toggleMinimized(view);
-  view.pinned = !view.pinned;
+  if (isUnpinning && view.minimized) toggleMinimized(view);
+  view.pinned = !isUnpinning;
   view.pinButton.classList.toggle('active', view.pinned);
   view.pinButton.setAttribute('aria-pressed', String(view.pinned));
   view.pinButton.title = view.pinned ? 'Allow this view to close' : 'Keep this view open';
@@ -699,7 +700,7 @@ function onClear() {
     editor.removePipeElement(id);
   }
   editor.updateConnections();
-  for (const id of dataViews.keys()) removeDataView(id);
+  for (const id of Array.from(dataViews.keys())) removeDataView(id);
 
   // Clear URL state
   const url = new URL(window.location.href);
