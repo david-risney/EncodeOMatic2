@@ -599,8 +599,6 @@ function openAddPipeDialog(context = null) {
 function onAddPipeRequest(e) {
   openAddPipeDialog({
     input: e.detail.input,
-    output: null,
-    replacedConnection: null,
     position: e.detail.position,
   });
 }

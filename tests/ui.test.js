@@ -139,6 +139,7 @@ describe('GraphEditor', () => {
     const request = vi.fn();
     editor.addEventListener('add-pipe-request', request);
     vi.spyOn(editor._inner, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
+    vi.spyOn(document, 'elementFromPoint').mockReturnValue(editor._canvas);
 
     editor._onPortMouseDown({}, source.id, 'output', 'output');
     editor._onCanvasMouseMove({ clientX: 310, clientY: 220 });
