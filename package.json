@@ -1,0 +1,27 @@
+{
+  "name": "encodeomatic2",
+  "version": "1.0.0",
+  "description": "A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](https://david-risney.github.io/EncodeOMatic2/).",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "find src tests -name \"*.js\" -print0 | xargs -0 -n1 node --check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/david-risney/EncodeOMatic2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/david-risney/EncodeOMatic2/issues"
+  },
+  "homepage": "https://github.com/david-risney/EncodeOMatic2#readme",
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.10"
+  },
+  "type": "module"
+}
