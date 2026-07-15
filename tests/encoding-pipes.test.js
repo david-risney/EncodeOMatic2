@@ -12,6 +12,32 @@ import { UrlEncodePipe, UrlDecodePipe } from '../src/pipes/builtin/encoding/url-
 import { decode, encode, processBytes, processText } from './helpers.js';
 
 describe('source and byte encodings', () => {
+  it.each([
+    [InputPipe, { text: '' }],
+    [Base64EncodePipe, {}],
+    [Base64DecodePipe, {}],
+    [HexEncodePipe, { separator: '', uppercase: true }],
+    [HexDecodePipe, {}],
+    [BinaryEncodePipe, { separator: ' ' }],
+    [BinaryDecodePipe, {}],
+    [PercentEncodePipe, { encoding: 'utf-8', mode: 'component' }],
+    [PercentDecodePipe, { encoding: 'utf-8' }],
+    [UrlEncodePipe, { encoding: 'utf-8' }],
+    [UrlDecodePipe, { encoding: 'utf-8' }],
+    [HtmlEncodePipe, { encoding: 'utf-8', mode: 'minimal' }],
+    [HtmlDecodePipe, { encoding: 'utf-8' }],
+    [XmlEncodePipe, { encoding: 'utf-8' }],
+    [XmlDecodePipe, { encoding: 'utf-8' }],
+    [CharsetDecodePipe, { fromEncoding: 'utf-8', fatal: true }],
+    [CharsetEncodePipe, { toEncoding: 'utf-8' }],
+    [SlashEscapePipe, { encoding: 'utf-8', escapeNonAscii: false }],
+    [SlashUnescapePipe, { encoding: 'utf-8' }],
+  ])('%s exposes its expected default configuration', (PipeClass, expected) => {
+    const pipe = new PipeClass();
+    expect(Object.fromEntries([...pipe.configs].map(([name, config]) => [name, config.value])))
+      .toEqual(expected);
+  });
+
   it('produces input text as UTF-8 bytes', async () => {
     const pipe = new InputPipe();
     expect(pipe.defineInputs()).toEqual([]);
@@ -26,6 +52,13 @@ describe('source and byte encodings', () => {
     expect([...await processBytes(new Base64DecodePipe(), encoded)]).toEqual(bytes);
     await expect(processText(new Base64DecodePipe(), '%%%')).rejects
       .toMatchObject({ message: 'Invalid Base64 input' });
+  });
+
+  it('handles empty Base64, hex, and binary inputs', async () => {
+    expect(await processBytes(new Base64DecodePipe(), [])).toHaveLength(0);
+    expect(await processText(new Base64EncodePipe(), '')).toBe('');
+    expect(await processBytes(new HexDecodePipe(), [])).toHaveLength(0);
+    expect(await processBytes(new BinaryDecodePipe(), [])).toHaveLength(0);
   });
 
   it('encodes configurable hex and decodes separated hex', async () => {
@@ -64,6 +97,7 @@ describe('percent and URL encodings', () => {
 
   it('decodes percent data and reports malformed sequences', async () => {
     expect(await processText(new PercentDecodePipe(), 'caf%C3%A9')).toBe('café');
+    expect(await processText(new PercentDecodePipe(), 'a%2Fb%3Fc%3Dd')).toBe('a/b?c=d');
     await expect(processText(new PercentDecodePipe(), '%ZZ')).rejects
       .toMatchObject({ message: 'Invalid percent-encoding in input' });
   });
@@ -91,6 +125,19 @@ describe('markup encodings', () => {
       .toBe('&©😀&unknown;');
   });
 
+  it.each([
+    ['&nbsp;', '\u00a0'],
+    ['&copy;', '©'],
+    ['&reg;', '®'],
+    ['&trade;', '™'],
+    ['&mdash;', '—'],
+    ['&ndash;', '–'],
+    ['&hellip;', '…'],
+    ['&amp &bogus; &#xZZ;', '&amp &bogus; &#xZZ;'],
+  ])('decodes HTML entity input %s', async (input, expected) => {
+    expect(await processText(new HtmlDecodePipe(), input)).toBe(expected);
+  });
+
   it('round trips XML entities and leaves unknown names unchanged', async () => {
     const source = `<tag a="'">&`;
     const encoded = await processText(new XmlEncodePipe(), source);
@@ -111,6 +158,18 @@ describe('charset encodings', () => {
     });
     pipe.setConfig('fatal', false);
     expect(decode(await processBytes(pipe, [0xff]))).toBe('�');
+  });
+
+  it.each([
+    ['utf-16le', [0x41, 0, 0x3d, 0xd8, 0, 0xde]],
+    ['utf-16be', [0, 0x41, 0xd8, 0x3d, 0xde, 0]],
+    ['iso-8859-1', [0x41, 0xe9]],
+    ['shift_jis', [0x41]],
+  ])('decodes representative %s input', async (encoding, bytes) => {
+    const pipe = new CharsetDecodePipe();
+    pipe.setConfig('fromEncoding', encoding);
+    const expected = new TextDecoder(encoding, { fatal: true }).decode(Uint8Array.from(bytes));
+    expect(decode(await processBytes(pipe, bytes))).toBe(expected);
   });
 
   it('encodes UTF-8 to UTF-8 and both UTF-16 byte orders', async () => {
@@ -144,5 +203,11 @@ describe('slash escaping', () => {
       .toBe('\0\b\t\n\r\f\v\\\'"AB😀q');
     expect(await processText(new SlashUnescapePipe(), '\\xZZ\\uZZZZ\\u{no}\\u{123'))
       .toBe('\\xZZ\\uZZZZ\\u{no}\\u{123');
+  });
+
+  it('preserves a trailing slash and handles Unicode boundaries', async () => {
+    expect(await processText(new SlashUnescapePipe(), 'value\\')).toBe('value\\');
+    expect(await processText(new SlashUnescapePipe(), '\\u0000\\u{10FFFF}'))
+      .toBe('\0\u{10ffff}');
   });
 });

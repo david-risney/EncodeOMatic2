@@ -106,6 +106,29 @@ describe('StringPipe', () => {
       .rejects.toMatchObject({ message: 'Cannot decode input bytes as utf-8' });
   });
 
+  it.each([
+    ['utf-16le', [0x68, 0x00, 0xe9, 0x00], 'HÉ'],
+    ['utf-16be', [0x00, 0x68, 0x00, 0xe9], 'HÉ'],
+    ['windows-1252', [0xe9], 'É'],
+  ])('honors the %s encoding configuration', async (encoding, bytes, expected) => {
+    const pipe = new UpperPipe();
+    pipe.setConfig('encoding', encoding);
+    const output = await pipe.process(new Map([['input', Uint8Array.from(bytes)]]));
+    expect(decode(output.get('output'))).toBe(expected);
+  });
+
+  it('reports unsupported configured encodings', async () => {
+    const pipe = new UpperPipe();
+    pipe.setConfig('encoding', 'not-an-encoding');
+    await expect(pipe.process(new Map([['input', encode('text')]])))
+      .rejects.toMatchObject({ message: 'Cannot decode input bytes as not-an-encoding' });
+  });
+
+  it('processes absent input as an empty string', async () => {
+    const output = await new UpperPipe().process(new Map());
+    expect(output.get('output')).toHaveLength(0);
+  });
+
   it('requires subclasses to implement string processing', async () => {
     await expect(new StringPipe().processString('x')).rejects.toThrow('not implemented');
   });

@@ -25,6 +25,26 @@ describe('UrlParserPipe', () => {
     await expect(new UrlParserPipe().process(new Map([['input', encode('not a url')]])))
       .rejects.toMatchObject({ message: 'Invalid URL: "not a url"' });
   });
+
+  it('parses IPv6, default ports, and encoded query names', async () => {
+    const pipe = new UrlParserPipe();
+    const result = await pipe.process(new Map([['input',
+      encode('https://[2001:db8::1]:443/path?hello%20world=value')
+    ]]));
+    expect(decode(result.get('hostname'))).toBe('[2001:db8::1]');
+    expect(decode(result.get('port'))).toBe('');
+    expect(decode(result.get('origin'))).toBe('https://[2001:db8::1]');
+    expect(decode(result.get('query:hello world'))).toBe('value');
+  });
+
+  it('rebuilds dynamic query outputs between runs', async () => {
+    const pipe = new UrlParserPipe();
+    await pipe.process(new Map([['input', encode('https://example.test/?old=1')]]));
+    await pipe.process(new Map([['input', encode('https://example.test/?new=2')]]));
+    const names = pipe.defineOutputs().map(({ name }) => name);
+    expect(names).toContain('query:new');
+    expect(names).not.toContain('query:old');
+  });
 });
 
 describe('JsonParserPipe', () => {
@@ -48,6 +68,29 @@ describe('JsonParserPipe', () => {
     expect(pipe.defineOutputs().map(({ name }) => name)).toEqual(['json']);
     await expect(pipe.process(new Map([['input', encode('{')]]))).rejects
       .toMatchObject({ message: expect.stringContaining('Invalid JSON:') });
+  });
+
+  it.each([
+    ['{}', '{}'],
+    ['[]', '[]'],
+    ['null', 'null'],
+    ['"text"', '"text"'],
+    ['0', '0'],
+  ])('handles JSON top-level value %s', async (input, expected) => {
+    const pipe = new JsonParserPipe();
+    const result = await pipe.process(new Map([['input', encode(input)]]));
+    expect(decode(result.get('json'))).toBe(expected);
+    expect(pipe.defineOutputs().map(({ name }) => name)).toEqual(['json']);
+  });
+
+  it('exposes keys containing punctuation without changing their names', async () => {
+    const pipe = new JsonParserPipe();
+    const result = await pipe.process(new Map([['input',
+      encode('{"a.b":1,"spaced key":"value","":false}')
+    ]]));
+    expect(decode(result.get('key:a.b'))).toBe('1');
+    expect(decode(result.get('key:spaced key'))).toBe('value');
+    expect(decode(result.get('key:'))).toBe('false');
   });
 });
 
@@ -78,5 +121,25 @@ describe('RegexMatchPipe', () => {
     pipe.setConfig('pattern', '[');
     await expect(pipe.process(new Map([['input', encode('x')]]))).rejects
       .toMatchObject({ message: expect.stringContaining('Invalid regex:') });
+  });
+
+  it.each([
+    ['^second$', 'm', 'first\nsecond', 'second'],
+    ['a.b', 's', 'a\nb', 'a\nb'],
+    ['😀', 'u', 'x😀y', '😀'],
+    ['word', 'i', 'WORD', 'WORD'],
+  ])('honors regex flags for pattern %s', async (pattern, flags, input, expected) => {
+    const pipe = new RegexMatchPipe();
+    pipe.setConfig('pattern', pattern);
+    pipe.setConfig('flags', flags);
+    const result = await pipe.process(new Map([['input', encode(input)]]));
+    expect(decode(result.get('match'))).toBe(expected);
+  });
+
+  it('handles zero-length matches without hanging', async () => {
+    const pipe = new RegexMatchPipe();
+    pipe.setConfig('pattern', '^|$');
+    const result = await pipe.process(new Map([['input', encode('ab')]]));
+    expect(decode(result.get('all-matches'))).toBe('\n');
   });
 });
