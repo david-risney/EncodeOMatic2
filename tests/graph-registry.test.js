@@ -153,7 +153,19 @@ describe('PipeGraph mutation and traversal', () => {
 
 describe('registry', () => {
   it('contains every built-in type and creates instances', () => {
-    expect(registry.size).toBe(22);
+    expect([...registry.keys()]).toEqual([
+      'InputPipe',
+      'Base64Encode', 'Base64Decode',
+      'PercentEncode', 'PercentDecode',
+      'HexEncode', 'HexDecode',
+      'HtmlEncode', 'HtmlDecode',
+      'XmlEncode', 'XmlDecode',
+      'CharsetDecode', 'CharsetEncode',
+      'BinaryEncode', 'BinaryDecode',
+      'SlashEscape', 'SlashUnescape',
+      'UrlEncode', 'UrlDecode',
+      'UrlParser', 'JsonParser', 'RegexMatch',
+    ]);
     expect(createPipe('HexEncode')).toBeInstanceOf(HexEncodePipe);
     expect(createPipe('missing')).toBeNull();
   });
