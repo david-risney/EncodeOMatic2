@@ -17,6 +17,33 @@ const XML_DECODE_MAP = {
   amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
 };
 
+function scoreXmlEntities(input) {
+  if (input == null || input.length === 0) return 0;
+  let text;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(input);
+  } catch {
+    return -10;
+  }
+
+  let found = false;
+  for (const match of text.matchAll(/&([^&\s;]*);/g)) {
+    const entity = match[1];
+    let codePoint = null;
+    if (/^#x[0-9a-fA-F]+$/.test(entity)) {
+      codePoint = parseInt(entity.slice(2), 16);
+    } else if (/^#[0-9]+$/.test(entity)) {
+      codePoint = parseInt(entity.slice(1), 10);
+    } else if (!Object.hasOwn(XML_DECODE_MAP, entity)) {
+      return -10;
+    }
+    if (codePoint != null && codePoint > 0x10FFFF) return -10;
+    found = true;
+  }
+  if (/&#(?:x)?[^&\s;]*(?:\s|$)/i.test(text)) return -10;
+  return found ? 10 : 0;
+}
+
 export class XmlEncodePipe extends StringPipe {
   static typeName = 'XmlEncode';
   static typeDescription = 'XML Encode';
@@ -33,6 +60,10 @@ export class XmlDecodePipe extends StringPipe {
   static typeDescription = 'XML Decode';
   static category = 'Encoding';
   static categoryDescription = 'Decode XML/SGML entities to characters.';
+
+  static getInputAppropriateness(input) {
+    return scoreXmlEntities(input);
+  }
 
   async processString(input) {
     return input.replace(/&(?:#x([0-9a-fA-F]+)|#([0-9]+)|([a-zA-Z]+));/g,

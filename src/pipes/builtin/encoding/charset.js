@@ -73,6 +73,19 @@ export class CharsetDecodePipe extends Pipe {
   static category = 'Encoding';
   static categoryDescription = 'Decode bytes from a specified character encoding to UTF-8 text.';
 
+  static getInputAppropriateness(input) {
+    if (input == null || input.length === 0) return 0;
+    const hasBom =
+      (input.length >= 3 && input[0] === 0xEF && input[1] === 0xBB && input[2] === 0xBF) ||
+      (input.length >= 4 && input[0] === 0x00 && input[1] === 0x00 &&
+        input[2] === 0xFE && input[3] === 0xFF) ||
+      (input.length >= 4 && input[0] === 0xFF && input[1] === 0xFE &&
+        input[2] === 0x00 && input[3] === 0x00) ||
+      (input.length >= 2 && input[0] === 0xFE && input[1] === 0xFF) ||
+      (input.length >= 2 && input[0] === 0xFF && input[1] === 0xFE);
+    return hasBom ? 10 : 0;
+  }
+
   defineConfigs() {
     return [
       new PipeConfig({
@@ -113,6 +126,16 @@ export class CharsetEncodePipe extends Pipe {
   static typeDescription = 'Charset Encode';
   static category = 'Encoding';
   static categoryDescription = 'Encode UTF-8 text bytes to a target character encoding.';
+
+  static getInputAppropriateness(input) {
+    if (input == null || input.length === 0) return 0;
+    try {
+      new TextDecoder('utf-8', { fatal: true }).decode(input);
+      return 0;
+    } catch {
+      return -10;
+    }
+  }
 
   defineConfigs() {
     return [

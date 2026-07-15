@@ -27,6 +27,24 @@ export class UrlDecodePipe extends StringPipe {
   static category = 'Encoding';
   static categoryDescription = 'Decode a URI using decodeURI.';
 
+  static getInputAppropriateness(input) {
+    if (input == null || input.length === 0) return 0;
+    let text;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(input);
+    } catch {
+      return -10;
+    }
+    if (!text.includes('%')) return 0;
+    if (/%(?![0-9a-fA-F]{2})/.test(text)) return -10;
+    try {
+      decodeURI(text);
+      return 10;
+    } catch {
+      return -10;
+    }
+  }
+
   async processString(input) {
     try {
       return decodeURI(input);

@@ -75,6 +75,41 @@ export class SlashUnescapePipe extends StringPipe {
   static category = 'Encoding';
   static categoryDescription = 'Unescape C-style backslash sequences.';
 
+  static getInputAppropriateness(input) {
+    if (input == null || input.length === 0) return 0;
+    let text;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(input);
+    } catch {
+      return -10;
+    }
+    if (!text.includes('\\')) return 0;
+
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] !== '\\') continue;
+      const next = text[++i];
+      if (next === undefined) return -10;
+      if (UNESCAPE_MAP[next] !== undefined) continue;
+      if (next === 'x') {
+        if (!/^[0-9a-fA-F]{2}$/.test(text.slice(i + 1, i + 3))) return -10;
+        i += 2;
+        continue;
+      }
+      if (next !== 'u') return -10;
+      if (text[i + 1] === '{') {
+        const end = text.indexOf('}', i + 2);
+        if (end === -1) return -10;
+        const hex = text.slice(i + 2, end);
+        if (!/^[0-9a-fA-F]+$/.test(hex) || parseInt(hex, 16) > 0x10FFFF) return -10;
+        i = end;
+      } else {
+        if (!/^[0-9a-fA-F]{4}$/.test(text.slice(i + 1, i + 5))) return -10;
+        i += 4;
+      }
+    }
+    return 10;
+  }
+
   async processString(input) {
     let out = '';
     let i = 0;
