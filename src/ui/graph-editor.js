@@ -58,8 +58,8 @@ class GraphEditor extends HTMLElement {
     // Pipe elements: pipeId → HTMLElement
     this._pipeElements = new Map();
 
-    // SVG connection paths: connId → SVGPathElement
-    this._connPaths = new Map();
+    // SVG connection path groups: connId → { hit: SVGPathElement, vis: SVGPathElement }
+    this._connPathGroups = new Map();
 
     this._canvas = null;
     this._inner = null;
@@ -167,31 +167,43 @@ class GraphEditor extends HTMLElement {
   updateConnections() {
     if (!this._graph || !this._svg) return;
 
-    // Remove paths not in graph
-    for (const [id, path] of this._connPaths) {
+    // Remove path groups not in graph
+    for (const [id, paths] of this._connPathGroups) {
       const exists = this._graph.connections.find(c => c.id === id);
       if (!exists) {
-        path.remove();
-        this._connPaths.delete(id);
+        paths.vis.remove();
+        paths.hit.remove();
+        this._connPathGroups.delete(id);
       }
     }
 
-    // Add/update paths for each connection
+    // Add/update path groups for each connection
     for (const conn of this._graph.connections) {
-      let path = this._connPaths.get(conn.id);
-      if (!path) {
-        path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.classList.add('connection-path');
-        path.dataset.connId = conn.id;
-        path.addEventListener('click', () => {
+      let paths = this._connPathGroups.get(conn.id);
+      if (!paths) {
+        // Visual path: rendered appearance only, no pointer events
+        const vis = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        vis.classList.add('connection-path');
+
+        // Hit path: wide transparent stroke for easier clicking
+        const hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        hit.classList.add('connection-hit');
+        hit.dataset.connId = conn.id;
+        hit.addEventListener('click', (e) => {
           this.dispatchEvent(new CustomEvent('connection-click', {
-            detail: { connection: conn }, bubbles: true
+            detail: { connection: conn, clientX: e.clientX, clientY: e.clientY },
+            bubbles: true,
           }));
         });
-        this._svg.appendChild(path);
-        this._connPaths.set(conn.id, path);
+        hit.addEventListener('mouseenter', () => vis.classList.add('hover'));
+        hit.addEventListener('mouseleave', () => vis.classList.remove('hover'));
+
+        this._svg.appendChild(vis);
+        this._svg.appendChild(hit);
+        paths = { vis, hit };
+        this._connPathGroups.set(conn.id, paths);
       }
-      this._updateConnectionPath(path, conn);
+      this._updateConnectionPath(paths, conn);
     }
 
     // Update draft path if active
@@ -200,19 +212,22 @@ class GraphEditor extends HTMLElement {
     }
   }
 
-  _updateConnectionPath(path, conn) {
+  _updateConnectionPath(paths, conn) {
     const fromKey = `${conn.fromPipeId}:output:${conn.fromOutput}`;
     const toKey   = `${conn.toPipeId}:input:${conn.toInput}`;
     const fromEl  = this._portElements.get(fromKey);
     const toEl    = this._portElements.get(toKey);
     if (!fromEl || !toEl) {
-      path.setAttribute('d', '');
+      paths.vis.setAttribute('d', '');
+      paths.hit.setAttribute('d', '');
       return;
     }
 
     const fromPos = this._portCenter(fromEl);
     const toPos   = this._portCenter(toEl);
-    path.setAttribute('d', bezierPath(fromPos.x, fromPos.y, toPos.x, toPos.y));
+    const d = bezierPath(fromPos.x, fromPos.y, toPos.x, toPos.y);
+    paths.vis.setAttribute('d', d);
+    paths.hit.setAttribute('d', d);
   }
 
   /** Get port center in canvas-inner coordinates. */
