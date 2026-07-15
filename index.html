@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Encode-O-Matic 2</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1 class="app-title">Encode-O-Matic 2</h1>
+    <div class="toolbar">
+      <button id="btn-add-pipe" class="btn btn-primary" title="Add a pipe to the graph">+ Add Pipe</button>
+      <div class="toolbar-sep"></div>
+      <button id="btn-save" class="btn" title="Save graph to URL">Save to URL</button>
+      <button id="btn-load" class="btn" title="Load graph from URL">Load</button>
+      <button id="btn-clear" class="btn btn-danger" title="Clear graph">Clear</button>
+      <div class="toolbar-sep"></div>
+      <button id="btn-zoom-fit" class="btn" title="Fit graph in view">Fit</button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <div class="graph-panel">
+      <graph-editor id="graph-editor"></graph-editor>
+    </div>
+    <div class="data-panel" id="data-panel">
+      <div class="data-panel-header">
+        <span id="data-panel-title" class="data-panel-title">Select a pipe port to view data</span>
+        <div class="data-panel-controls">
+          <button id="btn-view-text" class="btn btn-sm active" title="View as text">Text</button>
+          <button id="btn-view-hex" class="btn btn-sm" title="View as hex">Hex</button>
+        </div>
+      </div>
+      <data-viewer id="data-viewer"></data-viewer>
+    </div>
+  </div>
+
+  <!-- Add Pipe Dialog -->
+  <dialog id="add-pipe-dialog" class="dialog">
+    <form method="dialog" class="dialog-form">
+      <h2>Add Pipe</h2>
+      <div class="pipe-search">
+        <input type="search" id="pipe-search-input" placeholder="Search pipes..." autocomplete="off">
+      </div>
+      <div id="pipe-list" class="pipe-list"></div>
+      <div class="dialog-footer">
+        <button value="cancel" class="btn">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Pipe Config Dialog -->
+  <dialog id="config-dialog" class="dialog">
+    <form method="dialog" class="dialog-form">
+      <h2 id="config-dialog-title">Configure Pipe</h2>
+      <div id="config-fields" class="config-fields"></div>
+      <div class="dialog-footer">
+        <button id="config-delete-btn" type="button" class="btn btn-danger">Delete Pipe</button>
+        <button value="ok" class="btn btn-primary">OK</button>
+        <button value="cancel" class="btn">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
