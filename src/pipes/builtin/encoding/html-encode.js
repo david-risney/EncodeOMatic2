@@ -21,6 +21,34 @@ const NAMED_ENTITIES = {
   mdash: '\u2014', ndash: '\u2013', hellip: '\u2026',
 };
 
+function scoreHtmlEntities(input) {
+  if (input == null || input.length === 0) return 0;
+  let text;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(input);
+  } catch {
+    return -10;
+  }
+
+  let found = false;
+  const candidates = text.matchAll(/&([^&\s;]*);/g);
+  for (const match of candidates) {
+    const entity = match[1];
+    let codePoint = null;
+    if (/^#x[0-9a-fA-F]+$/.test(entity)) {
+      codePoint = parseInt(entity.slice(2), 16);
+    } else if (/^#[0-9]+$/.test(entity)) {
+      codePoint = parseInt(entity.slice(1), 10);
+    } else if (!Object.hasOwn(NAMED_ENTITIES, entity)) {
+      return -10;
+    }
+    if (codePoint != null && codePoint > 0x10FFFF) return -10;
+    found = true;
+  }
+  if (/&#(?:x)?[^&\s;]*(?:\s|$)/i.test(text)) return -10;
+  return found ? 10 : 0;
+}
+
 export class HtmlEncodePipe extends StringPipe {
   static typeName = 'HtmlEncode';
   static typeDescription = 'HTML Encode';
@@ -60,6 +88,10 @@ export class HtmlDecodePipe extends StringPipe {
   static typeDescription = 'HTML Decode';
   static category = 'Encoding';
   static categoryDescription = 'Decode HTML entities to characters.';
+
+  static getInputAppropriateness(input) {
+    return scoreHtmlEntities(input);
+  }
 
   async processString(input) {
     return input.replace(HTML_ENTITY_PATTERN, (_match, hex, dec, name) => {

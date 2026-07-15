@@ -7,6 +7,9 @@
  * Pipes can report errors with optional selection ranges.
  */
 
+export const MIN_INPUT_APPROPRIATENESS = -10;
+export const MAX_INPUT_APPROPRIATENESS = 10;
+
 /** Configuration parameter for a pipe. */
 export class PipeConfig {
   /**
@@ -71,6 +74,17 @@ let _nextId = 1;
  * Subclasses should set a static `typeName` and `typeDescription`.
  */
 export class Pipe {
+  /**
+   * Rate how appropriate the supplied bytes are as input for this pipe.
+   * Subclasses may return a score from -10 (definitely inappropriate) to
+   * 10 (definitely appropriate); 0 means indeterminate.
+   * @param {Uint8Array|null} input
+   * @returns {number}
+   */
+  static getInputAppropriateness(input) {
+    return 0;
+  }
+
   constructor() {
     this.id = `pipe-${_nextId++}`;
     this.position = { x: 0, y: 0 };

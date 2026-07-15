@@ -54,6 +54,24 @@ export class PercentDecodePipe extends StringPipe {
   static category = 'Encoding';
   static categoryDescription = 'Decode percent-encoded (URL-encoded) text.';
 
+  static getInputAppropriateness(input) {
+    if (input == null || input.length === 0) return 0;
+    let text;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(input);
+    } catch {
+      return -10;
+    }
+    if (!text.includes('%')) return 0;
+    if (/%(?![0-9a-fA-F]{2})/.test(text)) return -10;
+    try {
+      decodeURIComponent(text);
+      return 10;
+    } catch {
+      return -10;
+    }
+  }
+
   async processString(input) {
     try {
       return decodeURIComponent(input);

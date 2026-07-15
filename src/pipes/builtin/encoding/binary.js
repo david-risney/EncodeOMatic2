@@ -35,6 +35,20 @@ export class BinaryDecodePipe extends Pipe {
   static category = 'Encoding';
   static categoryDescription = 'Decode a binary (base-2) bit string to bytes.';
 
+  static getInputAppropriateness(input) {
+    if (input == null || input.length === 0) return 0;
+    let text;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(input).trim();
+    } catch {
+      return -10;
+    }
+    if (text.length === 0) return 0;
+    const tokens = text.split(/[\s,]+/).filter(Boolean);
+    if (!tokens.every(token => /^[01]+$/.test(token))) return -10;
+    return tokens.every(token => token.length === 8) ? 10 : 5;
+  }
+
   async process(inputs) {
     const data = inputs.get(this.defaultInputName) ?? new Uint8Array(0);
     const text = new TextDecoder().decode(data);

@@ -13,6 +13,23 @@ export class JsonParserPipe extends Pipe {
   static category = 'Parsing';
   static categoryDescription = 'Parse JSON and expose top-level keys as separate outputs.';
 
+  static getInputAppropriateness(input) {
+    if (input == null || input.length === 0) return 0;
+    let text;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(input).trim();
+    } catch {
+      return -10;
+    }
+    if (text.length === 0) return 0;
+    try {
+      JSON.parse(text);
+      return 10;
+    } catch {
+      return -10;
+    }
+  }
+
   constructor() {
     super();
     this._dynamicOutputs = [];
