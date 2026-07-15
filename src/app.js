@@ -38,8 +38,15 @@ let selectedPort = null; // {pipeId, portName, portType}
 let _connActionPopover = null;
 /** The connection whose popover is currently shown. @type {import('./pipes/graph.js').Connection|null} */
 let _connActionTarget = null;
-/** When set, the next addPipe() call inserts the new pipe between these endpoints. @type {import('./pipes/graph.js').Connection|null} */
-let _insertBetweenConn = null;
+/**
+ * The default connections for the pipe being added.
+ * @type {{
+ *   input: {pipeId: string, portName: string}|null,
+ *   output: {pipeId: string, portName: string}|null,
+ *   replacedConnection: import('./pipes/graph.js').Connection|null
+ * }|null}
+ */
+let _addPipeContext = null;
 
 // ── Initialize ───────────────────────────────────────────────────
 
@@ -74,7 +81,7 @@ async function init() {
   }
 
   // Wire toolbar buttons
-  document.getElementById('btn-add-pipe').addEventListener('click', openAddPipeDialog);
+  document.getElementById('btn-add-pipe').addEventListener('click', () => openAddPipeDialog());
   document.getElementById('btn-save').addEventListener('click', onSave);
   document.getElementById('btn-load').addEventListener('click', onLoad);
   document.getElementById('btn-clear').addEventListener('click', onClear);
@@ -179,10 +186,14 @@ function initConnActionPopover() {
   addPipeBtn.textContent = 'Add Pipe';
   addPipeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    _insertBetweenConn = _connActionTarget;
+    const conn = _connActionTarget;
     _connActionTarget = null;
     hideConnActionPopover();
-    openAddPipeDialog();
+    openAddPipeDialog({
+      input: conn ? { pipeId: conn.fromPipeId, portName: conn.fromOutput } : null,
+      output: conn ? { pipeId: conn.toPipeId, portName: conn.toInput } : null,
+      replacedConnection: conn,
+    });
   });
 
   popover.appendChild(deleteBtn);
@@ -398,51 +409,50 @@ function initAddPipeDialog() {
   searchInput.addEventListener('input', filterPipeList);
   renderPipeList('');
 
-  // Clear any pending insert-between connection if the dialog closes without adding a pipe.
-  // (In addPipe(), _insertBetweenConn is already cleared before dialog.close() is called,
-  //  so this safely handles the cancel/dismiss case without interfering with normal adds.)
   const dialog = document.getElementById('add-pipe-dialog');
-  dialog.addEventListener('close', () => { _insertBetweenConn = null; });
+  dialog.addEventListener('close', () => { _addPipeContext = null; });
 }
 
 function renderPipeList(query) {
   const list = document.getElementById('pipe-list');
   list.innerHTML = '';
-  const groups = getPipesByCategory();
   const q = query.toLowerCase();
+  const inputData = _addPipeContext?.input
+    ? graph.pipes.get(_addPipeContext.input.pipeId)?.getOutputData(_addPipeContext.input.portName) ?? null
+    : null;
+  const pipes = [...getPipesByCategory().values()]
+    .flat()
+    .filter(pipe =>
+      !q ||
+      pipe.typeDescription.toLowerCase().includes(q) ||
+      pipe.typeName.toLowerCase().includes(q) ||
+      pipe.categoryDescription.toLowerCase().includes(q))
+    .map((pipe, index) => ({
+      ...pipe,
+      index,
+      appropriateness: Math.max(
+        -10,
+        Math.min(10, pipe.cls.getInputAppropriateness(inputData))
+      ),
+    }))
+    .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
 
-  for (const [category, pipes] of groups) {
-    const filtered = q
-      ? pipes.filter(p =>
-          p.typeDescription.toLowerCase().includes(q) ||
-          p.typeName.toLowerCase().includes(q) ||
-          p.categoryDescription.toLowerCase().includes(q))
-      : pipes;
+  for (const pipe of pipes) {
+    const item = document.createElement('div');
+    item.className = 'pipe-list-item';
 
-    if (filtered.length === 0) continue;
+    const name = document.createElement('div');
+    name.className = 'pipe-list-item-name';
+    name.textContent = pipe.typeDescription;
 
-    const catEl = document.createElement('div');
-    catEl.className = 'pipe-category';
-    catEl.textContent = category;
-    list.appendChild(catEl);
+    const desc = document.createElement('div');
+    desc.className = 'pipe-list-item-desc';
+    desc.textContent = pipe.categoryDescription;
 
-    for (const pipe of filtered) {
-      const item = document.createElement('div');
-      item.className = 'pipe-list-item';
-
-      const name = document.createElement('div');
-      name.className = 'pipe-list-item-name';
-      name.textContent = pipe.typeDescription;
-
-      const desc = document.createElement('div');
-      desc.className = 'pipe-list-item-desc';
-      desc.textContent = pipe.categoryDescription;
-
-      item.appendChild(name);
-      item.appendChild(desc);
-      item.addEventListener('click', () => addPipe(pipe.typeName));
-      list.appendChild(item);
-    }
+    item.appendChild(name);
+    item.appendChild(desc);
+    item.addEventListener('click', () => addPipe(pipe.typeName));
+    list.appendChild(item);
   }
 }
 
@@ -450,9 +460,18 @@ function filterPipeList(e) {
   renderPipeList(e.target.value);
 }
 
-function openAddPipeDialog() {
+function openAddPipeDialog(context = null) {
   const dialog = document.getElementById('add-pipe-dialog');
   const searchInput = document.getElementById('pipe-search-input');
+  if (context == null) {
+    const lastPipe = graph.getLastPipe();
+    context = {
+      input: lastPipe ? { pipeId: lastPipe.id, portName: lastPipe.defaultOutputName } : null,
+      output: null,
+      replacedConnection: null,
+    };
+  }
+  _addPipeContext = context;
   searchInput.value = '';
   renderPipeList('');
   dialog.showModal();
@@ -462,15 +481,15 @@ function openAddPipeDialog() {
 function addPipe(typeName) {
   const dialog = document.getElementById('add-pipe-dialog');
 
-  // Capture and clear the insert-between connection before closing the dialog,
-  // since dialog.close() fires the 'close' event synchronously.
-  const insertBetween = _insertBetweenConn;
-  _insertBetweenConn = null;
+  // Capture and clear the context before close synchronously fires its handler.
+  const context = _addPipeContext;
+  _addPipeContext = null;
   dialog.close();
 
   const pipe = createPipe(typeName);
   if (!pipe) return;
 
+  const insertBetween = context?.replacedConnection;
   if (insertBetween) {
     // Insert new pipe between the two endpoints of the stored connection
     const conn = insertBetween;
@@ -514,10 +533,10 @@ function addPipe(typeName) {
   }
 
   // Normal case: position to the right of the last pipe
-  const lastPipe = graph.getLastPipe();
-  if (lastPipe) {
-    pipe.position.x = lastPipe.position.x + 200;
-    pipe.position.y = lastPipe.position.y;
+  const inputPipe = context?.input ? graph.pipes.get(context.input.pipeId) : null;
+  if (inputPipe) {
+    pipe.position.x = inputPipe.position.x + 200;
+    pipe.position.y = inputPipe.position.y;
   } else {
     pipe.position.x = 60;
     pipe.position.y = 80;
@@ -526,15 +545,15 @@ function addPipe(typeName) {
   graph.addPipe(pipe);
   editor.addPipeElement(pipe);
 
-  // Auto-connect to last pipe's default output
-  if (lastPipe && pipe.defineInputs().length > 0) {
+  // Auto-connect to the input captured when the dialog was opened.
+  if (inputPipe && context?.input && pipe.defineInputs().length > 0) {
     const conn = graph.connect(
-      lastPipe.id, lastPipe.defaultOutputName,
+      inputPipe.id, context.input.portName,
       pipe.id, pipe.defaultInputName
     );
     if (conn) {
       editor.updateConnections();
-      graph.processFrom(lastPipe.id).catch(console.error);
+      graph.processFrom(inputPipe.id).catch(console.error);
     }
   } else if (typeName === 'InputPipe') {
     // Process immediately for input pipes

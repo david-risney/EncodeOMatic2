@@ -33,6 +33,22 @@ export class Base64DecodePipe extends Pipe {
   static category = 'Encoding';
   static categoryDescription = 'Decode Base64 ASCII text to raw bytes.';
 
+  static getInputAppropriateness(input) {
+    if (input == null) return 0;
+    const b64 = new TextDecoder('ascii').decode(input).trim();
+    if (/\s/.test(b64) ||
+        !/^[A-Za-z0-9+/]*={0,2}$/.test(b64) ||
+        b64.length % 4 === 1) {
+      return -10;
+    }
+    try {
+      atob(b64);
+      return 10;
+    } catch {
+      return -10;
+    }
+  }
+
   async process(inputs) {
     const data = inputs.get(this.defaultInputName) ?? new Uint8Array(0);
     const decoder = new TextDecoder('ascii');
