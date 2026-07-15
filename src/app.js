@@ -8,6 +8,7 @@ import { PipeGraph } from './pipes/graph.js';
 import { registry, createPipe, getPipesByCategory } from './pipes/registry.js';
 import { WorkerPool } from './worker/worker-pool.js';
 import { saveToUrl, loadFromUrl } from './state.js';
+import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
 
@@ -294,12 +295,7 @@ function onConfigClick(e) {
           const file = fileInput.files[0];
           if (!file) return;
           const buffer = await file.arrayBuffer();
-          const bytes = new Uint8Array(buffer);
-          let binary = '';
-          for (let i = 0; i < bytes.length; i++) {
-            binary += String.fromCharCode(bytes[i]);
-          }
-          state.base64 = btoa(binary);
+          state.base64 = FileInputPipe.bytesToBase64(new Uint8Array(buffer));
           state.fileName = file.name;
           fileNameDisplay.textContent = file.name;
         };
@@ -337,7 +333,7 @@ function onConfigClick(e) {
       input.value = String(cfg.value);
     }
 
-    inputs.set(cfg.name, { input, type: cfg.type });
+    inputs.set(cfg.name, { input, type: cfg.type, state: null });
     field.appendChild(label);
     field.appendChild(input);
     field.appendChild(desc);

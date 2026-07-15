@@ -42,10 +42,22 @@ export class FileInputPipe extends Pipe {
       return new Map([['output', new Uint8Array(0)]]);
     }
     const binary = atob(fileData);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
     return new Map([['output', bytes]]);
+  }
+
+  /**
+   * Encode a Uint8Array to a base64 string using chunked processing to avoid
+   * call-stack limits with large files.
+   * @param {Uint8Array} bytes
+   * @returns {string}
+   */
+  static bytesToBase64(bytes) {
+    const chunkSize = 0x8000; // 32 KB chunks to stay within call-stack limits
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
   }
 }

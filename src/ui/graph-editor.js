@@ -21,6 +21,7 @@
  */
 
 import { Connection } from '../pipes/graph.js';
+import { FileInputPipe } from '../pipes/builtin/file-input-pipe.js';
 
 /**
  * Compute SVG cubic bezier path between two points.
@@ -313,12 +314,7 @@ class GraphEditor extends HTMLElement {
           const file = fileInput.files[0];
           if (!file) return;
           const buffer = await file.arrayBuffer();
-          const bytes = new Uint8Array(buffer);
-          let binary = '';
-          for (let i = 0; i < bytes.length; i++) {
-            binary += String.fromCharCode(bytes[i]);
-          }
-          const base64 = btoa(binary);
+          const base64 = FileInputPipe.bytesToBase64(new Uint8Array(buffer));
           pipe.setConfig('fileName', file.name);
           pipe.setConfig('fileData', base64);
           fileNameEl.textContent = file.name;
