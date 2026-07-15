@@ -59,6 +59,19 @@ async function init() {
     editor.fitView();
   }
 
+  if (graph.pipes.size === 0) {
+    const inputPipe = createPipe('InputPipe');
+    if (inputPipe) {
+      inputPipe.position.x = 60;
+      inputPipe.position.y = 80;
+      graph.addPipe(inputPipe);
+      editor.addPipeElement(inputPipe);
+      editor.updateConnections();
+      await graph.processFrom(inputPipe.id);
+      editor.fitView();
+    }
+  }
+
   // Wire toolbar buttons
   document.getElementById('btn-add-pipe').addEventListener('click', openAddPipeDialog);
   document.getElementById('btn-save').addEventListener('click', onSave);
