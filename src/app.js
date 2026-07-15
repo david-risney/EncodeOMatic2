@@ -213,6 +213,7 @@ function showDataView(pipeId, portName, portType) {
   } else {
     view.portName = portName;
     view.portType = portType;
+    if (view.minimized) toggleMinimized(view);
   }
   refreshDataView(view);
 }
