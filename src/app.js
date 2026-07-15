@@ -33,6 +33,13 @@ const btnViewHex  = document.getElementById('btn-view-hex');
 let viewMode = 'text'; // 'text' | 'hex'
 let selectedPort = null; // {pipeId, portName, portType}
 
+/** The connection action popover element. @type {HTMLElement|null} */
+let _connActionPopover = null;
+/** The connection whose popover is currently shown. @type {import('./pipes/graph.js').Connection|null} */
+let _connActionTarget = null;
+/** When set, the next addPipe() call inserts the new pipe between these endpoints. @type {import('./pipes/graph.js').Connection|null} */
+let _insertBetweenConn = null;
+
 // ── Initialize ───────────────────────────────────────────────────
 
 async function init() {
@@ -72,6 +79,7 @@ async function init() {
   // Add Pipe dialog setup
   initAddPipeDialog();
   initConfigDialog();
+  initConnActionPopover();
 
   // Toast container
   const toast = document.createElement('div');
@@ -128,14 +136,87 @@ function onPipeSelect(e) {
   }
 }
 
+// ── Connection action popover ────────────────────────────────────
+
+/**
+ * Creates and attaches the floating connection-action popover to the document.
+ * The popover shows Delete and Add Pipe actions for the clicked connection.
+ */
+function initConnActionPopover() {
+  const popover = document.createElement('div');
+  popover.className = 'conn-action-popover';
+  popover.style.display = 'none';
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'btn btn-sm btn-danger';
+  deleteBtn.textContent = 'Delete';
+  deleteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (_connActionTarget) {
+      graph.disconnectById(_connActionTarget.id);
+      editor.updateConnections();
+      _connActionTarget = null;
+    }
+    hideConnActionPopover();
+  });
+
+  const addPipeBtn = document.createElement('button');
+  addPipeBtn.className = 'btn btn-sm btn-primary';
+  addPipeBtn.textContent = 'Add Pipe';
+  addPipeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    _insertBetweenConn = _connActionTarget;
+    _connActionTarget = null;
+    hideConnActionPopover();
+    openAddPipeDialog();
+  });
+
+  popover.appendChild(deleteBtn);
+  popover.appendChild(addPipeBtn);
+  document.body.appendChild(popover);
+  _connActionPopover = popover;
+
+  // Close popover when clicking outside of it
+  document.addEventListener('click', (e) => {
+    if (_connActionPopover && _connActionPopover.style.display !== 'none' &&
+        !_connActionPopover.contains(e.target)) {
+      hideConnActionPopover();
+    }
+  }, true);
+}
+
+/**
+ * Shows the connection action popover near the given viewport coordinates.
+ * @param {number} clientX
+ * @param {number} clientY
+ * @param {import('./pipes/graph.js').Connection} conn
+ */
+function showConnActionPopover(clientX, clientY, conn) {
+  if (!_connActionPopover) return;
+  _connActionTarget = conn;
+
+  // Show at the click offset first, then measure and clamp within the viewport
+  _connActionPopover.style.left = `${clientX + 6}px`;
+  _connActionPopover.style.top  = `${clientY + 6}px`;
+  _connActionPopover.style.display = '';
+
+  const pw = _connActionPopover.offsetWidth;
+  const ph = _connActionPopover.offsetHeight;
+  _connActionPopover.style.left = `${Math.min(clientX + 6, window.innerWidth  - pw - 8)}px`;
+  _connActionPopover.style.top  = `${Math.min(clientY + 6, window.innerHeight - ph - 8)}px`;
+}
+
+/** Hides the connection action popover. */
+function hideConnActionPopover() {
+  if (_connActionPopover) _connActionPopover.style.display = 'none';
+  _connActionTarget = null;
+}
+
 // ── Connection click (delete) ────────────────────────────────────
 
 function onConnectionClick(e) {
-  const { connection } = e.detail;
-  if (confirm(`Remove connection from ${connection.fromOutput} → ${connection.toInput}?`)) {
-    graph.disconnectById(connection.id);
-    editor.updateConnections();
-  }
+  const { connection, clientX, clientY } = e.detail;
+  showConnActionPopover(clientX, clientY, connection);
 }
 
 // ── Config dialog ─────────────────────────────────────────────────
@@ -258,6 +339,12 @@ function initAddPipeDialog() {
   const searchInput = document.getElementById('pipe-search-input');
   searchInput.addEventListener('input', filterPipeList);
   renderPipeList('');
+
+  // Clear any pending insert-between connection if the dialog closes without adding a pipe.
+  // (In addPipe(), _insertBetweenConn is already cleared before dialog.close() is called,
+  //  so this safely handles the cancel/dismiss case without interfering with normal adds.)
+  const dialog = document.getElementById('add-pipe-dialog');
+  dialog.addEventListener('close', () => { _insertBetweenConn = null; });
 }
 
 function renderPipeList(query) {
@@ -316,12 +403,59 @@ function openAddPipeDialog() {
 
 function addPipe(typeName) {
   const dialog = document.getElementById('add-pipe-dialog');
+
+  // Capture and clear the insert-between connection before closing the dialog,
+  // since dialog.close() fires the 'close' event synchronously.
+  const insertBetween = _insertBetweenConn;
+  _insertBetweenConn = null;
   dialog.close();
 
   const pipe = createPipe(typeName);
   if (!pipe) return;
 
-  // Position: auto-place to the right of the last pipe
+  if (insertBetween) {
+    // Insert new pipe between the two endpoints of the stored connection
+    const conn = insertBetween;
+
+    const fromPipe = graph.pipes.get(conn.fromPipeId);
+    const toPipe   = graph.pipes.get(conn.toPipeId);
+
+    // Position new pipe midway between the two connected pipes
+    if (fromPipe && toPipe) {
+      pipe.position.x = (fromPipe.position.x + toPipe.position.x) / 2;
+      pipe.position.y = (fromPipe.position.y + toPipe.position.y) / 2;
+    } else if (fromPipe) {
+      pipe.position.x = fromPipe.position.x + 200;
+      pipe.position.y = fromPipe.position.y;
+    } else {
+      pipe.position.x = 60;
+      pipe.position.y = 80;
+    }
+
+    graph.addPipe(pipe);
+    editor.addPipeElement(pipe);
+
+    // Remove the original direct connection
+    graph.disconnectById(conn.id);
+
+    // Connect: upstream output → new pipe input
+    if (fromPipe && pipe.defineInputs().length > 0) {
+      graph.connect(conn.fromPipeId, conn.fromOutput, pipe.id, pipe.defaultInputName);
+    }
+
+    // Connect: new pipe output → downstream input
+    if (toPipe && pipe.defineOutputs().length > 0) {
+      graph.connect(pipe.id, pipe.defaultOutputName, conn.toPipeId, conn.toInput);
+    }
+
+    editor.updateConnections();
+    if (fromPipe) {
+      graph.processFrom(conn.fromPipeId).catch(console.error);
+    }
+    return;
+  }
+
+  // Normal case: position to the right of the last pipe
   const lastPipe = graph.getLastPipe();
   if (lastPipe) {
     pipe.position.x = lastPipe.position.x + 200;

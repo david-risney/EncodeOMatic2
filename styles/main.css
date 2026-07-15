@@ -357,14 +357,21 @@ graph-editor {
   fill: none;
   stroke: var(--color-connection);
   stroke-width: 2;
-  pointer-events: stroke;
-  cursor: pointer;
-  transition: stroke 0.15s;
+  pointer-events: none;
+  transition: stroke 0.15s, stroke-width 0.15s;
 }
 
-.connection-path:hover {
+.connection-path.hover {
   stroke: var(--color-connection-hover);
   stroke-width: 3;
+}
+
+.connection-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: pointer;
 }
 
 .connection-path.draft {
@@ -372,6 +379,21 @@ graph-editor {
   stroke-dasharray: 6 4;
   stroke-width: 2;
   pointer-events: none;
+}
+
+/* ── Connection action popover ───────────────────────────────── */
+.conn-action-popover {
+  position: fixed;
+  z-index: 2000;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow);
+  min-width: 120px;
 }
 
 /* ── Data Viewer ──────────────────────────────────────────────── */
