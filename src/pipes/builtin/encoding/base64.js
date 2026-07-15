@@ -35,10 +35,14 @@ export class Base64DecodePipe extends Pipe {
 
   static getInputAppropriateness(input) {
     if (input == null) return 0;
-    const b64 = new TextDecoder('utf-8', { fatal: false }).decode(input).trim();
+    let b64;
+    try {
+      b64 = new TextDecoder('utf-8', { fatal: true }).decode(input).trim();
+    } catch {
+      return -10;
+    }
     if (b64.length === 0) return 0;
-    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(b64) ||
-        b64.length % 4 === 1) {
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(b64)) {
       return -10;
     }
     try {
