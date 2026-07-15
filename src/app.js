@@ -586,14 +586,6 @@ function openAddPipeDialog(context = null) {
     };
   }
 
-  function onAddPipeRequest(e) {
-    openAddPipeDialog({
-      input: e.detail.input,
-      output: null,
-      replacedConnection: null,
-      position: e.detail.position,
-    });
-  }
   context.sourceData = context.input
     ? graph.pipes.get(context.input.pipeId)?.getOutputData(context.input.portName) ?? null
     : null;
@@ -602,6 +594,15 @@ function openAddPipeDialog(context = null) {
   renderPipeList('');
   dialog.showModal();
   searchInput.focus();
+}
+
+function onAddPipeRequest(e) {
+  openAddPipeDialog({
+    input: e.detail.input,
+    output: null,
+    replacedConnection: null,
+    position: e.detail.position,
+  });
 }
 
 function addPipe(typeName) {

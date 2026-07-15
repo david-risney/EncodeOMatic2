@@ -518,7 +518,7 @@ class GraphEditor extends HTMLElement {
     }
     if (this._draftFrom) {
       // Check if we released on an input port
-      const target = document.elementFromPoint(e.clientX, e.clientY);
+      const target = document.elementFromPoint?.(e.clientX, e.clientY);
       if (target?.classList.contains('port') && target.dataset.portType === 'input') {
         this._completeConnection(target.dataset.pipeId, target.dataset.portName);
       } else {
