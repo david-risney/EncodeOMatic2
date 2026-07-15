@@ -231,16 +231,16 @@ function updateDataPanelVisibility() {
 }
 
 function togglePinned(view) {
-  const willClose = view.pinned && view.pipeId !== selectedPipeId;
-  if (view.pinned && view.minimized && !willClose) toggleMinimized(view);
+  if (view.pinned && view.pipeId !== selectedPipeId) {
+    removeDataView(view.pipeId);
+    return;
+  }
+  if (view.pinned && view.minimized) toggleMinimized(view);
   view.pinned = !view.pinned;
   view.pinButton.classList.toggle('active', view.pinned);
   view.pinButton.setAttribute('aria-pressed', String(view.pinned));
   view.pinButton.title = view.pinned ? 'Allow this view to close' : 'Keep this view open';
   view.minimizeButton.hidden = !view.pinned;
-  if (!view.pinned) {
-    if (view.pipeId !== selectedPipeId) removeDataView(view.pipeId);
-  }
 }
 
 function toggleMinimized(view) {
