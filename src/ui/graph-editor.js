@@ -18,6 +18,7 @@
  *   editor.updateConnections()       — redraw all connection SVG paths
  *   editor.startDraftConnection(portEl) — begin connection drag
  *   editor.fitView()                 — fit all pipes in view
+ *   editor.setZoom(percent)          — set zoom level from 20–300
  */
 
 import { Connection } from '../pipes/graph.js';
@@ -496,6 +497,7 @@ class GraphEditor extends HTMLElement {
     if (this._dragging) {
       this._dragging.el.style.cursor = '';
       this._dragging = null;
+      this.dispatchEvent(new CustomEvent('graph-change', { bubbles: true }));
     }
     if (this._isPanning) {
       this._isPanning = false;
@@ -546,6 +548,7 @@ class GraphEditor extends HTMLElement {
     this._scale = Math.max(0.2, Math.min(3, this._scale * delta));
     this._applyTransform();
     this.updateConnections();
+    this._notifyZoom();
   }
 
   _applyTransform() {
@@ -578,6 +581,29 @@ class GraphEditor extends HTMLElement {
     this._panY = (ch - gh * this._scale) / 2 - minY * this._scale + 20;
     this._applyTransform();
     this.updateConnections();
+    this._notifyZoom();
+  }
+
+  /** Set zoom percentage while keeping the viewport center fixed. */
+  setZoom(percent) {
+    const nextScale = Math.max(0.2, Math.min(3, Number(percent) / 100));
+    if (!this._canvas || !Number.isFinite(nextScale)) return;
+    const cx = this._canvas.clientWidth / 2;
+    const cy = this._canvas.clientHeight / 2;
+    const ratio = nextScale / this._scale;
+    this._panX = cx - (cx - this._panX) * ratio;
+    this._panY = cy - (cy - this._panY) * ratio;
+    this._scale = nextScale;
+    this._applyTransform();
+    this.updateConnections();
+    this._notifyZoom();
+  }
+
+  _notifyZoom() {
+    this.dispatchEvent(new CustomEvent('zoom-change', {
+      detail: { percent: Math.round(this._scale * 100) },
+      bubbles: true,
+    }));
   }
 }
 

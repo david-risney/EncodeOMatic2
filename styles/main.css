@@ -232,6 +232,80 @@ body {
   font-size: 11px;
 }
 
+.btn-icon {
+  font-size: 16px;
+  line-height: 1;
+  padding-inline: 9px;
+}
+
+.session-menu {
+  position: relative;
+}
+
+.menu-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  min-width: 160px;
+  padding: 5px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.menu-popover[hidden] {
+  display: none;
+}
+
+.menu-popover button {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-popover button:hover {
+  background: var(--color-surface2);
+}
+
+.menu-popover .menu-danger {
+  color: var(--color-error);
+}
+
+.menu-sep {
+  height: 1px;
+  margin: 4px;
+  background: var(--color-border);
+}
+
+.zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-dim);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.zoom-control input {
+  width: 110px;
+  accent-color: var(--color-accent);
+}
+
+.zoom-control output {
+  width: 38px;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Graph Editor (web component host) ───────────────────────── */
 graph-editor {
   display: block;
@@ -789,6 +863,10 @@ data-viewer {
 
   .toolbar-sep {
     display: none;
+  }
+
+  .zoom-control input {
+    width: 80px;
   }
 
   .btn {

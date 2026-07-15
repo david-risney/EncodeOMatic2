@@ -1,39 +1,17 @@
 /**
- * State management — serializes and deserializes the graph from the URL
- * and from IndexedDB (for large graphs).
+ * State management — serializes graphs into shareable URLs and persists
+ * named sessions in IndexedDB.
  *
  * URL format:
- *   ?g=<base64url-json>   — small graph (< ~2000 chars when encoded)
- *   ?gid=<uuid>           — large graph stored in IDB
- *
+ *   ?g=<base64url-json>   — complete graph state
  * IDB:
  *   Database: 'encode-o-matic'
  *   Object store: 'graphs'
- *   Keys: UUID strings
+ *   Keys: session names
  */
 
 const DB_NAME = 'encode-o-matic';
 const STORE = 'graphs';
-const MAX_URL_BYTES = 2000;
-
-// ── UUID generation ──────────────────────────────────────────────
-
-/**
- * Generate a UUID v4. Uses crypto.randomUUID() when available, falls back
- * to Math.random() for environments that don't support it.
- * @returns {string}
- */
-function generateUUID() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  // Fallback: RFC 4122 v4 UUID using Math.random
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = (Math.random() * 16) | 0;
-    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-  });
-}
-
 // ── Base64URL ────────────────────────────────────────────────────
 
 function toBase64Url(str) {
@@ -86,30 +64,30 @@ async function idbLoad(id) {
   });
 }
 
+async function idbList() {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
 // ── Public API ───────────────────────────────────────────────────
 
 /**
- * Save graph to URL (and IDB if too large).
+ * Save graph to the URL.
  * Updates window.location.href.
  * @param {object} graphJSON - plain JSON object from PipeGraph.toJSON()
  */
 export async function saveToUrl(graphJSON) {
   const json = JSON.stringify(graphJSON);
 
-  // Try URL first
   const encoded = toBase64Url(json);
   const url = new URL(window.location.href);
-
-  if (encoded.length <= MAX_URL_BYTES) {
-    url.searchParams.set('g', encoded);
-    url.searchParams.delete('gid');
-  } else {
-    // Store in IDB, save ID in URL
-    const id = generateUUID();
-    await idbSave(id, graphJSON);
-    url.searchParams.set('gid', id);
-    url.searchParams.delete('g');
-  }
+  url.searchParams.set('g', encoded);
+  url.searchParams.delete('gid');
 
   window.history.replaceState({}, '', url.toString());
   return url.toString();
@@ -159,4 +137,15 @@ export async function saveToIdb(id, graphJSON) {
  */
 export async function loadFromIdb(id) {
   return idbLoad(id);
+}
+
+/**
+ * List saved sessions, newest first.
+ * @returns {Promise<{name: string, savedAt: number}[]>}
+ */
+export async function listIdbSessions() {
+  const records = await idbList();
+  return records
+    .map(record => ({ name: record.id, savedAt: record.savedAt }))
+    .sort((a, b) => b.savedAt - a.savedAt || a.name.localeCompare(b.name));
 }
