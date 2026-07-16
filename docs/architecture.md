@@ -5,11 +5,11 @@
 `index.html` loads `src/app.js`. During initialization, `app.js`:
 
 1. Creates a `PipeGraph`.
-2. creates a `WorkerPool` using `src/worker/pipe-worker.js`;
-3. attaches the graph to the `<graph-editor>`;
-4. loads a serialized graph from the URL when present;
-5. registers graph, toolbar, dialog, viewer, and persistence handlers; and
-6. schedules the initial URL synchronization.
+2. Creates a `WorkerPool` using `src/worker/pipe-worker.js`;
+3. Attaches the graph to the `<graph-editor>`;
+4. Loads a serialized graph from the URL when present;
+5. Registers graph, toolbar, dialog, viewer, and persistence handlers; and
+6. Schedules the initial URL synchronization.
 
 `app.js` is the composition root. The model and reusable components do not
 import it.
