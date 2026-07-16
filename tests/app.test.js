@@ -118,6 +118,19 @@ describe('application integration', () => {
       .toBe('Update to version 1.1.0');
     document.getElementById('about-dialog').close();
 
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    fetch.mockRejectedValueOnce(new Error('offline'));
+    document.getElementById('btn-about').click();
+    await vi.waitFor(() => {
+      expect(document.getElementById('update-status').textContent)
+        .toBe('Could not check for updates.');
+    });
+    expect(document.getElementById('btn-update').textContent).toBe('Try again');
+    expect(document.getElementById('btn-update').hidden).toBe(false);
+    expect(warn).toHaveBeenCalledWith('Update check failed:', expect.any(Error));
+    warn.mockRestore();
+    document.getElementById('about-dialog').close();
+
     const input = document.getElementById('pipe-search-input');
     input.value = 'regex';
     input.dispatchEvent(new Event('input'));

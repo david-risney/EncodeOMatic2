@@ -176,7 +176,6 @@ function initAboutDialog() {
     try {
       const versionUrl = new URL('./version.js', import.meta.url);
       versionUrl.searchParams.set('cache', 'off');
-      versionUrl.searchParams.set('v', Date.now());
       const response = await fetch(versionUrl, { cache: 'no-store' });
       if (!response.ok) throw new Error(`Update check returned ${response.status}`);
       const versionSource = await response.text();
