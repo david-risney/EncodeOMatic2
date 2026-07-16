@@ -9,6 +9,7 @@
  *   - 'pipe-config-click' detail: {pipeId}
  *   - 'pipe-select'       detail: {pipeId}
  *   - 'connection-click'  detail: {connection}
+ *   - 'add-pipe-request'   detail: {input, position}
  *
  * API:
  *   editor.setGraph(graph)           — attach a PipeGraph
@@ -49,6 +50,7 @@ class GraphEditor extends HTMLElement {
     // Connection draft state
     this._draftFrom = null; // {pipeId, portName, portType, x, y}
     this._draftPath = null; // SVGPathElement
+    this._addPipeControl = null;
 
     // Drag state
     this._dragging = null; // {pipeId, startX, startY, elemStartX, elemStartY}
@@ -91,6 +93,15 @@ class GraphEditor extends HTMLElement {
     this._svg.style.left = '0';
     this._inner.appendChild(this._svg);
 
+    this._addPipeControl = document.createElement('button');
+    this._addPipeControl.className = 'add-pipe-control';
+    this._addPipeControl.type = 'button';
+    this._addPipeControl.setAttribute('aria-label', 'Add Pipe');
+    this._addPipeControl.innerHTML = '<span>+</span><span>Add Pipe</span>';
+    this._addPipeControl.addEventListener('mousedown', e => e.stopPropagation());
+    this._addPipeControl.addEventListener('click', () => this._requestAddPipe());
+    this._inner.appendChild(this._addPipeControl);
+
     // Events
     this._canvas.addEventListener('mousedown', this._onCanvasMouseDown.bind(this));
     this._canvas.addEventListener('mousemove', this._onCanvasMouseMove.bind(this));
@@ -99,6 +110,7 @@ class GraphEditor extends HTMLElement {
     this._canvas.addEventListener('contextmenu', e => e.preventDefault());
 
     this._applyTransform();
+    this._syncAddPipeControl();
   }
 
   /** @param {import('../pipes/graph.js').PipeGraph} graph */
@@ -108,6 +120,9 @@ class GraphEditor extends HTMLElement {
   }
 
   _onGraphEvent(event) {
+    if (event.type === 'pipe-added' || event.type === 'pipe-removed') {
+      this._syncAddPipeControl();
+    }
     if (event.type === 'pipe-processed' || event.type === 'processed') {
       const pipe = this._graph?.pipes.get(event.pipeId);
       if (pipe) this.updatePipeElement(pipe);
@@ -485,6 +500,7 @@ class GraphEditor extends HTMLElement {
       const svgRect = this._inner.getBoundingClientRect();
       const mx = (e.clientX - svgRect.left) / this._scale;
       const my = (e.clientY - svgRect.top)  / this._scale;
+      this._positionAddPipeControl(mx, my);
       this._draftPath.setAttribute('d',
         bezierPath(this._draftFrom.x, this._draftFrom.y, mx, my)
       );
@@ -506,6 +522,7 @@ class GraphEditor extends HTMLElement {
       if (target?.classList.contains('port') && target.dataset.portType === 'input') {
         this._completeConnection(target.dataset.pipeId, target.dataset.portName);
       } else {
+        this._requestAddPipe();
         this._cancelDraft();
       }
     }
@@ -530,6 +547,39 @@ class GraphEditor extends HTMLElement {
     }
     this._draftFrom = null;
     this._canvas.classList.remove('connecting');
+    this._syncAddPipeControl();
+  }
+
+  _positionAddPipeControl(x, y) {
+    if (!this._addPipeControl) return;
+    this._addPipeControl.hidden = false;
+    this._addPipeControl.classList.add('draft');
+    this._positionElement(this._addPipeControl, x - 70, y - 30);
+  }
+
+  _syncAddPipeControl() {
+    if (!this._addPipeControl || this._draftFrom) return;
+    const isEmpty = !this._graph || this._graph.pipes.size === 0;
+    this._addPipeControl.hidden = !isEmpty;
+    this._addPipeControl.classList.remove('draft');
+    if (isEmpty) this._positionElement(this._addPipeControl, 60, 80);
+  }
+
+  _requestAddPipe() {
+    if (!this._addPipeControl) return;
+    const input = this._draftFrom
+      ? { pipeId: this._draftFrom.pipeId, portName: this._draftFrom.portName }
+      : null;
+    this.dispatchEvent(new CustomEvent('add-pipe-request', {
+      detail: {
+        input,
+        position: {
+          x: parseFloat(this._addPipeControl.style.left) || 60,
+          y: parseFloat(this._addPipeControl.style.top) || 80,
+        },
+      },
+      bubbles: true,
+    }));
   }
 
   // ── Pan/zoom ─────────────────────────────────────────────────

@@ -135,6 +135,41 @@ describe('GraphEditor', () => {
     expect(editor._canvas.classList.contains('connecting')).toBe(false);
   });
 
+  it('requests a connected pipe when a connection is dropped on empty space', () => {
+    const request = vi.fn();
+    editor.addEventListener('add-pipe-request', request);
+    vi.spyOn(editor._inner, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
+    vi.spyOn(document, 'elementFromPoint').mockReturnValue(editor._canvas);
+
+    editor._onPortMouseDown({}, source.id, 'output', 'output');
+    editor._onCanvasMouseMove({ clientX: 310, clientY: 220 });
+    expect(editor._addPipeControl.hidden).toBe(false);
+    expect(editor._addPipeControl.classList.contains('draft')).toBe(true);
+    editor._onCanvasMouseUp({ clientX: 310, clientY: 220 });
+
+    expect(request.mock.calls[0][0].detail).toEqual({
+      input: { pipeId: source.id, portName: 'output' },
+      position: { x: 240, y: 190 },
+    });
+    expect(editor._draftFrom).toBeNull();
+    expect(editor._addPipeControl.hidden).toBe(true);
+  });
+
+  it('shows an add-pipe control for an empty graph', () => {
+    const emptyEditor = document.createElement('graph-editor');
+    document.body.appendChild(emptyEditor);
+    emptyEditor.setGraph(new PipeGraph());
+    const request = vi.fn();
+    emptyEditor.addEventListener('add-pipe-request', request);
+
+    expect(emptyEditor._addPipeControl.hidden).toBe(false);
+    emptyEditor._addPipeControl.click();
+    expect(request.mock.calls[0][0].detail).toEqual({
+      input: null,
+      position: { x: 60, y: 80 },
+    });
+  });
+
   it('pans, zooms, drags nodes, and fits the graph', () => {
     Object.defineProperties(editor._canvas, {
       clientWidth: { value: 800 },

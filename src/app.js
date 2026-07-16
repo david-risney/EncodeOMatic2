@@ -83,21 +83,7 @@ async function init() {
     editor.fitView();
   }
 
-  if (graph.pipes.size === 0) {
-    const inputPipe = createPipe('InputPipe');
-    if (inputPipe) {
-      inputPipe.position.x = 60;
-      inputPipe.position.y = 80;
-      graph.addPipe(inputPipe);
-      editor.addPipeElement(inputPipe);
-      editor.updateConnections();
-      await graph.processFrom(inputPipe.id);
-      editor.fitView();
-    }
-  }
-
   // Wire toolbar buttons
-  document.getElementById('btn-add-pipe').addEventListener('click', () => openAddPipeDialog());
   document.getElementById('btn-save').addEventListener('click', onSave);
   document.getElementById('btn-load').addEventListener('click', onLoad);
   document.getElementById('btn-clear').addEventListener('click', onClear);
@@ -108,6 +94,7 @@ async function init() {
   editor.addEventListener('pipe-config-click', onConfigClick);
   editor.addEventListener('pipe-select',        onPipeSelect);
   editor.addEventListener('connection-click',   onConnectionClick);
+  editor.addEventListener('add-pipe-request',   onAddPipeRequest);
 
   // Add Pipe dialog setup
   initAddPipeDialog();
@@ -598,6 +585,7 @@ function openAddPipeDialog(context = null) {
       replacedConnection: null,
     };
   }
+
   context.sourceData = context.input
     ? graph.pipes.get(context.input.pipeId)?.getOutputData(context.input.portName) ?? null
     : null;
@@ -606,6 +594,13 @@ function openAddPipeDialog(context = null) {
   renderPipeList('');
   dialog.showModal();
   searchInput.focus();
+}
+
+function onAddPipeRequest(e) {
+  openAddPipeDialog({
+    input: e.detail.input,
+    position: e.detail.position,
+  });
 }
 
 function addPipe(typeName) {
@@ -664,7 +659,10 @@ function addPipe(typeName) {
 
   // Normal case: position to the right of the last pipe
   const inputPipe = context?.input ? graph.pipes.get(context.input.pipeId) : null;
-  if (inputPipe) {
+  if (context?.position) {
+    pipe.position.x = context.position.x;
+    pipe.position.y = context.position.y;
+  } else if (inputPipe) {
     pipe.position.x = inputPipe.position.x + 200;
     pipe.position.y = inputPipe.position.y;
   } else {
