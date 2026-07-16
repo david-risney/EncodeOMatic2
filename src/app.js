@@ -227,11 +227,10 @@ function initSessionMenu() {
     loadButton.setAttribute('aria-expanded', 'false');
   };
 
-  button.addEventListener('click', async event => {
+  button.addEventListener('click', event => {
     event.stopPropagation();
     menu.hidden = !menu.hidden;
     button.setAttribute('aria-expanded', String(!menu.hidden));
-    if (!menu.hidden) await refreshSessionLoadMenu();
   });
 
   loadButton.addEventListener('click', async event => {
