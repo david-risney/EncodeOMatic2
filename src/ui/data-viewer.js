@@ -38,6 +38,8 @@ function decodeUtf8Lenient(bytes) {
   }
 }
 
+const HEX_BYTES_RE = /^(?:[0-9a-fA-F]{2})(?:\s+[0-9a-fA-F]{2})*$/;
+
 class DataViewer extends HTMLElement {
   constructor() {
     super();
@@ -151,7 +153,7 @@ class DataViewer extends HTMLElement {
       editor.setAttribute('aria-label', 'Edit input as hexadecimal bytes');
       editor.addEventListener('input', () => {
         const value = editor.value.trim();
-        const valid = value === '' || /^(?:[0-9a-fA-F]{2})(?:\s+[0-9a-fA-F]{2})*$/.test(value);
+        const valid = value === '' || HEX_BYTES_RE.test(value);
         editor.classList.toggle('invalid', !valid);
         editor.setAttribute('aria-invalid', String(!valid));
         if (!valid) return;
