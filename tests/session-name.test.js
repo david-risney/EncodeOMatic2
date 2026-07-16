@@ -19,7 +19,7 @@ describe('session names', () => {
       return value;
     });
     const names = new Set();
-    for (let index = 0; index < 200; index++) names.add(randomSessionName());
+    for (let iteration = 0; iteration < 200; iteration++) names.add(randomSessionName());
     expect(names.size).toBe(200);
   });
 });

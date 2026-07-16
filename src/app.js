@@ -993,7 +993,6 @@ function openGuessDialog() {
 }
 
 async function onGuessEncoding(input) {
-
   try {
     const chain = await guessPipeChain(new TextEncoder().encode(input), registry.values());
     _suspendUrlUpdates = true;
