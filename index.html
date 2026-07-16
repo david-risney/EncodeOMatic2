@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Encode-O-Matic 2</title>
+  <meta name="theme-color" content="#16213e">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
   <link rel="stylesheet" href="styles/main.css">
   <link rel="stylesheet" href="styles/controls.css">
   <link rel="stylesheet" href="styles/graph.css">
@@ -19,8 +22,7 @@
       <h1 class="app-title">Encode-O-Matic 2</h1>
     </div>
     <div class="toolbar">
-      <a class="btn project-link" href="https://github.com/david-risney/EncodeOMatic2"
-         aria-label="View Encode-O-Matic 2 on GitHub">GitHub</a>
+      <button id="btn-about" class="btn" type="button">About</button>
       <button id="btn-share" class="btn btn-icon" title="Share current URL" aria-label="Share current URL">🔗</button>
       <div class="session-controls">
         <div class="session-menu">
@@ -102,6 +104,29 @@
         <button id="guess-cancel" type="button" class="btn">Cancel</button>
         <button type="submit" class="btn btn-primary">Guess</button>
       </footer>
+    </form>
+  </dialog>
+
+  <dialog id="about-dialog" class="dialog">
+    <form method="dialog" class="dialog-form">
+      <h2>About</h2>
+      <div class="about-content">
+        <img class="about-logo" src="assets/logo.svg" alt="">
+        <div class="about-details">
+          <strong class="about-name">Encode-O-Matic 2</strong>
+          <span>Version <span id="about-version"></span></span>
+          <a href="https://github.com/david-risney/EncodeOMatic2"
+             target="_blank" rel="noopener noreferrer">View on GitHub</a>
+        </div>
+        <div id="update-status" class="update-status" role="status" aria-live="polite">
+          Checking for updates…
+        </div>
+        <button id="btn-update" class="btn btn-primary" type="button" hidden></button>
+        <div id="install-status" class="install-status" hidden></div>
+      </div>
+      <div class="dialog-footer">
+        <button value="close" class="btn">Close</button>
+      </div>
     </form>
   </dialog>
 

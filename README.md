@@ -11,6 +11,7 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 - **Named sessions** — save and load graphs locally with IndexedDB
 - **Encoding guesses** — build a likely decoding chain from applicability scores
 - **Worker threads** — pipe processing runs off the main thread using a Web Worker pool
+- **Offline support** — install the app and keep using its complete toolset without a network connection
 
 ## Built-in Pipes
 
@@ -58,6 +59,7 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 - Uses modern Web APIs: Web Components (`customElements`), Web Workers, IndexedDB, URL API
 - ES modules throughout (`type="module"`)
 - Hosted on GitHub Pages (no server required)
+- Installable PWA with a versioned, precached application shell
 
 ## Development
 

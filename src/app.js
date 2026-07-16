@@ -21,9 +21,24 @@ import {
 import { guessPipeChain } from './guess.js';
 import { randomSessionName } from './session-name.js';
 import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
+import { APP_VERSION } from './version.js';
+import { getInstallPrompt, clearInstallPrompt, isInstalledPWA } from './services/install.js';
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
 import { cloneTemplate } from './ui/templates.js';
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return null;
+
+  try {
+    return await navigator.serviceWorker.register('./sw.js');
+  } catch (error) {
+    console.warn('Service worker registration failed:', error);
+    return null;
+  }
+}
+
+const serviceWorkerRegistrationPromise = registerServiceWorker();
 
 // ── App state ────────────────────────────────────────────────────
 
@@ -103,6 +118,7 @@ async function init() {
 
   // Wire toolbar controls
   document.getElementById('btn-share').addEventListener('click', onShare);
+  initAboutDialog();
   document.getElementById('btn-clear').addEventListener('click', onClear);
   document.getElementById('btn-session-save').addEventListener('click', onSaveSession);
   document.getElementById('btn-guess').addEventListener('click', openGuessDialog);
@@ -125,6 +141,143 @@ async function init() {
   initGuessDialog();
 
   scheduleUrlUpdate();
+}
+
+function initAboutDialog() {
+  const dialog = document.getElementById('about-dialog');
+  const updateButton = document.getElementById('btn-update');
+  let availableVersion = null;
+  let checkId = 0;
+
+  document.getElementById('about-version').textContent = APP_VERSION;
+  document.getElementById('btn-about').addEventListener('click', () => {
+    dialog.showModal();
+    checkForUpdates();
+    updateInstallStatus();
+  });
+  updateButton.addEventListener('click', () => {
+    if (availableVersion) {
+      installUpdate();
+    } else {
+      checkForUpdates();
+    }
+  });
+
+  async function checkForUpdates() {
+    const currentCheck = ++checkId;
+    const status = document.getElementById('update-status');
+    availableVersion = null;
+    status.className = 'update-status checking';
+    status.textContent = 'Checking for updates…';
+    updateButton.hidden = true;
+
+    try {
+      const versionUrl = new URL('./version.js', import.meta.url);
+      versionUrl.searchParams.set('cache', 'off');
+      const response = await fetch(versionUrl, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Update check returned ${response.status}`);
+      const versionSource = await response.text();
+      const latestVersion = versionSource
+        .match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/)?.[1];
+      if (!latestVersion) throw new Error('Update check returned an invalid version');
+      if (currentCheck !== checkId) return;
+
+      if (latestVersion === APP_VERSION) {
+        status.className = 'update-status success';
+        status.textContent = 'Encode-O-Matic 2 is up to date.';
+        return;
+      }
+
+      availableVersion = latestVersion;
+      status.className = 'update-status';
+      status.textContent = `Version ${latestVersion} is available.`;
+      updateButton.textContent = `Update to version ${latestVersion}`;
+      updateButton.hidden = false;
+    } catch (error) {
+      if (currentCheck !== checkId) return;
+      console.warn('Update check failed:', error);
+      status.className = 'update-status error';
+      status.textContent = 'Could not check for updates.';
+      updateButton.textContent = 'Try again';
+      updateButton.hidden = false;
+    }
+  }
+
+  async function installUpdate() {
+    const status = document.getElementById('update-status');
+    updateButton.hidden = true;
+    status.className = 'update-status checking';
+    status.textContent = 'Updating…';
+
+    try {
+      const registration = await serviceWorkerRegistrationPromise;
+      if (!registration) {
+        window.location.reload();
+        return;
+      }
+
+      const reloadForUpdate = () => window.location.reload();
+      navigator.serviceWorker.addEventListener('controllerchange', reloadForUpdate, { once: true });
+      await registration.update();
+      status.textContent = 'Update downloaded. Reloading…';
+    } catch (error) {
+      console.warn('Update failed:', error);
+      status.className = 'update-status error';
+      status.textContent = 'Could not install the update.';
+      updateButton.textContent = 'Try again';
+      updateButton.hidden = false;
+    }
+  }
+
+  function updateInstallStatus() {
+    const container = document.getElementById('install-status');
+
+    if (isInstalledPWA()) {
+      container.hidden = false;
+      container.innerHTML = '';
+      const pill = document.createElement('span');
+      pill.className = 'install-pill install-pill--installed';
+      pill.textContent = '✓ App installed';
+      container.appendChild(pill);
+      return;
+    }
+
+    const prompt = getInstallPrompt();
+    if (prompt) {
+      container.hidden = false;
+      container.innerHTML = '';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'install-pill install-pill--action';
+      btn.textContent = 'Install app';
+      btn.addEventListener('click', async () => {
+        btn.textContent = 'Installing…';
+        btn.disabled = true;
+        try {
+          await prompt.prompt();
+          const { outcome } = await prompt.userChoice;
+          if (outcome === 'accepted') {
+            clearInstallPrompt();
+            container.innerHTML = '';
+            const donePill = document.createElement('span');
+            donePill.className = 'install-pill install-pill--installed';
+            donePill.textContent = '✓ App installed';
+            container.appendChild(donePill);
+          } else {
+            btn.textContent = 'Install app';
+            btn.disabled = false;
+          }
+        } catch {
+          btn.textContent = 'Install app';
+          btn.disabled = false;
+        }
+      });
+      container.appendChild(btn);
+      return;
+    }
+
+    container.hidden = true;
+  }
 }
 
 function initDataPanelResizer() {
