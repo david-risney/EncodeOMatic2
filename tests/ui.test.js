@@ -190,10 +190,10 @@ describe('GraphEditor', () => {
     vi.spyOn(document, 'elementFromPoint').mockReturnValue(editor._canvas);
 
     editor._onPortMouseDown({}, source.id, 'output', 'output');
-    editor._onCanvasMouseMove({ clientX: 310, clientY: 220 });
+    editor._onCanvasPointerMove({ clientX: 310, clientY: 220 });
     expect(editor._addPipeControl.hidden).toBe(false);
     expect(editor._addPipeControl.classList.contains('draft')).toBe(true);
-    editor._onCanvasMouseUp({ clientX: 310, clientY: 220 });
+    editor._onCanvasPointerUp({ clientX: 310, clientY: 220 });
 
     expect(request.mock.calls[0][0].detail).toEqual({
       input: { pipeId: source.id, portName: 'output' },
@@ -224,9 +224,9 @@ describe('GraphEditor', () => {
       clientHeight: { value: 600 },
     });
     vi.spyOn(editor._canvas, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
-    editor._onCanvasMouseDown({ button: 0, clientX: 5, clientY: 6 });
-    editor._onCanvasMouseMove({ clientX: 25, clientY: 36 });
-    editor._onCanvasMouseUp({ clientX: 25, clientY: 36 });
+    editor._onCanvasPointerDown({ button: 0, clientX: 5, clientY: 6 });
+    editor._onCanvasPointerMove({ clientX: 25, clientY: 36 });
+    editor._onCanvasPointerUp({ clientX: 25, clientY: 36 });
     expect(editor._panX).toBe(20);
     expect(editor._panY).toBe(30);
 
@@ -240,13 +240,44 @@ describe('GraphEditor', () => {
       pipeId: source.id, el: element, startMouseX: 0, startMouseY: 0,
       startElemX: source.position.x, startElemY: source.position.y,
     };
-    editor._onCanvasMouseMove({ clientX: 11, clientY: 22 });
+    editor._onCanvasPointerMove({ clientX: 11, clientY: 22 });
     expect(source.position.x).toBeCloseTo(20);
-    editor._onCanvasMouseUp({ clientX: 11, clientY: 22 });
+    editor._onCanvasPointerUp({ clientX: 11, clientY: 22 });
     expect(editor._dragging).toBeNull();
 
     editor.fitView();
     expect(editor._inner.style.transform).toContain('scale(');
+  });
+
+  it('pans with one touch and pinches around the moving touch center', () => {
+    vi.spyOn(editor._canvas, 'getBoundingClientRect').mockReturnValue({ left: 10, top: 20 });
+    const pointer = (pointerId, clientX, clientY) => ({
+      pointerId, pointerType: 'touch', button: 0, clientX, clientY,
+      preventDefault: vi.fn(),
+    });
+
+    editor._onCanvasPointerDown(pointer(1, 60, 70));
+    editor._onCanvasPointerMove(pointer(1, 80, 100));
+    expect(editor._panX).toBe(20);
+    expect(editor._panY).toBe(30);
+
+    editor._onCanvasPointerDown(pointer(2, 180, 100));
+    editor._onCanvasPointerMove(pointer(2, 280, 100));
+    expect(editor._scale).toBe(2);
+    expect(editor._panX).toBe(-30);
+    expect(editor._panY).toBe(-20);
+
+    editor._onCanvasPointerMove(pointer(1, 100, 120));
+    editor._onCanvasPointerMove(pointer(2, 300, 120));
+    expect(editor._panX).toBe(-10);
+    expect(editor._panY).toBe(0);
+
+    editor._onCanvasPointerUp(pointer(2, 300, 120));
+    editor._onCanvasPointerMove(pointer(1, 110, 130));
+    expect(editor._panX).toBe(0);
+    expect(editor._panY).toBe(10);
+    editor._onCanvasPointerUp(pointer(1, 110, 130));
+    expect(editor._isPanning).toBe(false);
   });
 
   it('displays processing errors and removes pipe elements', () => {
