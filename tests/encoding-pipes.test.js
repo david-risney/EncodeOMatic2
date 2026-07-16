@@ -7,6 +7,7 @@ import { BinaryEncodePipe, BinaryDecodePipe } from '../src/pipes/builtin/encodin
 import { HtmlEncodePipe, HtmlDecodePipe } from '../src/pipes/builtin/encoding/html-encode.js';
 import { XmlEncodePipe, XmlDecodePipe } from '../src/pipes/builtin/encoding/xml-encode.js';
 import { CharsetDecodePipe, CharsetEncodePipe } from '../src/pipes/builtin/encoding/charset.js';
+import { ALL_ENCODINGS } from '../src/pipes/builtin/encoding/charset.js';
 import { SlashEscapePipe, SlashUnescapePipe } from '../src/pipes/builtin/encoding/slash-escape.js';
 import { UrlEncodePipe, UrlDecodePipe } from '../src/pipes/builtin/encoding/url-encode.js';
 import { decode, encode, processBytes, processText } from './helpers.js';
@@ -257,6 +258,27 @@ describe('charset encodings', () => {
     await expect(processBytes(pipe, [0xff])).rejects.toMatchObject({
       message: expect.stringContaining('Input bytes are not valid UTF-8'),
     });
+  });
+
+  it('exposes all iconv-lite encoding names as options on both pipes', () => {
+    const decodePipe = new CharsetDecodePipe();
+    const encodePipe = new CharsetEncodePipe();
+    const decodeOptions = [...decodePipe.configs.get('fromEncoding').options];
+    const encodeOptions = [...encodePipe.configs.get('toEncoding').options];
+    expect(decodeOptions).toEqual(ALL_ENCODINGS);
+    expect(encodeOptions).toEqual(ALL_ENCODINGS);
+    // Spot-check a selection of encodings from different families
+    const expected = [
+      'utf-8', 'utf-16be', 'utf-16le', 'utf-32be', 'utf-32le',
+      'iso-8859-1', 'iso-8859-15', 'windows-1252', 'windows-1251',
+      'shift_jis', 'euc-jp', 'euc-kr', 'gbk', 'gb18030', 'big5',
+      'koi8-r', 'koi8-u', 'ascii', 'macintosh', 'cp437', 'cp866',
+      'ibm437', 'viscii', 'tis620', 'armscii8', 'mik',
+    ];
+    for (const enc of expected) {
+      expect(decodeOptions).toContain(enc);
+    }
+    expect(ALL_ENCODINGS.length).toBeGreaterThan(400);
   });
 });
 
