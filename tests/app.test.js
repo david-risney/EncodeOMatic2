@@ -1,10 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 class SilentWorker {
+  static errors = [];
+
   constructor() {
     this.postMessage = vi.fn(({ id }) => {
       queueMicrotask(() => this.onmessage({
-        data: { type: 'result', id, outputs: { output: [] }, errors: [] },
+        data: { type: 'result', id, outputs: { output: [] }, errors: SilentWorker.errors },
       }));
     });
     this.terminate = vi.fn();
@@ -83,8 +85,13 @@ describe('application integration', () => {
       .find((element) => element.textContent.includes('Input Buffer'));
     expect(node).not.toBeNull();
     const textarea = node.querySelector('textarea');
+    SilentWorker.errors = [{
+      message: 'Example processing error',
+      selections: [{ index: 1, length: 2 }],
+    }];
     textarea.value = 'hello';
     textarea.dispatchEvent(new Event('input'));
+    await vi.waitFor(() => expect(node.classList.contains('has-error')).toBe(true));
     await vi.waitFor(() => expect(window.location.search).toContain('g='));
     node.click();
     const dataView = document.querySelector('.data-view');
@@ -92,6 +99,10 @@ describe('application integration', () => {
       .toContain('Input Buffer · output');
     expect(dataView.querySelector('.data-panel-title').textContent)
       .not.toContain('output: output');
+    expect(dataView.querySelector('.data-view-errors').textContent)
+      .toContain('Example processing error');
+    expect(dataView.querySelector('.data-view-errors').textContent)
+      .toContain('Trigger: bytes 1-2');
     const modeButton = dataView.querySelector('[title="Switch to hex view"]');
     expect(modeButton.textContent).toBe('Aa');
     modeButton.click();

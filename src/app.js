@@ -47,6 +47,7 @@ const dataViewStack = document.getElementById('data-view-stack');
  *   mode: 'text'|'hex',
  *   element: HTMLElement,
  *   title: HTMLElement,
+ *   errors: HTMLElement,
  *   viewer: import('./ui/data-viewer.js').DataViewer,
  *   pinButton: HTMLButtonElement,
  *   minimizeButton: HTMLButtonElement,
@@ -196,6 +197,9 @@ function refreshDataView(view) {
   }
 
   view.viewer.setData(data, view.portName);
+  const selections = pipe.errors.flatMap(error => error.selections ?? []);
+  view.viewer.setSelections(view.portType === 'input' ? selections : []);
+  refreshDataViewErrors(view, pipe.errors);
   const portLabel = view.portName === view.portType
     ? view.portName
     : `${view.portType}: ${view.portName}`;
@@ -214,6 +218,32 @@ function refreshDataView(view) {
     editor.setInputText(pipe.id, pipe.getConfig('text').value);
     graph.processFrom(pipe.id).catch(console.error);
   } : null);
+}
+
+function refreshDataViewErrors(view, errors) {
+  view.errors.replaceChildren();
+  view.errors.hidden = errors.length === 0;
+  for (const error of errors) {
+    const item = document.createElement('div');
+    item.className = 'data-view-error';
+    const message = document.createElement('div');
+    message.className = 'data-view-error-message';
+    message.textContent = error.message;
+    item.appendChild(message);
+
+    const ranges = (error.selections ?? [])
+      .filter(({ index, length }) => Number.isFinite(index) && Number.isFinite(length) && length > 0)
+      .map(({ index, length }) => length === 1
+        ? `byte ${index}`
+        : `bytes ${index}-${index + length - 1}`);
+    if (ranges.length > 0) {
+      const locations = document.createElement('div');
+      locations.className = 'data-view-error-locations';
+      locations.textContent = `Trigger: ${ranges.join(', ')}`;
+      item.appendChild(locations);
+    }
+    view.errors.appendChild(item);
+  }
 }
 
 function createDataView(pipeId, portName, portType) {
@@ -246,8 +276,12 @@ function createDataView(pipeId, portName, portType) {
 
   controls.append(modeButton, pinButton, minimizeButton);
   header.append(title, controls);
+  const errors = document.createElement('div');
+  errors.className = 'data-view-errors';
+  errors.setAttribute('role', 'alert');
+  errors.hidden = true;
   const viewer = document.createElement('data-viewer');
-  element.append(header, viewer);
+  element.append(header, errors, viewer);
   dataViewStack.appendChild(element);
 
   const view = {
@@ -255,7 +289,7 @@ function createDataView(pipeId, portName, portType) {
     pinned: false,
     minimized: false,
     mode: 'text',
-    element, title, viewer,
+    element, title, errors, viewer,
     pinButton, minimizeButton, modeButton,
   };
   modeButton.addEventListener('click', () =>

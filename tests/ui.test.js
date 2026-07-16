@@ -40,6 +40,16 @@ describe('DataViewer', () => {
     expect(viewer.textContent).toContain('1 byte');
   });
 
+  it('highlights selected byte ranges in text and hex views', () => {
+    viewer.setData(encode('abcde'));
+    viewer.setSelections([{ index: 1, length: 2 }]);
+    expect(viewer.querySelector('.data-viewer-selection').textContent).toBe('bc');
+
+    viewer.setMode('hex');
+    expect([...viewer.querySelectorAll('.hex-byte.data-viewer-selection')]
+      .map((node) => node.textContent)).toEqual(['62', '63']);
+  });
+
   it('allows text and validated hex editing when enabled', () => {
     const changed = vi.fn();
     viewer.setData(new Uint8Array());
@@ -66,6 +76,15 @@ describe('DataViewer', () => {
     invalidEditor.dispatchEvent(new Event('input'));
     expect(invalidEditor.getAttribute('aria-invalid')).toBe('true');
     expect(changed).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not replace a focused editor when unchanged selections refresh', () => {
+    viewer.setData(encode('abc'));
+    viewer.setEditable(true);
+    const editor = viewer.querySelector('textarea');
+    editor.focus();
+    viewer.setSelections([]);
+    expect(viewer.querySelector('textarea')).toBe(editor);
   });
 });
 
