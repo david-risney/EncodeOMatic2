@@ -16,12 +16,20 @@ class SilentWorker {
 function appMarkup() {
   return `
     <button id="btn-share">Share</button>
-    <button id="btn-session-menu">Session</button>
-    <div id="session-menu" hidden>
-      <button id="btn-session-save">Save session</button>
-      <button id="btn-session-load">Load session</button>
-      <button id="btn-guess">Guess</button>
-      <button id="btn-clear">Clear</button>
+    <div class="session-controls">
+      <div class="session-menu">
+        <button id="btn-session-menu">Session</button>
+        <div id="session-menu" hidden>
+          <button id="btn-session-save">Save session</button>
+          <div class="session-load-item">
+            <button id="btn-session-load">Load session</button>
+            <div id="session-load-menu" hidden></div>
+          </div>
+          <button id="btn-guess">Guess</button>
+          <button id="btn-clear">Clear</button>
+        </div>
+      </div>
+      <input id="session-name">
     </div>
     <button id="btn-zoom-fit">Fit</button>
     <input id="zoom-range" type="range" min="20" max="300" value="100">
@@ -39,6 +47,13 @@ function appMarkup() {
       <span id="config-dialog-title"></span>
       <div id="config-fields"></div>
       <button id="config-delete-btn">Delete</button>
+    </dialog>
+    <dialog id="guess-dialog">
+      <form id="guess-form">
+        <textarea id="guess-input"></textarea>
+        <button id="guess-cancel" type="button">Cancel</button>
+        <button type="submit">Guess</button>
+      </form>
     </dialog>
   `;
 }
@@ -64,6 +79,7 @@ describe('application integration', () => {
   it('initializes and supports the primary user interactions', async () => {
     expect(document.getElementById('pipe-list').textContent).toContain('Base64 Encode');
     expect(document.getElementById('toast-container')).not.toBeNull();
+    expect(document.getElementById('session-name').value).toMatch(/^[a-z]+-[a-z]+$/);
 
     const input = document.getElementById('pipe-search-input');
     input.value = 'regex';
@@ -145,6 +161,32 @@ describe('application integration', () => {
     await vi.waitFor(() => expect(window.location.search).toContain('g='));
     expect(document.querySelector('.pipe-node')).toBeNull();
     expect(document.getElementById('data-panel').hidden).toBe(true);
+    expect(document.getElementById('session-name').value).toMatch(/^[a-z]+-[a-z]+$/);
+
+    const prompt = vi.spyOn(window, 'prompt');
+    const sessionName = document.getElementById('session-name');
+    sessionName.value = 'favorite-session';
+    document.getElementById('btn-session-save').click();
+    await vi.waitFor(() => {
+      expect([...document.querySelectorAll('.toast.success')].at(-1)?.textContent)
+        .toBe('Saved session "favorite-session"');
+    });
+    sessionName.value = 'another-session';
+    document.getElementById('btn-session-menu').click();
+    document.getElementById('btn-session-load').click();
+    const savedSession = await vi.waitFor(() => {
+      const item = document.querySelector('[data-session-name="favorite-session"]');
+      expect(item).not.toBeNull();
+      return item;
+    });
+    savedSession.click();
+    await vi.waitFor(() => expect(sessionName.value).toBe('favorite-session'));
+    expect(prompt).not.toHaveBeenCalled();
+
+    document.getElementById('btn-guess').click();
+    expect(document.getElementById('guess-dialog').open).toBe(true);
+    document.getElementById('guess-cancel').click();
+    expect(document.getElementById('guess-dialog').open).toBe(false);
 
     const zoom = document.getElementById('zoom-range');
     zoom.value = '150';
