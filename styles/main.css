@@ -75,6 +75,17 @@ body {
   flex-wrap: wrap;
 }
 
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-logo {
+  width: 32px;
+  height: 32px;
+}
+
 .app-title {
   margin: 0;
   font-size: 18px;
@@ -90,6 +101,11 @@ body {
   gap: 6px;
   flex-wrap: wrap;
   min-width: 0;
+  margin-left: auto;
+}
+
+.project-link {
+  text-decoration: none;
 }
 
 .toolbar-sep {
