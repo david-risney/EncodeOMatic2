@@ -102,7 +102,7 @@ describe('application integration', () => {
     expect(dataView.querySelector('.data-view-errors').textContent)
       .toContain('Example processing error');
     expect(dataView.querySelector('.data-view-errors').textContent)
-      .toContain('Trigger: bytes 1–2');
+      .toContain('Trigger: bytes 1-2');
     const modeButton = dataView.querySelector('[title="Switch to hex view"]');
     expect(modeButton.textContent).toBe('Aa');
     modeButton.click();

@@ -235,7 +235,7 @@ function refreshDataViewErrors(view, errors) {
       .filter(({ index, length }) => Number.isFinite(index) && Number.isFinite(length) && length > 0)
       .map(({ index, length }) => length === 1
         ? `byte ${index}`
-        : `bytes ${index}–${index + length - 1}`);
+        : `bytes ${index}-${index + length - 1}`);
     if (ranges.length > 0) {
       const locations = document.createElement('div');
       locations.className = 'data-view-error-locations';

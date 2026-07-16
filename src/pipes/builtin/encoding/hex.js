@@ -68,7 +68,8 @@ export class HexDecodePipe extends Pipe {
     // Strip whitespace and separators, keep only hex digits
     const cleaned = text.replace(/[^0-9a-fA-F]/g, '');
     if (cleaned.length % 2 !== 0) {
-      const charIndex = Math.max(text.search(/[0-9a-fA-F](?![\s\S]*[0-9a-fA-F])/), 0);
+      let charIndex = text.length - 1;
+      while (charIndex > 0 && !/[0-9a-fA-F]/.test(text[charIndex])) charIndex--;
       const byteIndex = new TextEncoder().encode(text.slice(0, charIndex)).length;
       throw new PipeError('Hex string has odd number of digits', [
         { index: byteIndex, length: 1 },
