@@ -55,15 +55,16 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 
 ## Technical Details
 
-- Pure client-side JavaScript, HTML, CSS — no framework, no build step
+- Pure client-side JavaScript, HTML, CSS — no framework
 - Uses modern Web APIs: Web Components (`customElements`), Web Workers, IndexedDB, URL API
 - ES modules throughout (`type="module"`)
 - Hosted on GitHub Pages (no server required)
 - Installable PWA with a versioned, precached application shell
+- The `vendor/iconv-lite.js` bundle is checked in; rebuild it with `npm run build:vendor` when updating `iconv-lite`
 
 ## Development
 
-No build step needed. Serve the repository root with any static file server:
+Serve the repository root with any static file server:
 
 ```sh
 # Using Python
@@ -74,6 +75,17 @@ npx serve .
 ```
 
 Then open `http://localhost:8080` in your browser.
+
+### Vendor bundle
+
+`vendor/iconv-lite.js` is a pre-built ESM bundle of [iconv-lite](https://github.com/ashtuchkin/iconv-lite)
+and is committed to the repository so GitHub Pages can serve it without a CI build step.
+Regenerate it after updating the `iconv-lite` dependency:
+
+```sh
+npm install
+npm run build:vendor
+```
 
 ### Tests
 

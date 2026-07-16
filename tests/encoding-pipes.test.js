@@ -209,8 +209,8 @@ describe('charset encodings', () => {
     const pipe = new CharsetDecodePipe();
     pipe.setConfig('fromEncoding', encoding);
     // Use our pipe result as the source of truth; cross-check against TextDecoder
-    // where it is supported (utf-32 is not in the WHATWG Encoding spec so Node's
-    // ICU-backed TextDecoder is used only for non-utf-32 encodings).
+    // where it is supported in the test environment. utf-32 is not in the WHATWG
+    // Encoding spec, so TextDecoder cross-checks are skipped for utf-32 encodings.
     const result = decode(await processBytes(pipe, bytes));
     if (!encoding.startsWith('utf-32')) {
       const expected = new TextDecoder(encoding, { fatal: true }).decode(Uint8Array.from(bytes));
@@ -220,35 +220,40 @@ describe('charset encodings', () => {
     }
   });
 
-  it('encodes UTF-8 to UTF-8, UTF-16, UTF-32, ASCII, and ISO-8859-1', async () => {
+  it('encodes UTF-8 to all supported encodings via iconv-lite', async () => {
     const pipe = new CharsetEncodePipe();
+    // UTF-8 passthrough
     expect([...await processBytes(pipe, encode('A😀'))]).toEqual([...encode('A😀')]);
+    // UTF-16 variants
     pipe.setConfig('toEncoding', 'utf-16le');
     expect([...await processBytes(pipe, encode('A😀'))])
       .toEqual([0x41, 0, 0x3d, 0xd8, 0, 0xde]);
     pipe.setConfig('toEncoding', 'utf-16be');
     expect([...await processBytes(pipe, encode('A😀'))])
       .toEqual([0, 0x41, 0xd8, 0x3d, 0xde, 0]);
+    // UTF-32 variants (4 bytes per code point)
     pipe.setConfig('toEncoding', 'utf-32le');
     expect([...await processBytes(pipe, encode('A😀'))])
       .toEqual([0x41, 0x00, 0x00, 0x00, 0x00, 0xF6, 0x01, 0x00]);
     pipe.setConfig('toEncoding', 'utf-32be');
     expect([...await processBytes(pipe, encode('A😀'))])
       .toEqual([0x00, 0x00, 0x00, 0x41, 0x00, 0x01, 0xF6, 0x00]);
+    // ASCII - unmappable characters are substituted with '?'
     pipe.setConfig('toEncoding', 'ascii');
     expect([...await processBytes(pipe, encode('Hello'))]).toEqual([72, 101, 108, 108, 111]);
-    await expect(processText(pipe, '€')).rejects.toMatchObject({
-      message: expect.stringContaining('cannot be encoded as ASCII'),
-    });
+    expect(await processText(pipe, '€')).toBe('?');
+    // ISO-8859-1 - unmappable characters are substituted with '?'
     pipe.setConfig('toEncoding', 'iso-8859-1');
     expect([...await processBytes(pipe, encode('Aé'))]).toEqual([0x41, 0xE9]);
-    await expect(processText(pipe, '€')).rejects.toMatchObject({
-      message: expect.stringContaining('cannot be encoded as ISO-8859-1'),
-    });
+    expect(await processText(pipe, '€')).toBe('?');
+    // windows-1252 — '€' is U+20AC → 0x80
     pipe.setConfig('toEncoding', 'windows-1252');
-    await expect(processBytes(pipe, encode('€'))).rejects.toMatchObject({
-      message: "Encoding to 'windows-1252' is not supported",
-    });
+    expect([...await processBytes(pipe, encode('€'))]).toEqual([0x80]);
+    // shift_jis
+    pipe.setConfig('toEncoding', 'shift_jis');
+    expect([...await processBytes(pipe, encode('Hello'))]).toEqual([72, 101, 108, 108, 111]);
+    // Non-UTF-8 input always rejected first
+    pipe.setConfig('toEncoding', 'utf-8');
     await expect(processBytes(pipe, [0xff])).rejects.toMatchObject({
       message: expect.stringContaining('Input bytes are not valid UTF-8'),
     });

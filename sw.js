@@ -37,6 +37,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/base64.js',
   './src/pipes/builtin/encoding/binary.js',
   './src/pipes/builtin/encoding/charset.js',
+  './vendor/iconv-lite.js',
   './src/pipes/builtin/encoding/hex.js',
   './src/pipes/builtin/encoding/html-encode.js',
   './src/pipes/builtin/encoding/percent.js',
