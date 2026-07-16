@@ -163,7 +163,11 @@ class GraphEditor extends HTMLElement {
 
     // Update error indicator
     const hasError = pipe.errors.length > 0;
-    el.classList.toggle('has-error', hasError);
+    const indicatorEl = el.querySelector('.pipe-node-error-indicator');
+    if (indicatorEl) {
+      indicatorEl.hidden = !hasError;
+      indicatorEl.title = hasError ? pipe.errors[0].message : '';
+    }
     const errEl = el.querySelector('.pipe-node-error');
     if (errEl) {
       errEl.textContent = hasError ? pipe.errors[0].message : '';
@@ -279,8 +283,15 @@ class GraphEditor extends HTMLElement {
     header.className = 'pipe-node-header';
     const nameEl = document.createElement('span');
     nameEl.className = 'pipe-node-name';
-    nameEl.textContent = pipe.displayName;
     nameEl.title = pipe.displayName;
+    const errorIndicatorEl = document.createElement('span');
+    errorIndicatorEl.className = 'pipe-node-error-indicator';
+    errorIndicatorEl.textContent = '⚠️';
+    errorIndicatorEl.setAttribute('role', 'img');
+    errorIndicatorEl.setAttribute('aria-label', 'Error');
+    errorIndicatorEl.hidden = true;
+    nameEl.appendChild(errorIndicatorEl);
+    nameEl.appendChild(document.createTextNode(pipe.displayName));
     const cfgBtn = document.createElement('button');
     cfgBtn.className = 'pipe-node-config-btn';
     cfgBtn.textContent = '⚙';

@@ -234,8 +234,16 @@ describe('GraphEditor', () => {
     source._errors = [{ message: 'failed' }];
     editor.updatePipeElement(source);
     const element = editor._pipeElements.get(source.id);
-    expect(element.classList.contains('has-error')).toBe(true);
+    const indicator = element.querySelector('.pipe-node-error-indicator');
+    expect(indicator.hidden).toBe(false);
+    expect(indicator.textContent).toBe('⚠️');
+    expect(indicator.title).toBe('failed');
     expect(element.querySelector('.pipe-node-error').textContent).toBe('failed');
+
+    source._errors = [];
+    editor.updatePipeElement(source);
+    expect(indicator.hidden).toBe(true);
+
     editor.removePipeElement(source.id);
     expect(editor._pipeElements.has(source.id)).toBe(false);
   });

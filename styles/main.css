@@ -337,10 +337,6 @@ graph-editor {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-pipe-selected) 25%, transparent);
 }
 
-.pipe-node.has-error {
-  border-color: var(--color-error);
-}
-
 .add-pipe-control {
   position: absolute;
   width: 140px;
@@ -409,6 +405,10 @@ graph-editor {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 110px;
+}
+
+.pipe-node-error-indicator {
+  margin-right: 4px;
 }
 
 .pipe-node-config-btn {
