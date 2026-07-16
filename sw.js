@@ -62,12 +62,14 @@ self.addEventListener('fetch', (event) => {
   if (
     event.request.method !== 'GET'
     || url.origin !== self.location.origin
+    // Version checks need to reach the deployed file instead of the precache.
     || url.searchParams.get('cache') === 'off'
   ) {
     return;
   }
 
   if (event.request.mode === 'navigate') {
+    // URL state lives in the query string, but every state uses the same cached app shell.
     const cacheKey = new Request(url.origin + url.pathname, event.request);
     event.respondWith(caches.match(cacheKey).then((cached) => cached || fetch(event.request)));
     return;

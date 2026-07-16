@@ -32,6 +32,18 @@ describe('PWA assets', () => {
     expect(cacheVersion).toBe(appVersion);
   });
 
+  it('only precaches assets that exist', async () => {
+    const workerSource = await readFile(resolve(root, 'sw.js'), 'utf8');
+    const precacheSource = workerSource.match(/const PRECACHE_URLS = \[([\s\S]*?)\];/)?.[1];
+    const precacheUrls = [...precacheSource.matchAll(/'([^']+)'/g)]
+      .map(([, url]) => url === './' ? './index.html' : url);
+
+    expect(precacheUrls.length).toBeGreaterThan(0);
+    await expect(Promise.all(
+      precacheUrls.map((url) => readFile(resolve(root, url)))
+    )).resolves.toHaveLength(precacheUrls.length);
+  });
+
   it('precaches every local module imported by the application', async () => {
     const [workerSource, modules] = await Promise.all([
       readFile(resolve(root, 'sw.js'), 'utf8'),

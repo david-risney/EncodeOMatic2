@@ -37,12 +37,21 @@ async function registerServiceWorker() {
 
     if (latestVersion !== APP_VERSION) {
       let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
+      const reloadForUpdate = () => {
         if (refreshing) return;
         refreshing = true;
         window.location.reload();
-      });
-      await registration.update();
+      };
+      navigator.serviceWorker.addEventListener('controllerchange', reloadForUpdate, { once: true });
+      try {
+        await registration.update();
+        if (!registration.installing && !registration.waiting) {
+          navigator.serviceWorker.removeEventListener('controllerchange', reloadForUpdate);
+        }
+      } catch (error) {
+        navigator.serviceWorker.removeEventListener('controllerchange', reloadForUpdate);
+        throw error;
+      }
     }
   } catch (error) {
     console.warn('Service worker registration failed:', error);
