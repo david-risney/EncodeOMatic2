@@ -168,6 +168,24 @@ describe('GraphEditor', () => {
     });
   });
 
+  it('exposes graph controls to keyboard and assistive technology', () => {
+    const select = vi.fn();
+    editor.addEventListener('pipe-select', select);
+    const node = editor._pipeElements.get(target.id);
+    const config = node.querySelector('.pipe-node-config-btn');
+    const port = editor._portElements.get(`${target.id}:input:input`);
+
+    expect(node.tabIndex).toBe(0);
+    expect(node.getAttribute('role')).toBe('button');
+    expect(node.getAttribute('aria-label')).toBe('Select Hex Encode pipe');
+    expect(config.getAttribute('aria-label')).toBe('Configure Hex Encode');
+    expect(port.tagName).toBe('BUTTON');
+    expect(port.getAttribute('aria-label')).toContain('input port input');
+
+    node.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(select).toHaveBeenCalledOnce();
+  });
+
   it('updates input configuration and processes downstream data', async () => {
     graph.connect(source.id, 'output', target.id, 'input');
     const process = vi.spyOn(graph, 'processFrom').mockResolvedValue();

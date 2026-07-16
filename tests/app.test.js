@@ -78,6 +78,7 @@ describe('application integration', () => {
 
   it('initializes and supports the primary user interactions', async () => {
     expect(document.getElementById('pipe-list').textContent).toContain('Base64 Encode');
+    expect(document.querySelector('.pipe-list-item').tagName).toBe('BUTTON');
     expect(document.getElementById('toast-container')).not.toBeNull();
     expect(document.getElementById('session-name').value).toMatch(/^[a-z]+-[a-z]+$/);
 

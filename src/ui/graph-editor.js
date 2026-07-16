@@ -279,6 +279,9 @@ class GraphEditor extends HTMLElement {
     const el = document.createElement('div');
     el.className = 'pipe-node';
     el.dataset.pipeId = pipe.id;
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', `Select ${pipe.displayName} pipe`);
 
     // Input ports row
     const topPorts = document.createElement('div');
@@ -303,8 +306,10 @@ class GraphEditor extends HTMLElement {
     nameGroupEl.appendChild(nameEl);
     const cfgBtn = document.createElement('button');
     cfgBtn.className = 'pipe-node-config-btn';
+    cfgBtn.type = 'button';
     cfgBtn.textContent = '⚙';
     cfgBtn.title = 'Configure';
+    cfgBtn.setAttribute('aria-label', `Configure ${pipe.displayName}`);
     cfgBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.dispatchEvent(new CustomEvent('pipe-config-click', {
@@ -399,6 +404,13 @@ class GraphEditor extends HTMLElement {
         detail: { pipeId: pipe.id }, bubbles: true
       }));
     });
+    el.addEventListener('keydown', (e) => {
+      if (e.target !== el || (e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault();
+      this.dispatchEvent(new CustomEvent('pipe-select', {
+        detail: { pipeId: pipe.id }, bubbles: true
+      }));
+    });
 
     return el;
   }
@@ -427,12 +439,14 @@ class GraphEditor extends HTMLElement {
     const wrapper = document.createElement('div');
     wrapper.className = 'port-wrapper';
 
-    const dot = document.createElement('div');
+    const dot = document.createElement('button');
     dot.className = `port ${portType}-port`;
+    dot.type = 'button';
     dot.dataset.pipeId = pipeId;
     dot.dataset.portName = portDef.name;
     dot.dataset.portType = portType;
     dot.title = `${portType}: ${portDef.name} — ${portDef.description}`;
+    dot.setAttribute('aria-label', `${portType} port ${portDef.name}: ${portDef.description}`);
 
     const label = document.createElement('span');
     label.className = 'port-name';

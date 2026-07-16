@@ -377,7 +377,7 @@ function createDataView(pipeId, portName, portType) {
   controls.className = 'data-panel-controls';
 
   const modeButton = document.createElement('button');
-  modeButton.className = 'btn btn-sm active';
+  modeButton.className = 'btn btn-sm';
   modeButton.textContent = 'Aa';
   modeButton.title = 'Switch to hex view';
   modeButton.setAttribute('aria-label', 'Text view; switch to hex');
@@ -385,11 +385,13 @@ function createDataView(pipeId, portName, portType) {
   pinButton.className = 'btn btn-sm';
   pinButton.textContent = '📍';
   pinButton.title = 'Keep this view open';
+  pinButton.setAttribute('aria-label', 'Keep this view open');
   pinButton.setAttribute('aria-pressed', 'false');
   const minimizeButton = document.createElement('button');
   minimizeButton.className = 'btn btn-sm';
   minimizeButton.textContent = '_';
   minimizeButton.title = 'Minimize this view';
+  minimizeButton.setAttribute('aria-label', 'Minimize this view');
   minimizeButton.setAttribute('aria-pressed', 'false');
   minimizeButton.hidden = true;
 
@@ -477,6 +479,7 @@ function togglePinned(view) {
   view.pinButton.textContent = view.pinned ? '📌' : '📍';
   view.pinButton.setAttribute('aria-pressed', String(view.pinned));
   view.pinButton.title = view.pinned ? 'Allow this view to close' : 'Keep this view open';
+  view.pinButton.setAttribute('aria-label', view.pinButton.title);
   view.minimizeButton.hidden = !view.pinned;
 }
 
@@ -487,6 +490,7 @@ function toggleMinimized(view) {
   view.minimizeButton.setAttribute('aria-pressed', String(view.minimized));
   view.minimizeButton.textContent = view.minimized ? '□' : '_';
   view.minimizeButton.title = view.minimized ? 'Restore this view' : 'Minimize this view';
+  view.minimizeButton.setAttribute('aria-label', view.minimizeButton.title);
 }
 
 // ── Port click ───────────────────────────────────────────────────
@@ -803,8 +807,9 @@ function renderPipeList(query) {
     .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
 
   for (const pipe of pipes) {
-    const item = document.createElement('div');
+    const item = document.createElement('button');
     item.className = 'pipe-list-item';
+    item.type = 'button';
 
     const name = document.createElement('div');
     name.className = 'pipe-list-item-name';
