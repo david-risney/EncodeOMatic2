@@ -42,7 +42,14 @@ const PRECACHE_URLS = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .catch((error) => {
+        console.error('Failed to precache the application shell:', error);
+        throw error;
+      })
+  );
   self.skipWaiting();
 });
 

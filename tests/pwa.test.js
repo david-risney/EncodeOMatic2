@@ -1,7 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -26,8 +25,9 @@ describe('PWA assets', () => {
       readFile(resolve(root, 'src/version.js'), 'utf8'),
       readFile(resolve(root, 'sw.js'), 'utf8'),
     ]);
-    const appVersion = versionSource.match(/APP_VERSION = '([^']+)'/)?.[1];
-    const cacheVersion = workerSource.match(/CACHE_NAME = 'encodeomatic2-v([^']+)'/)?.[1];
+    const appVersion = versionSource.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/)?.[1];
+    const cacheVersion = workerSource
+      .match(/CACHE_NAME\s*=\s*['"]encodeomatic2-v([^'"]+)['"]/)?.[1];
 
     expect(appVersion).toBeTruthy();
     expect(cacheVersion).toBe(appVersion);
@@ -36,10 +36,14 @@ describe('PWA assets', () => {
   it('only precaches assets that exist', async () => {
     const workerSource = await readFile(resolve(root, 'sw.js'), 'utf8');
     const precacheSource = workerSource.match(/const PRECACHE_URLS = \[([\s\S]*?)\];/)?.[1];
-    const precacheUrls = runInNewContext(`[${precacheSource}]`)
+    const precacheUrls = [...precacheSource.matchAll(/^\s*['"](\.\/[\w./-]*)['"],?\s*$/gm)]
+      .map(([, url]) => url)
       .map((url) => url === './' ? './index.html' : url);
 
     expect(precacheUrls.length).toBeGreaterThan(0);
+    expect(precacheUrls).toHaveLength(
+      precacheSource.split(',').filter((entry) => entry.trim()).length
+    );
     await expect(Promise.all(
       precacheUrls.map((url) => readFile(resolve(root, url)))
     )).resolves.toHaveLength(precacheUrls.length);

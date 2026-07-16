@@ -36,11 +36,8 @@ async function registerServiceWorker() {
     const { APP_VERSION: latestVersion } = await import(versionUrl.href);
 
     if (latestVersion !== APP_VERSION) {
-      let refreshing = false;
       const reloadForUpdate = () => {
         navigator.serviceWorker.removeEventListener('controllerchange', reloadForUpdate);
-        if (refreshing) return;
-        refreshing = true;
         window.location.reload();
       };
       navigator.serviceWorker.addEventListener('controllerchange', reloadForUpdate);
