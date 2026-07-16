@@ -1,11 +1,26 @@
 # Copilot instructions
 
+EncodeOMatic2 is a client-side JavaScript application with no build step. Keep
+changes focused and preserve the existing pipe architecture.
+
+Before editing:
+
+- Turn the request into explicit acceptance criteria, including relevant edge
+  cases and validation.
+- Inspect the affected implementation and tests. Run independent searches or
+  investigations in parallel when possible.
+- Reuse existing pipe and UI patterns rather than introducing new abstractions.
+
 Before completing code changes, run:
 
 ```sh
 npm run check
 npm test
 ```
+
+For pull request reviews, prioritize functional regressions, security issues,
+missing edge-case coverage, and violations of the pipe architecture. Do not
+report formatting or stylistic preferences unless they affect correctness.
 
 ## Screenshots
 
