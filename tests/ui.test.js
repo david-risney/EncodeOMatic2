@@ -33,7 +33,7 @@ describe('DataViewer', () => {
     viewer.setMode('hex');
     const bytes = [...viewer.querySelectorAll('.hex-byte')];
     expect(bytes.map((node) => node.textContent)).toEqual(['00', '0A', '20', '41', '7F', 'FF']);
-    expect(bytes[0].style.color).toBe('rgb(102, 102, 102)');
+    expect(bytes[0].style.getPropertyValue('--byte-color')).toBe('hsl(0, 0%, 40%)');
     expect(bytes[1].title).toContain('(ctrl)');
     expect(viewer._inner.classList.contains('hex-view')).toBe(true);
     viewer.setData(Uint8Array.of(65));
@@ -259,8 +259,10 @@ describe('GraphEditor', () => {
     });
     vi.spyOn(editor._canvas, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
     editor._onCanvasPointerDown({ button: 0, clientX: 5, clientY: 6, target: editor._canvas });
+    expect(editor._canvas.classList.contains('grabbing')).toBe(true);
     editor._onCanvasPointerMove({ clientX: 25, clientY: 36 });
     editor._onCanvasPointerUp({ clientX: 25, clientY: 36 });
+    expect(editor._canvas.classList.contains('grabbing')).toBe(false);
     expect(editor._panX).toBe(20);
     expect(editor._panY).toBe(30);
 
@@ -280,7 +282,7 @@ describe('GraphEditor', () => {
     expect(editor._dragging).toBeNull();
 
     editor.fitView();
-    expect(editor._inner.style.transform).toContain('scale(');
+    expect(Number(editor._inner.style.getPropertyValue('--graph-scale'))).toBeGreaterThan(0);
   });
 
   it('pans with one touch and pinches around the moving touch center', () => {

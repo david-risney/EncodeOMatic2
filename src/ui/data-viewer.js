@@ -15,6 +15,8 @@
  *   selection-change — detail.selections contains selected byte ranges
  */
 
+import { cloneTemplate } from './templates.js';
+
 /**
  * Generate a color for a byte value.
  * Uses HSL: hue derived from value, with distinct saturation/lightness.
@@ -71,8 +73,7 @@ class DataViewer extends HTMLElement {
   }
 
   connectedCallback() {
-    this._inner = document.createElement('div');
-    this._inner.className = 'data-viewer-inner';
+    this._inner = cloneTemplate('data-viewer-template');
     this._inner.addEventListener('mouseup', () => {
       if (this._editable) return;
       if (this._mode === 'hex') {
@@ -129,15 +130,14 @@ class DataViewer extends HTMLElement {
     if (!this._inner) return;
 
     if (!this._data || (this._data.length === 0 && !this._editable)) {
-      this._inner.innerHTML = '';
-      const empty = document.createElement('div');
-      empty.className = 'data-viewer-empty';
+      this._inner.replaceChildren();
+      const empty = cloneTemplate('data-viewer-empty-template');
       empty.textContent = this._data ? '(empty)' : 'No data';
       this._inner.appendChild(empty);
       return;
     }
 
-    this._inner.innerHTML = '';
+    this._inner.replaceChildren();
 
     if (this._mode === 'hex') {
       this._inner.classList.add('hex-view');
@@ -151,8 +151,7 @@ class DataViewer extends HTMLElement {
   _renderText() {
     const text = decodeUtf8Lenient(this._data);
     if (this._editable) {
-      const editor = document.createElement('textarea');
-      editor.className = 'data-viewer-editor';
+      const editor = cloneTemplate('data-viewer-editor-template');
       editor.value = text;
       editor.setAttribute('aria-label', 'Edit input as text');
       editor.addEventListener('input', () => {
@@ -185,16 +184,15 @@ class DataViewer extends HTMLElement {
       }
     }
 
-    const info = document.createElement('div');
-    info.className = 'data-viewer-info';
+    const info = cloneTemplate('data-viewer-info-template');
     info.textContent = `${this._data.length} byte${this._data.length === 1 ? '' : 's'} · ${text.length} char${text.length === 1 ? '' : 's'}`;
     this._inner.appendChild(info);
   }
 
   _renderHex() {
     if (this._editable) {
-      const editor = document.createElement('textarea');
-      editor.className = 'data-viewer-editor hex-editor';
+      const editor = cloneTemplate('data-viewer-editor-template');
+      editor.classList.add('hex-editor');
       editor.value = [...this._data]
         .map(byte => byte.toString(16).toUpperCase().padStart(2, '0'))
         .join(' ');
@@ -240,15 +238,14 @@ class DataViewer extends HTMLElement {
         span.className = 'hex-byte';
         if (selected.has(i)) span.classList.add('data-viewer-selection');
         span.textContent = byte.toString(16).toUpperCase().padStart(2, '0');
-        span.style.color = byteColor(byte);
+        span.style.setProperty('--byte-color', byteColor(byte));
         span.title = `0x${byte.toString(16).toUpperCase().padStart(2, '0')} = ${byte} = ${byte < 0x20 || byte > 0x7E ? '(ctrl)' : String.fromCharCode(byte)}`;
         fragment.appendChild(span);
       }
       this._inner.appendChild(fragment);
     }
 
-    const info = document.createElement('div');
-    info.className = 'data-viewer-info';
+    const info = cloneTemplate('data-viewer-info-template');
     info.textContent = `${this._data.length} byte${this._data.length === 1 ? '' : 's'}`;
     this._inner.appendChild(info);
   }
