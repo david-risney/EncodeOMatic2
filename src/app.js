@@ -37,6 +37,7 @@ graph.setWorkerPool(workerPool);
 const editor = document.getElementById('graph-editor');
 
 const dataPanel = document.getElementById('data-panel');
+const dataPanelResizer = document.getElementById('data-panel-resizer');
 const dataViewStack = document.getElementById('data-view-stack');
 
 /** @type {Map<string, {
@@ -48,6 +49,7 @@ const dataViewStack = document.getElementById('data-view-stack');
  *   mode: 'text'|'hex',
  *   element: HTMLElement,
  *   title: HTMLElement,
+ *   errors: HTMLElement,
  *   viewer: import('./ui/data-viewer.js').DataViewer,
  *   pinButton: HTMLButtonElement,
  *   minimizeButton: HTMLButtonElement,
@@ -79,6 +81,7 @@ async function init() {
   editor.setGraph(graph);
   initZoomControl();
   document.getElementById('session-name').value = randomSessionName();
+  initDataPanelResizer();
 
   graph.addListener(onGraphEvent);
 
@@ -89,6 +92,7 @@ async function init() {
     for (const pipe of graph.pipes.values()) {
       editor.addPipeElement(pipe);
     }
+
     editor.updateConnections();
     await graph.processAll();
     editor.fitView();
@@ -122,6 +126,69 @@ async function init() {
   toast.id = 'toast-container';
   document.body.appendChild(toast);
   scheduleUrlUpdate();
+}
+
+function initDataPanelResizer() {
+  const resizeStep = 20;
+  let startX = 0;
+  let startWidth = 0;
+
+  function widthBounds() {
+    const mobile = window.matchMedia?.('(max-width: 640px)').matches ?? false;
+    return {
+      min: mobile ? 240 : 280,
+      max: window.innerWidth * (mobile ? 0.75 : 0.5),
+    };
+  }
+
+  function currentWidth() {
+    // Hidden panels have no layout width, so fall back to their computed width
+    // and finally the stylesheet's default custom property.
+    return dataPanel.getBoundingClientRect().width
+      || Number.parseFloat(getComputedStyle(dataPanel).width)
+      || Number.parseFloat(getComputedStyle(document.documentElement)
+        .getPropertyValue('--data-panel-width'));
+  }
+
+  function setWidth(width) {
+    const bounds = widthBounds();
+    const nextWidth = Math.round(Math.min(bounds.max, Math.max(bounds.min, width)));
+    dataPanel.style.width = `${nextWidth}px`;
+    dataPanelResizer.setAttribute('aria-valuemin', String(bounds.min));
+    dataPanelResizer.setAttribute('aria-valuemax', String(Math.round(bounds.max)));
+    dataPanelResizer.setAttribute('aria-valuenow', String(nextWidth));
+  }
+
+  dataPanelResizer.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+    startX = event.clientX;
+    startWidth = currentWidth();
+    dataPanelResizer.setPointerCapture(event.pointerId);
+    dataPanelResizer.classList.add('dragging');
+    event.preventDefault();
+  });
+
+  dataPanelResizer.addEventListener('pointermove', (event) => {
+    if (!dataPanelResizer.hasPointerCapture(event.pointerId)) return;
+    setWidth(startWidth + startX - event.clientX);
+  });
+
+  dataPanelResizer.addEventListener('lostpointercapture', () => {
+    dataPanelResizer.classList.remove('dragging');
+  });
+
+  dataPanelResizer.addEventListener('keydown', (event) => {
+    let width = currentWidth();
+    if (event.key === 'ArrowLeft') width += resizeStep;
+    else if (event.key === 'ArrowRight') width -= resizeStep;
+    else if (event.key === 'Home') width = widthBounds().min;
+    else if (event.key === 'End') width = widthBounds().max;
+    else return;
+    setWidth(width);
+    event.preventDefault();
+  });
+
+  setWidth(currentWidth());
 }
 
 // ── Graph events ─────────────────────────────────────────────────
@@ -245,6 +312,9 @@ function refreshDataView(view) {
   }
 
   view.viewer.setData(data, view.portName);
+  const selections = pipe.errors.flatMap(error => error.selections ?? []);
+  view.viewer.setSelections(view.portType === 'input' ? selections : []);
+  refreshDataViewErrors(view, pipe.errors);
   const portLabel = view.portName === view.portType
     ? view.portName
     : `${view.portType}: ${view.portName}`;
@@ -263,6 +333,32 @@ function refreshDataView(view) {
     editor.setInputText(pipe.id, pipe.getConfig('text').value);
     graph.processFrom(pipe.id).catch(console.error);
   } : null);
+}
+
+function refreshDataViewErrors(view, errors) {
+  view.errors.replaceChildren();
+  view.errors.hidden = errors.length === 0;
+  for (const error of errors) {
+    const item = document.createElement('div');
+    item.className = 'data-view-error';
+    const message = document.createElement('div');
+    message.className = 'data-view-error-message';
+    message.textContent = error.message;
+    item.appendChild(message);
+
+    const ranges = (error.selections ?? [])
+      .filter(({ index, length }) => Number.isFinite(index) && Number.isFinite(length) && length > 0)
+      .map(({ index, length }) => length === 1
+        ? `byte ${index}`
+        : `bytes ${index}-${index + length - 1}`);
+    if (ranges.length > 0) {
+      const locations = document.createElement('div');
+      locations.className = 'data-view-error-locations';
+      locations.textContent = `Trigger: ${ranges.join(', ')}`;
+      item.appendChild(locations);
+    }
+    view.errors.appendChild(item);
+  }
 }
 
 function createDataView(pipeId, portName, portType) {
@@ -295,8 +391,12 @@ function createDataView(pipeId, portName, portType) {
 
   controls.append(modeButton, pinButton, minimizeButton);
   header.append(title, controls);
+  const errors = document.createElement('div');
+  errors.className = 'data-view-errors';
+  errors.setAttribute('role', 'alert');
+  errors.hidden = true;
   const viewer = document.createElement('data-viewer');
-  element.append(header, viewer);
+  element.append(header, errors, viewer);
   dataViewStack.appendChild(element);
 
   const view = {
@@ -304,7 +404,7 @@ function createDataView(pipeId, portName, portType) {
     pinned: false,
     minimized: false,
     mode: 'text',
-    element, title, viewer,
+    element, title, errors, viewer,
     pinButton, minimizeButton, modeButton,
   };
   modeButton.addEventListener('click', () =>

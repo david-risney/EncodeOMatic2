@@ -1,10 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 class SilentWorker {
+  static errors = [];
+
   constructor() {
     this.postMessage = vi.fn(({ id }) => {
       queueMicrotask(() => this.onmessage({
-        data: { type: 'result', id, outputs: { output: [] }, errors: [] },
+        data: { type: 'result', id, outputs: { output: [] }, errors: SilentWorker.errors },
       }));
     });
     this.terminate = vi.fn();
@@ -33,7 +35,8 @@ function appMarkup() {
     <input id="zoom-range" type="range" min="20" max="300" value="100">
     <output id="zoom-value">100%</output>
     <graph-editor id="graph-editor"></graph-editor>
-    <aside id="data-panel" hidden>
+    <aside id="data-panel" style="width: 380px" hidden>
+      <div id="data-panel-resizer"></div>
       <div id="data-view-stack"></div>
     </aside>
     <dialog id="add-pipe-dialog">
@@ -99,8 +102,13 @@ describe('application integration', () => {
       .find((element) => element.textContent.includes('Input Buffer'));
     expect(node).not.toBeNull();
     const textarea = node.querySelector('textarea');
+    SilentWorker.errors = [{
+      message: 'Example processing error',
+      selections: [{ index: 1, length: 2 }],
+    }];
     textarea.value = 'hello';
     textarea.dispatchEvent(new Event('input'));
+    await vi.waitFor(() => expect(node.classList.contains('has-error')).toBe(true));
     await vi.waitFor(() => expect(window.location.search).toContain('g='));
     node.click();
     const dataView = document.querySelector('.data-view');
@@ -108,12 +116,27 @@ describe('application integration', () => {
       .toContain('Input Buffer · output');
     expect(dataView.querySelector('.data-panel-title').textContent)
       .not.toContain('output: output');
+    expect(dataView.querySelector('.data-view-errors').textContent)
+      .toContain('Example processing error');
+    expect(dataView.querySelector('.data-view-errors').textContent)
+      .toContain('Trigger: bytes 1-2');
     const modeButton = dataView.querySelector('[title="Switch to hex view"]');
     expect(modeButton.textContent).toBe('Aa');
     modeButton.click();
     expect(dataView.querySelector('data-viewer')._mode).toBe('hex');
     expect(modeButton.textContent).toBe('0xFF');
     expect(dataView.querySelector('[title="Keep this view open"]').textContent).toBe('📍');
+
+    const resizer = document.getElementById('data-panel-resizer');
+    expect(document.getElementById('data-panel').style.width).toBe('380px');
+    resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+    expect(document.getElementById('data-panel').style.width).toBe('400px');
+    resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+    expect(document.getElementById('data-panel').style.width).toBe('380px');
+    resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home' }));
+    expect(document.getElementById('data-panel').style.width).toBe('280px');
+    resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'End' }));
+    expect(document.getElementById('data-panel').style.width).toBe('512px');
 
     node.querySelector('.pipe-node-config-btn').click();
     const configDialog = document.getElementById('config-dialog');

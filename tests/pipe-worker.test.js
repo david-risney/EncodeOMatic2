@@ -70,7 +70,10 @@ describe('pipe worker message handler', () => {
     });
     expect(self.postMessage).toHaveBeenLastCalledWith(expect.objectContaining({
       id: 4,
-      errors: [{ message: 'Hex string has odd number of digits', selections: [] }],
+      errors: [{
+        message: 'Hex string has odd number of digits',
+        selections: [{ index: 2, length: 1 }],
+      }],
     }));
   });
 });

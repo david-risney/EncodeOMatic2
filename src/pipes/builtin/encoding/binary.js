@@ -52,12 +52,17 @@ export class BinaryDecodePipe extends Pipe {
   async process(inputs) {
     const data = inputs.get(this.defaultInputName) ?? new Uint8Array(0);
     const text = new TextDecoder().decode(data);
-    const tokens = text.trim().split(/[\s,]+/).filter(Boolean);
+    const tokens = [...text.matchAll(/[^\s,]+/g)];
     const bytes = new Uint8Array(tokens.length);
     for (let i = 0; i < tokens.length; i++) {
-      const val = parseInt(tokens[i], 2);
-      if (isNaN(val) || tokens[i].replace(/[01]/g, '').length > 0) {
-        throw new PipeError(`Invalid binary byte at position ${i}: "${tokens[i]}"`);
+      const token = tokens[i][0];
+      const val = parseInt(token, 2);
+      if (isNaN(val) || token.replace(/[01]/g, '').length > 0) {
+        const byteIndex = new TextEncoder().encode(text.slice(0, tokens[i].index)).length;
+        const byteLength = new TextEncoder().encode(token).length;
+        throw new PipeError(`Invalid binary byte at position ${i}: "${token}"`, [
+          { index: byteIndex, length: byteLength },
+        ]);
       }
       bytes[i] = val;
     }

@@ -120,10 +120,8 @@ body {
   min-width: 280px;
   max-width: 50vw;
   flex-shrink: 0;
+  display: flex;
   background: var(--color-surface);
-  border-left: 1px solid var(--color-border);
-  resize: horizontal;
-  direction: rtl;
   overflow: hidden;
 }
 
@@ -133,10 +131,26 @@ body {
 
 .data-view-stack {
   display: flex;
+  flex: 1;
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  direction: ltr;
+  min-width: 0;
+}
+
+.data-panel-resizer {
+  width: 7px;
+  flex: 0 0 7px;
+  border-left: 1px solid var(--color-border);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.data-panel-resizer:hover,
+.data-panel-resizer:focus-visible,
+.data-panel-resizer.dragging {
+  background: var(--color-accent);
+  outline: none;
 }
 
 .data-view {
@@ -152,7 +166,8 @@ body {
   flex: 0 0 auto;
 }
 
-.data-view.minimized data-viewer {
+.data-view.minimized data-viewer,
+.data-view.minimized .data-view-errors {
   display: none;
 }
 
@@ -612,6 +627,36 @@ data-viewer {
   overflow: hidden;
 }
 
+.data-view-errors {
+  flex-shrink: 0;
+  max-height: 35%;
+  overflow: auto;
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
+  color: var(--color-danger);
+  font-size: 12px;
+}
+
+.data-view-errors[hidden] {
+  display: none;
+}
+
+.data-view-error + .data-view-error {
+  margin-top: 6px;
+}
+
+.data-view-error-message {
+  font-weight: 600;
+}
+
+.data-view-error-locations {
+  margin-top: 2px;
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
 .data-viewer-inner {
   height: 100%;
   overflow: auto;
@@ -677,6 +722,13 @@ data-viewer {
   letter-spacing: 0.5px;
   line-height: 1.4;
   background: rgba(255,255,255,0.05);
+}
+
+.data-viewer-selection {
+  background: color-mix(in srgb, var(--color-danger) 32%, transparent);
+  color: var(--color-text);
+  outline: 1px solid var(--color-danger);
+  border-radius: 2px;
 }
 
 /* ── Dialogs ──────────────────────────────────────────────────── */
@@ -1002,7 +1054,10 @@ data-viewer {
   .data-panel {
     min-width: 240px;
     max-width: 75vw;
-    resize: none;
+  }
+
+  .data-panel-resizer {
+    display: none;
   }
 
   .data-panel-controls {

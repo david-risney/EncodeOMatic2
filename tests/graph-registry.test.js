@@ -66,6 +66,54 @@ describe('PipeGraph mutation and traversal', () => {
     expect(graph._downstreamFrom(a.id)).toEqual([a.id, b.id, c.id]);
   });
 
+  it('reconnects upstream and downstream pipes after removing a pipe', () => {
+    const graph = new PipeGraph();
+    const [source, removed, firstTarget, secondTarget] =
+      [new PassPipe(), new PassPipe(), new PassPipe(), new PassPipe()];
+    for (const pipe of [source, removed, firstTarget, secondTarget]) graph.addPipe(pipe);
+    graph.connect(source.id, 'output', removed.id, 'input');
+    graph.connect(removed.id, 'output', firstTarget.id, 'input');
+    graph.connect(removed.id, 'output', secondTarget.id, 'input');
+
+    const pipeStillPresentDuringReconnect = [];
+    graph.addListener((event) => {
+      if (event.type === 'connection-added') {
+        pipeStillPresentDuringReconnect.push(graph.pipes.has(removed.id));
+      }
+    });
+    graph.removePipe(removed.id);
+
+    expect(graph.connections.map(connection => connection.toJSON())).toEqual([
+      {
+        fromPipeId: source.id,
+        fromOutput: 'output',
+        toPipeId: firstTarget.id,
+        toInput: 'input',
+      },
+      {
+        fromPipeId: source.id,
+        fromOutput: 'output',
+        toPipeId: secondTarget.id,
+        toInput: 'input',
+      },
+    ]);
+    expect(pipeStillPresentDuringReconnect).toEqual([false, false]);
+  });
+
+  it('does not create bypass connections without both an input and an output', () => {
+    const graph = new PipeGraph();
+    const [source, sourceOnly, sinkOnly, target] =
+      [new PassPipe(), new PassPipe(), new PassPipe(), new PassPipe()];
+    for (const pipe of [source, sourceOnly, sinkOnly, target]) graph.addPipe(pipe);
+    graph.connect(sourceOnly.id, 'output', target.id, 'input');
+    graph.connect(source.id, 'output', sinkOnly.id, 'input');
+
+    graph.removePipe(sourceOnly.id);
+    graph.removePipe(sinkOnly.id);
+
+    expect(graph.connections).toEqual([]);
+  });
+
   it('processes connected pipes and emits processing events', async () => {
     const graph = new PipeGraph();
     const source = new InputPipe();
