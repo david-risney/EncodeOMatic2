@@ -59,6 +59,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+  // Returning without respondWith leaves these requests to the browser's normal network handling.
   if (
     event.request.method !== 'GET'
     || url.origin !== self.location.origin

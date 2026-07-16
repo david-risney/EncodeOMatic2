@@ -1,6 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -35,8 +36,8 @@ describe('PWA assets', () => {
   it('only precaches assets that exist', async () => {
     const workerSource = await readFile(resolve(root, 'sw.js'), 'utf8');
     const precacheSource = workerSource.match(/const PRECACHE_URLS = \[([\s\S]*?)\];/)?.[1];
-    const precacheUrls = [...precacheSource.matchAll(/'([^']+)'/g)]
-      .map(([, url]) => url === './' ? './index.html' : url);
+    const precacheUrls = runInNewContext(`[${precacheSource}]`)
+      .map((url) => url === './' ? './index.html' : url);
 
     expect(precacheUrls.length).toBeGreaterThan(0);
     await expect(Promise.all(

@@ -38,11 +38,12 @@ async function registerServiceWorker() {
     if (latestVersion !== APP_VERSION) {
       let refreshing = false;
       const reloadForUpdate = () => {
+        navigator.serviceWorker.removeEventListener('controllerchange', reloadForUpdate);
         if (refreshing) return;
         refreshing = true;
         window.location.reload();
       };
-      navigator.serviceWorker.addEventListener('controllerchange', reloadForUpdate, { once: true });
+      navigator.serviceWorker.addEventListener('controllerchange', reloadForUpdate);
       try {
         await registration.update();
         if (!registration.installing && !registration.waiting) {
