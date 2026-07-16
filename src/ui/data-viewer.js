@@ -42,6 +42,7 @@ function decodeUtf8Lenient(bytes) {
 }
 
 const HEX_BYTES_RE = /^(?:[0-9a-fA-F]{2})(?:\s+[0-9a-fA-F]{2})*$/;
+const UTF8_ENCODER = new TextEncoder();
 
 class DataViewer extends HTMLElement {
   constructor() {
@@ -155,14 +156,14 @@ class DataViewer extends HTMLElement {
       editor.value = text;
       editor.setAttribute('aria-label', 'Edit input as text');
       editor.addEventListener('input', () => {
-        const bytes = new TextEncoder().encode(editor.value);
+        const bytes = UTF8_ENCODER.encode(editor.value);
         this._data = bytes;
         this._updateInfo(bytes.length, editor.value.length);
         this._onChange?.(bytes, 'text');
       });
       editor.addEventListener('select', () => {
-        const start = new TextEncoder().encode(editor.value.slice(0, editor.selectionStart)).length;
-        const length = new TextEncoder()
+        const start = UTF8_ENCODER.encode(editor.value.slice(0, editor.selectionStart)).length;
+        const length = UTF8_ENCODER
           .encode(editor.value.slice(editor.selectionStart, editor.selectionEnd)).length;
         this._emitSelection(start, start + length);
       });
@@ -298,8 +299,8 @@ class DataViewer extends HTMLElement {
     const prefix = range.cloneRange();
     prefix.selectNodeContents(this._inner);
     prefix.setEnd(range.startContainer, range.startOffset);
-    const start = new TextEncoder().encode(prefix.toString()).length;
-    const length = new TextEncoder().encode(range.toString()).length;
+    const start = UTF8_ENCODER.encode(prefix.toString()).length;
+    const length = UTF8_ENCODER.encode(range.toString()).length;
     this._emitSelection(start, start + length);
   }
 

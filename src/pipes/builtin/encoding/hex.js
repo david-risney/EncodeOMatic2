@@ -4,6 +4,8 @@
 
 import { Pipe, PipeConfig, PipeError, PortDef } from '../../pipe.js';
 
+const UTF8_ENCODER = new TextEncoder();
+
 export class HexEncodePipe extends Pipe {
   static typeName = 'HexEncode';
   static typeDescription = 'Hex Encode';
@@ -38,11 +40,11 @@ export class HexEncodePipe extends Pipe {
       hexes.push(h);
     }
     const out = hexes.join(sep);
-    return new Map([['output', new TextEncoder().encode(out)]]);
+    return new Map([['output', UTF8_ENCODER.encode(out)]]);
   }
 
   translateSelections(fromPortType, fromPortName, toPortType, toPortName, selections) {
-    const separatorLength = new TextEncoder()
+    const separatorLength = UTF8_ENCODER
       .encode(this.getConfig('separator')?.value ?? '').length;
     const stride = 2 + separatorLength;
     if (fromPortType === 'input' && toPortType === 'output') {
@@ -57,7 +59,8 @@ export class HexEncodePipe extends Pipe {
         const start = Math.max(0, Math.floor(selection.index));
         const end = start + Math.max(0, Math.floor(selection.length));
         const indexes = [];
-        for (let index = 0; index * stride < end && index < inputLength; index++) {
+        const maxIndex = Math.min(Math.ceil(end / stride), inputLength);
+        for (let index = 0; index < maxIndex; index++) {
           const tokenStart = index * stride;
           if (tokenStart < end && tokenStart + 2 > start) indexes.push(index);
         }
@@ -99,7 +102,7 @@ export class HexDecodePipe extends Pipe {
     if (cleaned.length % 2 !== 0) {
       let charIndex = text.length - 1;
       while (charIndex > 0 && !/[0-9a-fA-F]/.test(text[charIndex])) charIndex--;
-      const byteIndex = new TextEncoder().encode(text.slice(0, charIndex)).length;
+      const byteIndex = UTF8_ENCODER.encode(text.slice(0, charIndex)).length;
       throw new PipeError('Hex string has odd number of digits', [
         { index: byteIndex, length: 1 },
       ]);
@@ -119,12 +122,11 @@ export class HexDecodePipe extends Pipe {
       [...text.matchAll(/[0-9a-fA-F]/g)].map(match => match.index)
     );
     const digits = [];
-    const encoder = new TextEncoder();
     let byteOffset = 0;
     for (let characterIndex = 0; characterIndex < text.length;) {
       if (digitCharacterIndexes.has(characterIndex)) digits.push(byteOffset);
       const character = String.fromCodePoint(text.codePointAt(characterIndex));
-      byteOffset += encoder.encode(character).length;
+      byteOffset += UTF8_ENCODER.encode(character).length;
       characterIndex += character.length;
     }
     const tokens = [];
