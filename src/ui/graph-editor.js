@@ -167,6 +167,7 @@ class GraphEditor extends HTMLElement {
     if (indicatorEl) {
       indicatorEl.hidden = !hasError;
       indicatorEl.title = hasError ? pipe.errors[0].message : '';
+      indicatorEl.setAttribute('aria-label', hasError ? `Error: ${pipe.errors[0].message}` : 'Error');
     }
     const errEl = el.querySelector('.pipe-node-error');
     if (errEl) {
@@ -281,17 +282,20 @@ class GraphEditor extends HTMLElement {
     // Header
     const header = document.createElement('div');
     header.className = 'pipe-node-header';
+    const nameGroupEl = document.createElement('div');
+    nameGroupEl.className = 'pipe-node-name-group';
     const nameEl = document.createElement('span');
     nameEl.className = 'pipe-node-name';
     nameEl.title = pipe.displayName;
     const errorIndicatorEl = document.createElement('span');
     errorIndicatorEl.className = 'pipe-node-error-indicator';
-    errorIndicatorEl.textContent = '⚠️';
+    errorIndicatorEl.textContent = '❗';
     errorIndicatorEl.setAttribute('role', 'img');
     errorIndicatorEl.setAttribute('aria-label', 'Error');
     errorIndicatorEl.hidden = true;
-    nameEl.appendChild(errorIndicatorEl);
-    nameEl.appendChild(document.createTextNode(pipe.displayName));
+    nameEl.textContent = pipe.displayName;
+    nameGroupEl.appendChild(errorIndicatorEl);
+    nameGroupEl.appendChild(nameEl);
     const cfgBtn = document.createElement('button');
     cfgBtn.className = 'pipe-node-config-btn';
     cfgBtn.textContent = '⚙';
@@ -302,7 +306,7 @@ class GraphEditor extends HTMLElement {
         detail: { pipeId: pipe.id }, bubbles: true
       }));
     });
-    header.appendChild(nameEl);
+    header.appendChild(nameGroupEl);
     header.appendChild(cfgBtn);
 
     // Output ports row
