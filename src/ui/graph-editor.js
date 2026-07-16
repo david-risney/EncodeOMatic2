@@ -492,7 +492,7 @@ class GraphEditor extends HTMLElement {
 
   _onCanvasPointerDown(e) {
     if (this._trackPointerDown(e)) return;
-    if (e.target?.closest('button, textarea, input, select')) return;
+    if (e.target.closest('button, textarea, input, select')) return;
     if (e.button === 1 || (e.button === 0 && !this._draftFrom && !this._dragging)) {
       // Pan
       this._isPanning = true;
@@ -603,7 +603,9 @@ class GraphEditor extends HTMLElement {
       y: e.clientY,
       pointerType: e.pointerType,
     });
-    this._canvas.setPointerCapture?.(e.pointerId);
+    if (typeof this._canvas.setPointerCapture === 'function') {
+      this._canvas.setPointerCapture(e.pointerId);
+    }
 
     const touches = this._touchPointers();
     if (touches.length < 2) return false;
@@ -659,12 +661,15 @@ class GraphEditor extends HTMLElement {
     if (touches.length >= 2) {
       this._beginTouchGesture(touches);
     } else if (touches.length === 1) {
-      const [pointerId, pointer] = [...this._activePointers.entries()]
+      const remainingTouch = [...this._activePointers.entries()]
         .find(([, value]) => value.pointerType === 'touch');
-      this._interactionPointerId = pointerId;
-      this._isPanning = true;
-      this._panStart = { x: pointer.x - this._panX, y: pointer.y - this._panY };
-      this._canvas.style.cursor = 'grabbing';
+      if (remainingTouch) {
+        const [pointerId, pointer] = remainingTouch;
+        this._interactionPointerId = pointerId;
+        this._isPanning = true;
+        this._panStart = { x: pointer.x - this._panX, y: pointer.y - this._panY };
+        this._canvas.style.cursor = 'grabbing';
+      }
     }
     return true;
   }

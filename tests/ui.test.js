@@ -224,7 +224,7 @@ describe('GraphEditor', () => {
       clientHeight: { value: 600 },
     });
     vi.spyOn(editor._canvas, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
-    editor._onCanvasPointerDown({ button: 0, clientX: 5, clientY: 6 });
+    editor._onCanvasPointerDown({ button: 0, clientX: 5, clientY: 6, target: editor._canvas });
     editor._onCanvasPointerMove({ clientX: 25, clientY: 36 });
     editor._onCanvasPointerUp({ clientX: 25, clientY: 36 });
     expect(editor._panX).toBe(20);
@@ -253,7 +253,7 @@ describe('GraphEditor', () => {
     vi.spyOn(editor._canvas, 'getBoundingClientRect').mockReturnValue({ left: 10, top: 20 });
     const pointer = (pointerId, clientX, clientY) => ({
       pointerId, pointerType: 'touch', button: 0, clientX, clientY,
-      preventDefault: vi.fn(),
+      preventDefault: vi.fn(), target: editor._canvas,
     });
 
     editor._onCanvasPointerDown(pointer(1, 60, 70));
