@@ -167,7 +167,11 @@ class GraphEditor extends HTMLElement {
     if (indicatorEl) {
       indicatorEl.hidden = !hasError;
       indicatorEl.title = hasError ? pipe.errors[0].message : '';
-      indicatorEl.setAttribute('aria-label', hasError ? `Error: ${pipe.errors[0].message}` : 'Error');
+      if (hasError) {
+        indicatorEl.setAttribute('aria-label', `Error: ${pipe.errors[0].message}`);
+      } else {
+        indicatorEl.removeAttribute('aria-label');
+      }
     }
     const errEl = el.querySelector('.pipe-node-error');
     if (errEl) {
@@ -292,7 +296,6 @@ class GraphEditor extends HTMLElement {
     errorIndicatorEl.className = 'pipe-node-error-indicator';
     errorIndicatorEl.textContent = '❗';
     errorIndicatorEl.setAttribute('role', 'img');
-    errorIndicatorEl.setAttribute('aria-label', 'Error');
     errorIndicatorEl.hidden = true;
     nameGroupEl.appendChild(errorIndicatorEl);
     nameGroupEl.appendChild(nameEl);

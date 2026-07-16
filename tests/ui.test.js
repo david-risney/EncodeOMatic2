@@ -244,6 +244,7 @@ describe('GraphEditor', () => {
     source._errors = [];
     editor.updatePipeElement(source);
     expect(indicator.hidden).toBe(true);
+    expect(indicator.hasAttribute('aria-label')).toBe(false);
 
     editor.removePipeElement(source.id);
     expect(editor._pipeElements.has(source.id)).toBe(false);
