@@ -75,13 +75,17 @@ export class PipeGraph {
 
   /** @param {string} pipeId */
   removePipe(pipeId) {
-    const incoming = this.connections.filter(c => c.toPipeId === pipeId);
-    const outgoing = this.connections.filter(c => c.fromPipeId === pipeId);
-
-    // Remove all connections involving this pipe
-    this.connections = this.connections.filter(
-      c => c.fromPipeId !== pipeId && c.toPipeId !== pipeId
-    );
+    const incoming = [];
+    const outgoing = [];
+    const remaining = [];
+    for (const connection of this.connections) {
+      if (connection.toPipeId === pipeId) incoming.push(connection);
+      if (connection.fromPipeId === pipeId) outgoing.push(connection);
+      if (connection.fromPipeId !== pipeId && connection.toPipeId !== pipeId) {
+        remaining.push(connection);
+      }
+    }
+    this.connections = remaining;
     this.pipes.delete(pipeId);
     this._notify({ type: 'pipe-removed', pipeId });
 

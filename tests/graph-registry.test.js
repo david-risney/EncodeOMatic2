@@ -75,10 +75,10 @@ describe('PipeGraph mutation and traversal', () => {
     graph.connect(removed.id, 'output', firstTarget.id, 'input');
     graph.connect(removed.id, 'output', secondTarget.id, 'input');
 
-    const pipePresentWhenReconnected = [];
+    const removedPipePresent = [];
     graph.addListener((event) => {
       if (event.type === 'connection-added') {
-        pipePresentWhenReconnected.push(graph.pipes.has(removed.id));
+        removedPipePresent.push(graph.pipes.has(removed.id));
       }
     });
     graph.removePipe(removed.id);
@@ -97,7 +97,7 @@ describe('PipeGraph mutation and traversal', () => {
         toInput: 'input',
       },
     ]);
-    expect(pipePresentWhenReconnected).toEqual([false, false]);
+    expect(removedPipePresent).toEqual([false, false]);
   });
 
   it('does not create bypass connections without both an input and an output', () => {
