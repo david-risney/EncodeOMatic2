@@ -36,6 +36,7 @@ graph.setWorkerPool(workerPool);
 const editor = document.getElementById('graph-editor');
 
 const dataPanel = document.getElementById('data-panel');
+const dataPanelResizer = document.getElementById('data-panel-resizer');
 const dataViewStack = document.getElementById('data-view-stack');
 
 /** @type {Map<string, {
@@ -77,6 +78,7 @@ let _suspendUrlUpdates = false;
 async function init() {
   editor.setGraph(graph);
   initZoomControl();
+  initDataPanelResizer();
 
   graph.addListener(onGraphEvent);
 
@@ -87,6 +89,7 @@ async function init() {
     for (const pipe of graph.pipes.values()) {
       editor.addPipeElement(pipe);
     }
+
     editor.updateConnections();
     await graph.processAll();
     editor.fitView();
@@ -120,6 +123,67 @@ async function init() {
   toast.id = 'toast-container';
   document.body.appendChild(toast);
   scheduleUrlUpdate();
+}
+
+function initDataPanelResizer() {
+  const resizeStep = 20;
+  let startX = 0;
+  let startWidth = 0;
+
+  function widthBounds() {
+    const mobile = window.matchMedia?.('(max-width: 640px)').matches ?? false;
+    return {
+      min: mobile ? 240 : 280,
+      max: window.innerWidth * (mobile ? 0.75 : 0.5),
+    };
+  }
+
+  function currentWidth() {
+    return dataPanel.getBoundingClientRect().width
+      || Number.parseFloat(getComputedStyle(dataPanel).width)
+      || Number.parseFloat(getComputedStyle(document.documentElement)
+        .getPropertyValue('--data-panel-width'));
+  }
+
+  function setWidth(width) {
+    const bounds = widthBounds();
+    const nextWidth = Math.round(Math.min(bounds.max, Math.max(bounds.min, width)));
+    dataPanel.style.width = `${nextWidth}px`;
+    dataPanelResizer.setAttribute('aria-valuemin', String(bounds.min));
+    dataPanelResizer.setAttribute('aria-valuemax', String(Math.round(bounds.max)));
+    dataPanelResizer.setAttribute('aria-valuenow', String(nextWidth));
+  }
+
+  dataPanelResizer.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+    startX = event.clientX;
+    startWidth = currentWidth();
+    dataPanelResizer.setPointerCapture(event.pointerId);
+    dataPanelResizer.classList.add('dragging');
+    event.preventDefault();
+  });
+
+  dataPanelResizer.addEventListener('pointermove', (event) => {
+    if (!dataPanelResizer.hasPointerCapture(event.pointerId)) return;
+    setWidth(startWidth + startX - event.clientX);
+  });
+
+  dataPanelResizer.addEventListener('lostpointercapture', () => {
+    dataPanelResizer.classList.remove('dragging');
+  });
+
+  dataPanelResizer.addEventListener('keydown', (event) => {
+    let width = currentWidth();
+    if (event.key === 'ArrowLeft') width += resizeStep;
+    else if (event.key === 'ArrowRight') width -= resizeStep;
+    else if (event.key === 'Home') width = widthBounds().min;
+    else if (event.key === 'End') width = widthBounds().max;
+    else return;
+    setWidth(width);
+    event.preventDefault();
+  });
+
+  setWidth(currentWidth());
 }
 
 // ── Graph events ─────────────────────────────────────────────────
