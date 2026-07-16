@@ -19,6 +19,7 @@ import {
   listIdbSessions,
 } from './state.js';
 import { guessPipeChain } from './guess.js';
+import { randomSessionName } from './session-name.js';
 import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
@@ -77,6 +78,7 @@ let _suspendUrlUpdates = false;
 async function init() {
   editor.setGraph(graph);
   initZoomControl();
+  document.getElementById('session-name').value = randomSessionName();
 
   graph.addListener(onGraphEvent);
 
@@ -96,8 +98,7 @@ async function init() {
   document.getElementById('btn-share').addEventListener('click', onShare);
   document.getElementById('btn-clear').addEventListener('click', onClear);
   document.getElementById('btn-session-save').addEventListener('click', onSaveSession);
-  document.getElementById('btn-session-load').addEventListener('click', onLoadSession);
-  document.getElementById('btn-guess').addEventListener('click', onGuessEncoding);
+  document.getElementById('btn-guess').addEventListener('click', openGuessDialog);
   document.getElementById('btn-zoom-fit').addEventListener('click', () => editor.fitView());
   initSessionMenu();
 
@@ -113,6 +114,7 @@ async function init() {
   initAddPipeDialog();
   initConfigDialog();
   initConnActionPopover();
+  initGuessDialog();
 
   // Toast container
   const toast = document.createElement('div');
@@ -149,20 +151,67 @@ function scheduleUrlUpdate() {
 function initSessionMenu() {
   const button = document.getElementById('btn-session-menu');
   const menu = document.getElementById('session-menu');
+  const loadButton = document.getElementById('btn-session-load');
+  const loadMenu = document.getElementById('session-load-menu');
   const close = () => {
     menu.hidden = true;
+    loadMenu.hidden = true;
     button.setAttribute('aria-expanded', 'false');
+    loadButton.setAttribute('aria-expanded', 'false');
   };
 
-  button.addEventListener('click', event => {
+  button.addEventListener('click', async event => {
     event.stopPropagation();
     menu.hidden = !menu.hidden;
     button.setAttribute('aria-expanded', String(!menu.hidden));
+    if (!menu.hidden) await refreshSessionLoadMenu();
   });
-  menu.addEventListener('click', close);
+
+  loadButton.addEventListener('click', async event => {
+    event.stopPropagation();
+    loadMenu.hidden = !loadMenu.hidden;
+    loadButton.setAttribute('aria-expanded', String(!loadMenu.hidden));
+    if (!loadMenu.hidden) await refreshSessionLoadMenu();
+  });
+
+  for (const id of ['btn-session-save', 'btn-guess', 'btn-clear']) {
+    document.getElementById(id).addEventListener('click', close);
+  }
+
+  loadMenu.addEventListener('click', async event => {
+    const item = event.target.closest('[data-session-name]');
+    if (!item) return;
+    await onLoadSession(item.dataset.sessionName);
+    close();
+  });
+
   document.addEventListener('click', event => {
     if (!menu.hidden && !menu.contains(event.target)) close();
   });
+}
+
+async function refreshSessionLoadMenu() {
+  const loadMenu = document.getElementById('session-load-menu');
+  const sessions = await listIdbSessions();
+  loadMenu.replaceChildren();
+
+  if (sessions.length === 0) {
+    const empty = document.createElement('button');
+    empty.type = 'button';
+    empty.disabled = true;
+    empty.textContent = 'No saved sessions';
+    loadMenu.appendChild(empty);
+    return;
+  }
+
+  for (const session of sessions) {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.role = 'menuitem';
+    item.dataset.sessionName = session.name;
+    item.textContent = session.name;
+    loadMenu.appendChild(item);
+  }
 }
 
 function initZoomControl() {
@@ -787,12 +836,19 @@ async function onShare() {
 }
 
 async function onSaveSession() {
-  const name = prompt('Name this session:')?.trim();
-  if (!name) return;
+  const input = document.getElementById('session-name');
+  const name = input.value.trim();
+  if (!name) {
+    showToast('Enter a session name', 'error');
+    input.focus();
+    return;
+  }
+  input.value = name;
   try {
     const existing = (await listIdbSessions()).some(session => session.name === name);
     if (existing && !confirm(`Replace the saved session "${name}"?`)) return;
     await saveToIdb(name, graph.toJSON());
+    await refreshSessionLoadMenu();
     showToast(`Saved session "${name}"`, 'success');
   } catch (e) {
     console.error('Session save failed:', e);
@@ -800,22 +856,15 @@ async function onSaveSession() {
   }
 }
 
-async function onLoadSession() {
+async function onLoadSession(name) {
   try {
-    const sessions = await listIdbSessions();
-    if (sessions.length === 0) {
-      showToast('No saved sessions', 'error');
-      return;
-    }
-    const names = sessions.map(session => session.name);
-    const name = prompt(`Session name to load:\n\n${names.join('\n')}`)?.trim();
-    if (!name) return;
     const data = await loadFromIdb(name);
     if (!data) {
       showToast(`Session "${name}" was not found`, 'error');
       return;
     }
     await replaceGraph(data);
+    document.getElementById('session-name').value = name;
     showToast(`Loaded session "${name}"`, 'success');
   } catch (e) {
     console.error('Session load failed:', e);
@@ -823,9 +872,27 @@ async function onLoadSession() {
   }
 }
 
-async function onGuessEncoding() {
-  const input = prompt('Enter the encoded string to inspect:');
-  if (input == null || input.length === 0) return;
+function initGuessDialog() {
+  const dialog = document.getElementById('guess-dialog');
+  const input = document.getElementById('guess-input');
+  document.getElementById('guess-cancel').addEventListener('click', () => dialog.close());
+  document.getElementById('guess-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const value = input.value;
+    if (!value) return;
+    dialog.close();
+    onGuessEncoding(value);
+  });
+}
+
+function openGuessDialog() {
+  const input = document.getElementById('guess-input');
+  input.value = '';
+  document.getElementById('guess-dialog').showModal();
+  input.focus();
+}
+
+async function onGuessEncoding(input) {
 
   try {
     const chain = await guessPipeChain(new TextEncoder().encode(input), registry.values());
@@ -884,6 +951,7 @@ async function replaceGraph(data) {
 function onClear() {
   if (!confirm('Clear the entire graph?')) return;
   clearGraphWithoutConfirmation();
+  document.getElementById('session-name').value = randomSessionName();
   scheduleUrlUpdate();
 }
 

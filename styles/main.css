@@ -238,8 +238,32 @@ body {
   padding-inline: 9px;
 }
 
-.session-menu {
+.session-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.session-menu,
+.session-load-item {
   position: relative;
+}
+
+.session-name-input {
+  width: 150px;
+  min-width: 90px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.session-name-input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
 
 .menu-popover {
@@ -274,6 +298,22 @@ body {
 
 .menu-popover button:hover {
   background: var(--color-surface2);
+}
+
+.menu-popover button:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.menu-popover button:disabled:hover {
+  background: transparent;
+}
+
+.session-load-menu {
+  top: -5px;
+  left: calc(100% + 6px);
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 .menu-popover .menu-danger {
@@ -676,6 +716,24 @@ data-viewer {
   padding: 12px 20px;
   border-top: 1px solid var(--color-border);
   flex-shrink: 0;
+}
+
+.guess-input-label {
+  padding: 4px 20px 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+#guess-input {
+  min-height: 100px;
+  margin: 0 20px;
+  padding: 8px;
+  resize: vertical;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: 12px var(--font-mono);
 }
 
 /* Pipe List in Add Dialog */

@@ -11,15 +11,22 @@
     <h1 class="app-title">Encode-O-Matic 2</h1>
     <div class="toolbar">
       <button id="btn-share" class="btn btn-icon" title="Share current URL" aria-label="Share current URL">🔗</button>
-      <div class="session-menu">
-        <button id="btn-session-menu" class="btn" aria-haspopup="menu" aria-expanded="false">Session ▾</button>
-        <div id="session-menu" class="menu-popover" role="menu" hidden>
-          <button id="btn-session-save" role="menuitem">Save Session</button>
-          <button id="btn-session-load" role="menuitem">Load Session</button>
-          <button id="btn-guess" role="menuitem">Guess Encoding</button>
-          <div class="menu-sep"></div>
-          <button id="btn-clear" class="menu-danger" role="menuitem">Clear</button>
+      <div class="session-controls">
+        <div class="session-menu">
+          <button id="btn-session-menu" class="btn" aria-haspopup="menu" aria-expanded="false">Session ▾</button>
+          <div id="session-menu" class="menu-popover" role="menu" hidden>
+            <button id="btn-session-save" role="menuitem">Save Session</button>
+            <div class="session-load-item">
+              <button id="btn-session-load" role="menuitem" aria-haspopup="menu" aria-expanded="false">Load Session ▸</button>
+              <div id="session-load-menu" class="menu-popover session-load-menu" role="menu" hidden></div>
+            </div>
+            <button id="btn-guess" role="menuitem">Guess Encoding</button>
+            <div class="menu-sep"></div>
+            <button id="btn-clear" class="menu-danger" role="menuitem">Clear</button>
+          </div>
         </div>
+        <input id="session-name" class="session-name-input" type="text" maxlength="80"
+               aria-label="Current session name" title="Current session name" spellcheck="false">
       </div>
       <div class="toolbar-sep"></div>
       <button id="btn-zoom-fit" class="btn" title="Fit graph in view">Fit</button>
@@ -64,6 +71,18 @@
         <button value="ok" class="btn btn-primary">OK</button>
         <button value="cancel" class="btn">Cancel</button>
       </div>
+    </form>
+  </dialog>
+
+  <dialog id="guess-dialog" class="dialog">
+    <form id="guess-form" class="dialog-form">
+      <h2>Guess Encoding</h2>
+      <label class="guess-input-label" for="guess-input">Encoded string</label>
+      <textarea id="guess-input" rows="6" required></textarea>
+      <footer class="dialog-footer">
+        <button id="guess-cancel" type="button" class="btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Guess</button>
+      </footer>
     </form>
   </dialog>
 
