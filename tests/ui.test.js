@@ -253,8 +253,20 @@ describe('GraphEditor', () => {
     source._errors = [{ message: 'failed' }];
     editor.updatePipeElement(source);
     const element = editor._pipeElements.get(source.id);
-    expect(element.classList.contains('has-error')).toBe(true);
-    expect(element.querySelector('.pipe-node-error').textContent).toBe('failed');
+    const indicator = element.querySelector('.pipe-node-error-indicator');
+    expect(indicator.hidden).toBe(false);
+    expect(indicator.textContent).toBe('⚠️');
+    expect(indicator.title).toBe('failed');
+    expect(indicator.getAttribute('aria-hidden')).toBe('false');
+    expect(indicator.getAttribute('aria-label')).toBe('Error: failed');
+    expect(element.querySelector('.pipe-node-error')).toBeNull();
+
+    source._errors = [];
+    editor.updatePipeElement(source);
+    expect(indicator.hidden).toBe(true);
+    expect(indicator.getAttribute('aria-hidden')).toBe('true');
+    expect(indicator.hasAttribute('aria-label')).toBe(false);
+
     editor.removePipeElement(source.id);
     expect(editor._pipeElements.has(source.id)).toBe(false);
   });

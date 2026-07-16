@@ -392,10 +392,6 @@ graph-editor {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-pipe-selected) 25%, transparent);
 }
 
-.pipe-node.has-error {
-  border-color: var(--color-error);
-}
-
 .add-pipe-control {
   position: absolute;
   width: 140px;
@@ -456,6 +452,12 @@ graph-editor {
   border-bottom: 1px solid var(--color-border);
 }
 
+.pipe-node-name-group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
 .pipe-node-name {
   font-size: 12px;
   font-weight: 600;
@@ -464,6 +466,13 @@ graph-editor {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 110px;
+}
+
+.pipe-node-error-indicator {
+  flex-shrink: 0;
+  margin-right: 4px;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .pipe-node-config-btn {
@@ -480,15 +489,6 @@ graph-editor {
 .pipe-node-config-btn:hover {
   color: var(--color-text);
   background: rgba(255,255,255,0.1);
-}
-
-.pipe-node-error {
-  font-size: 10px;
-  color: var(--color-error);
-  padding: 2px 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Port dot */

@@ -165,13 +165,17 @@ class GraphEditor extends HTMLElement {
 
     // Update error indicator
     const hasError = pipe.errors.length > 0;
-    el.classList.toggle('has-error', hasError);
-    const errEl = el.querySelector('.pipe-node-error');
-    if (errEl) {
-      errEl.textContent = hasError ? pipe.errors[0].message : '';
-      errEl.style.display = hasError ? '' : 'none';
+    const indicatorEl = el.querySelector('.pipe-node-error-indicator');
+    if (indicatorEl) {
+      indicatorEl.hidden = !hasError;
+      indicatorEl.setAttribute('aria-hidden', String(!hasError));
+      indicatorEl.title = hasError ? pipe.errors[0].message : '';
+      if (hasError) {
+        indicatorEl.setAttribute('aria-label', `Error: ${pipe.errors[0].message}`);
+      } else {
+        indicatorEl.removeAttribute('aria-label');
+      }
     }
-
     // Refresh ports for dynamic-port pipes (URL parser, etc.)
     const topPorts = el.querySelector('.pipe-node-ports-top');
     const botPorts = el.querySelector('.pipe-node-ports-bottom');
@@ -279,10 +283,20 @@ class GraphEditor extends HTMLElement {
     // Header
     const header = document.createElement('div');
     header.className = 'pipe-node-header';
+    const nameGroupEl = document.createElement('div');
+    nameGroupEl.className = 'pipe-node-name-group';
     const nameEl = document.createElement('span');
     nameEl.className = 'pipe-node-name';
     nameEl.textContent = pipe.displayName;
     nameEl.title = pipe.displayName;
+    const errorIndicatorEl = document.createElement('span');
+    errorIndicatorEl.className = 'pipe-node-error-indicator';
+    errorIndicatorEl.textContent = '⚠️';
+    errorIndicatorEl.setAttribute('role', 'img');
+    errorIndicatorEl.setAttribute('aria-hidden', 'true');
+    errorIndicatorEl.hidden = true;
+    nameGroupEl.appendChild(errorIndicatorEl);
+    nameGroupEl.appendChild(nameEl);
     const cfgBtn = document.createElement('button');
     cfgBtn.className = 'pipe-node-config-btn';
     cfgBtn.textContent = '⚙';
@@ -293,17 +307,12 @@ class GraphEditor extends HTMLElement {
         detail: { pipeId: pipe.id }, bubbles: true
       }));
     });
-    header.appendChild(nameEl);
+    header.appendChild(nameGroupEl);
     header.appendChild(cfgBtn);
 
     // Output ports row
     const botPorts = document.createElement('div');
     botPorts.className = 'pipe-node-ports-bottom';
-
-    // Error area
-    const errEl = document.createElement('div');
-    errEl.className = 'pipe-node-error';
-    errEl.style.display = 'none';
 
     // Input area for InputPipe
     let inputArea = null;
@@ -358,7 +367,6 @@ class GraphEditor extends HTMLElement {
     el.appendChild(header);
     if (inputArea) el.appendChild(inputArea);
     el.appendChild(botPorts);
-    el.appendChild(errEl);
 
     this._buildPorts(pipe, topPorts, botPorts);
 

@@ -108,7 +108,9 @@ describe('application integration', () => {
     }];
     textarea.value = 'hello';
     textarea.dispatchEvent(new Event('input'));
-    await vi.waitFor(() => expect(node.classList.contains('has-error')).toBe(true));
+    await vi.waitFor(() => {
+      expect(node.querySelector('.pipe-node-error-indicator').hidden).toBe(false);
+    });
     await vi.waitFor(() => expect(window.location.search).toContain('g='));
     node.click();
     const dataView = document.querySelector('.data-view');
@@ -126,6 +128,9 @@ describe('application integration', () => {
     expect(dataView.querySelector('data-viewer')._mode).toBe('hex');
     expect(modeButton.textContent).toBe('0xFF');
     expect(dataView.querySelector('[title="Keep this view open"]').textContent).toBe('📍');
+
+    expect(node.querySelector('.pipe-node-error')).toBeNull();
+    expect(node.querySelector('.pipe-node-error-indicator').textContent).toBe('⚠️');
 
     document.querySelector('.graph-canvas').click();
     expect(dataView.isConnected).toBe(false);
