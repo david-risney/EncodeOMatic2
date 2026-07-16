@@ -16,6 +16,7 @@
   --color-success: #44cc66;
   --color-port-input: #5bc4f5;
   --color-port-output: #f5a25b;
+  --color-selection: #3390ff;
   --color-pipe-bg: #1e2d4a;
   --color-pipe-border: #3a4e6a;
   --color-pipe-selected: #e94560;
@@ -648,9 +649,9 @@ data-viewer {
   max-height: 35%;
   overflow: auto;
   padding: 8px 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
-  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
-  color: var(--color-danger);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-error) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-error) 10%, var(--color-surface));
+  color: var(--color-error);
   font-size: 12px;
 }
 
@@ -711,7 +712,7 @@ data-viewer {
 }
 
 .data-viewer-editor.invalid {
-  border-color: var(--color-danger);
+  border-color: var(--color-error);
 }
 
 .data-viewer-info {
@@ -741,9 +742,9 @@ data-viewer {
 }
 
 .data-viewer-selection {
-  background: color-mix(in srgb, var(--color-danger) 32%, transparent);
+  background: color-mix(in srgb, var(--color-selection) 45%, transparent);
   color: var(--color-text);
-  outline: 1px solid var(--color-danger);
+  outline: 1px solid var(--color-selection);
   border-radius: 2px;
 }
 

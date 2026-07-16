@@ -176,6 +176,70 @@ export class PipeGraph {
     this._notify({ type: 'processed' });
   }
 
+  /**
+   * Translate selections through connected ports and pipes.
+   * @returns {Map<string, {index: number, length: number}[]>}
+   */
+  translateSelections(pipeId, portType, portName, selections) {
+    const keyFor = (id, type, name) => `${id}:${type}:${name}`;
+    const translated = new Map();
+    const queue = [{ pipeId, portType, portName, selections }];
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      const key = keyFor(current.pipeId, current.portType, current.portName);
+      if (translated.has(key)) continue;
+      translated.set(key, current.selections);
+
+      for (const connection of this.connections) {
+        if (current.portType === 'output' &&
+            connection.fromPipeId === current.pipeId &&
+            connection.fromOutput === current.portName) {
+          queue.push({
+            pipeId: connection.toPipeId,
+            portType: 'input',
+            portName: connection.toInput,
+            selections: current.selections,
+          });
+        } else if (current.portType === 'input' &&
+                   connection.toPipeId === current.pipeId &&
+                   connection.toInput === current.portName) {
+          queue.push({
+            pipeId: connection.fromPipeId,
+            portType: 'output',
+            portName: connection.fromOutput,
+            selections: current.selections,
+          });
+        }
+      }
+
+      const pipe = this.pipes.get(current.pipeId);
+      if (!pipe) continue;
+      const targets = current.portType === 'input'
+        ? pipe.defineOutputs().map(port => ({ type: 'output', name: port.name }))
+        : pipe.defineInputs().map(port => ({ type: 'input', name: port.name }));
+      for (const target of targets) {
+        const mapped = pipe.translateSelections(
+          current.portType,
+          current.portName,
+          target.type,
+          target.name,
+          current.selections
+        );
+        if (mapped !== null) {
+          queue.push({
+            pipeId: current.pipeId,
+            portType: target.type,
+            portName: target.name,
+            selections: mapped,
+          });
+        }
+      }
+    }
+
+    return translated;
+  }
+
   /** @param {string} pipeId */
   async _runPipe(pipeId) {
     const pipe = this.pipes.get(pipeId);

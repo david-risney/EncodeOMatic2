@@ -11,6 +11,8 @@
  *   viewer.setSelections(ranges)   — highlight byte ranges
  *   viewer.setMode('text'|'hex')   — switch view mode
  *   viewer.setEditable(editable, onChange) — allow editing displayed bytes
+ * Events:
+ *   selection-change — detail.selections contains selected byte ranges
  */
 
 /**
@@ -40,6 +42,7 @@ function decodeUtf8Lenient(bytes) {
 }
 
 const HEX_BYTES_RE = /^(?:[0-9a-fA-F]{2})(?:\s+[0-9a-fA-F]{2})*$/;
+const UTF8_ENCODER = new TextEncoder();
 
 class DataViewer extends HTMLElement {
   constructor() {
@@ -70,6 +73,14 @@ class DataViewer extends HTMLElement {
   connectedCallback() {
     this._inner = document.createElement('div');
     this._inner.className = 'data-viewer-inner';
+    this._inner.addEventListener('mouseup', () => {
+      if (this._editable) return;
+      if (this._mode === 'hex') {
+        this._captureHexSelection();
+      } else {
+        this._captureTextSelection();
+      }
+    });
     this.appendChild(this._inner);
     this._render();
   }
@@ -145,10 +156,16 @@ class DataViewer extends HTMLElement {
       editor.value = text;
       editor.setAttribute('aria-label', 'Edit input as text');
       editor.addEventListener('input', () => {
-        const bytes = new TextEncoder().encode(editor.value);
+        const bytes = UTF8_ENCODER.encode(editor.value);
         this._data = bytes;
         this._updateInfo(bytes.length, editor.value.length);
         this._onChange?.(bytes, 'text');
+      });
+      editor.addEventListener('select', () => {
+        const start = UTF8_ENCODER.encode(editor.value.slice(0, editor.selectionStart)).length;
+        const length = UTF8_ENCODER
+          .encode(editor.value.slice(editor.selectionStart, editor.selectionEnd)).length;
+        this._emitSelection(start, start + length);
       });
       this._inner.appendChild(editor);
     } else {
@@ -194,6 +211,21 @@ class DataViewer extends HTMLElement {
         this._data = bytes;
         this._updateInfo(bytes.length);
         this._onChange?.(bytes, 'hex');
+      });
+      editor.addEventListener('select', () => {
+        const tokens = [...editor.value.matchAll(/[0-9a-fA-F]{2}/g)];
+        const selected = tokens
+          .map((token, index) => ({
+            index,
+            start: token.index,
+            end: token.index + token[0].length,
+          }))
+          .filter(token =>
+            token.start < editor.selectionEnd && token.end > editor.selectionStart);
+        this._emitSelection(
+          selected[0]?.index ?? 0,
+          selected.length === 0 ? 0 : selected.at(-1).index + 1
+        );
       });
       this._inner.appendChild(editor);
     } else {
@@ -251,6 +283,50 @@ class DataViewer extends HTMLElement {
     if (selected) span.className = 'data-viewer-selection';
     span.textContent = decodeUtf8Lenient(bytes);
     this._inner.appendChild(span);
+  }
+
+  _captureTextSelection() {
+    const selection = document.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      this._emitSelection(0, 0);
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    if (!this._inner.contains(range.startContainer) || !this._inner.contains(range.endContainer) ||
+        range.commonAncestorContainer.parentElement?.closest('.data-viewer-info')) {
+      return;
+    }
+    const prefix = range.cloneRange();
+    prefix.selectNodeContents(this._inner);
+    prefix.setEnd(range.startContainer, range.startOffset);
+    const start = UTF8_ENCODER.encode(prefix.toString()).length;
+    const length = UTF8_ENCODER.encode(range.toString()).length;
+    this._emitSelection(start, start + length);
+  }
+
+  _captureHexSelection() {
+    const selection = document.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      this._emitSelection(0, 0);
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    const bytes = [...this._inner.querySelectorAll('.hex-byte')];
+    const selected = bytes
+      .map((node, index) => ({ node, index }))
+      .filter(({ node }) => range.intersectsNode(node));
+    this._emitSelection(
+      selected[0]?.index ?? 0,
+      selected.length === 0 ? 0 : selected.at(-1).index + 1
+    );
+  }
+
+  _emitSelection(start, end) {
+    const selections = end > start ? [{ index: start, length: end - start }] : [];
+    this.dispatchEvent(new CustomEvent('selection-change', {
+      bubbles: true,
+      detail: { selections },
+    }));
   }
 
   _updateInfo(byteCount, charCount = null) {

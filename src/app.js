@@ -56,6 +56,8 @@ const dataViewStack = document.getElementById('data-view-stack');
  *   modeButton: HTMLButtonElement
  * }>} */
 const dataViews = new Map();
+let activeSelections = new Map();
+let selectionRefreshFrame = null;
 let selectedPipeId = null;
 
 /** The connection action popover element. @type {HTMLElement|null} */
@@ -312,8 +314,10 @@ function refreshDataView(view) {
   }
 
   view.viewer.setData(data, view.portName);
-  const selections = pipe.errors.flatMap(error => error.selections ?? []);
-  view.viewer.setSelections(view.portType === 'input' ? selections : []);
+  const selectionKey = `${view.pipeId}:${view.portType}:${view.portName}`;
+  const errorSelections = pipe.errors.flatMap(error => error.selections ?? []);
+  view.viewer.setSelections(activeSelections.get(selectionKey) ??
+    (view.portType === 'input' ? errorSelections : []));
   refreshDataViewErrors(view, pipe.errors);
   const portLabel = view.portName === view.portType
     ? view.portName
@@ -407,6 +411,20 @@ function createDataView(pipeId, portName, portType) {
     element, title, errors, viewer,
     pinButton, minimizeButton, modeButton,
   };
+  viewer.addEventListener('selection-change', event => {
+    activeSelections = graph.translateSelections(
+      pipeId,
+      view.portType,
+      view.portName,
+      event.detail.selections
+    );
+    if (selectionRefreshFrame === null) {
+      selectionRefreshFrame = requestAnimationFrame(() => {
+        selectionRefreshFrame = null;
+        refreshDataViews();
+      });
+    }
+  });
   modeButton.addEventListener('click', () =>
     setViewMode(view, view.mode === 'text' ? 'hex' : 'text'));
   pinButton.addEventListener('click', () => togglePinned(view));
