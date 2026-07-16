@@ -27,7 +27,8 @@ function appMarkup() {
     <input id="zoom-range" type="range" min="20" max="300" value="100">
     <output id="zoom-value">100%</output>
     <graph-editor id="graph-editor"></graph-editor>
-    <aside id="data-panel" hidden>
+    <aside id="data-panel" style="width: 380px" hidden>
+      <div id="data-panel-resizer"></div>
       <div id="data-view-stack"></div>
     </aside>
     <dialog id="add-pipe-dialog">
@@ -109,6 +110,17 @@ describe('application integration', () => {
     expect(dataView.querySelector('data-viewer')._mode).toBe('hex');
     expect(modeButton.textContent).toBe('0xFF');
     expect(dataView.querySelector('[title="Keep this view open"]').textContent).toBe('📍');
+
+    const resizer = document.getElementById('data-panel-resizer');
+    expect(document.getElementById('data-panel').style.width).toBe('380px');
+    resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+    expect(document.getElementById('data-panel').style.width).toBe('400px');
+    resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+    expect(document.getElementById('data-panel').style.width).toBe('380px');
+    resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home' }));
+    expect(document.getElementById('data-panel').style.width).toBe('280px');
+    resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'End' }));
+    expect(document.getElementById('data-panel').style.width).toBe('512px');
 
     node.querySelector('.pipe-node-config-btn').click();
     const configDialog = document.getElementById('config-dialog');
