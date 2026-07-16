@@ -19,6 +19,7 @@ import {
   listIdbSessions,
 } from './state.js';
 import { guessPipeChain } from './guess.js';
+import { randomSessionName } from './session-name.js';
 import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
@@ -36,6 +37,7 @@ graph.setWorkerPool(workerPool);
 const editor = document.getElementById('graph-editor');
 
 const dataPanel = document.getElementById('data-panel');
+const dataPanelResizer = document.getElementById('data-panel-resizer');
 const dataViewStack = document.getElementById('data-view-stack');
 
 /** @type {Map<string, {
@@ -47,7 +49,7 @@ const dataViewStack = document.getElementById('data-view-stack');
  *   mode: 'text'|'hex',
  *   element: HTMLElement,
  *   title: HTMLElement,
- *   error: HTMLElement,
+ *   errors: HTMLElement,
  *   viewer: import('./ui/data-viewer.js').DataViewer,
  *   pinButton: HTMLButtonElement,
  *   minimizeButton: HTMLButtonElement,
@@ -78,6 +80,8 @@ let _suspendUrlUpdates = false;
 async function init() {
   editor.setGraph(graph);
   initZoomControl();
+  document.getElementById('session-name').value = randomSessionName();
+  initDataPanelResizer();
 
   graph.addListener(onGraphEvent);
 
@@ -88,6 +92,7 @@ async function init() {
     for (const pipe of graph.pipes.values()) {
       editor.addPipeElement(pipe);
     }
+
     editor.updateConnections();
     await graph.processAll();
     editor.fitView();
@@ -97,8 +102,7 @@ async function init() {
   document.getElementById('btn-share').addEventListener('click', onShare);
   document.getElementById('btn-clear').addEventListener('click', onClear);
   document.getElementById('btn-session-save').addEventListener('click', onSaveSession);
-  document.getElementById('btn-session-load').addEventListener('click', onLoadSession);
-  document.getElementById('btn-guess').addEventListener('click', onGuessEncoding);
+  document.getElementById('btn-guess').addEventListener('click', openGuessDialog);
   document.getElementById('btn-zoom-fit').addEventListener('click', () => editor.fitView());
   initSessionMenu();
 
@@ -106,6 +110,7 @@ async function init() {
   editor.addEventListener('pipe-port-click',   onPortClick);
   editor.addEventListener('pipe-config-click', onConfigClick);
   editor.addEventListener('pipe-select',        onPipeSelect);
+  editor.addEventListener('graph-background-click', onGraphBackgroundClick);
   editor.addEventListener('connection-click',   onConnectionClick);
   editor.addEventListener('graph-change', scheduleUrlUpdate);
   editor.addEventListener('add-pipe-request',   onAddPipeRequest);
@@ -114,6 +119,7 @@ async function init() {
   initAddPipeDialog();
   initConfigDialog();
   initConnActionPopover();
+  initGuessDialog();
 
   // Toast container
   const toast = document.createElement('div');
@@ -121,6 +127,69 @@ async function init() {
   toast.id = 'toast-container';
   document.body.appendChild(toast);
   scheduleUrlUpdate();
+}
+
+function initDataPanelResizer() {
+  const resizeStep = 20;
+  let startX = 0;
+  let startWidth = 0;
+
+  function widthBounds() {
+    const mobile = window.matchMedia?.('(max-width: 640px)').matches ?? false;
+    return {
+      min: mobile ? 240 : 280,
+      max: window.innerWidth * (mobile ? 0.75 : 0.5),
+    };
+  }
+
+  function currentWidth() {
+    // Hidden panels have no layout width, so fall back to their computed width
+    // and finally the stylesheet's default custom property.
+    return dataPanel.getBoundingClientRect().width
+      || Number.parseFloat(getComputedStyle(dataPanel).width)
+      || Number.parseFloat(getComputedStyle(document.documentElement)
+        .getPropertyValue('--data-panel-width'));
+  }
+
+  function setWidth(width) {
+    const bounds = widthBounds();
+    const nextWidth = Math.round(Math.min(bounds.max, Math.max(bounds.min, width)));
+    dataPanel.style.width = `${nextWidth}px`;
+    dataPanelResizer.setAttribute('aria-valuemin', String(bounds.min));
+    dataPanelResizer.setAttribute('aria-valuemax', String(Math.round(bounds.max)));
+    dataPanelResizer.setAttribute('aria-valuenow', String(nextWidth));
+  }
+
+  dataPanelResizer.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+    startX = event.clientX;
+    startWidth = currentWidth();
+    dataPanelResizer.setPointerCapture(event.pointerId);
+    dataPanelResizer.classList.add('dragging');
+    event.preventDefault();
+  });
+
+  dataPanelResizer.addEventListener('pointermove', (event) => {
+    if (!dataPanelResizer.hasPointerCapture(event.pointerId)) return;
+    setWidth(startWidth + startX - event.clientX);
+  });
+
+  dataPanelResizer.addEventListener('lostpointercapture', () => {
+    dataPanelResizer.classList.remove('dragging');
+  });
+
+  dataPanelResizer.addEventListener('keydown', (event) => {
+    let width = currentWidth();
+    if (event.key === 'ArrowLeft') width += resizeStep;
+    else if (event.key === 'ArrowRight') width -= resizeStep;
+    else if (event.key === 'Home') width = widthBounds().min;
+    else if (event.key === 'End') width = widthBounds().max;
+    else return;
+    setWidth(width);
+    event.preventDefault();
+  });
+
+  setWidth(currentWidth());
 }
 
 // ── Graph events ─────────────────────────────────────────────────
@@ -150,9 +219,13 @@ function scheduleUrlUpdate() {
 function initSessionMenu() {
   const button = document.getElementById('btn-session-menu');
   const menu = document.getElementById('session-menu');
+  const loadButton = document.getElementById('btn-session-load');
+  const loadMenu = document.getElementById('session-load-menu');
   const close = () => {
     menu.hidden = true;
+    loadMenu.hidden = true;
     button.setAttribute('aria-expanded', 'false');
+    loadButton.setAttribute('aria-expanded', 'false');
   };
 
   button.addEventListener('click', event => {
@@ -160,10 +233,52 @@ function initSessionMenu() {
     menu.hidden = !menu.hidden;
     button.setAttribute('aria-expanded', String(!menu.hidden));
   });
-  menu.addEventListener('click', close);
+
+  loadButton.addEventListener('click', async event => {
+    event.stopPropagation();
+    loadMenu.hidden = !loadMenu.hidden;
+    loadButton.setAttribute('aria-expanded', String(!loadMenu.hidden));
+    if (!loadMenu.hidden) await refreshSessionLoadMenu();
+  });
+
+  for (const id of ['btn-session-save', 'btn-guess', 'btn-clear']) {
+    document.getElementById(id).addEventListener('click', close);
+  }
+
+  loadMenu.addEventListener('click', async event => {
+    const item = event.target.closest('[data-session-name]');
+    if (!item) return;
+    await onLoadSession(item.dataset.sessionName);
+    close();
+  });
+
   document.addEventListener('click', event => {
     if (!menu.hidden && !menu.contains(event.target)) close();
   });
+}
+
+async function refreshSessionLoadMenu() {
+  const loadMenu = document.getElementById('session-load-menu');
+  const sessions = await listIdbSessions();
+  loadMenu.replaceChildren();
+
+  if (sessions.length === 0) {
+    const empty = document.createElement('button');
+    empty.type = 'button';
+    empty.disabled = true;
+    empty.textContent = 'No saved sessions';
+    loadMenu.appendChild(empty);
+    return;
+  }
+
+  for (const session of sessions) {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.role = 'menuitem';
+    item.dataset.sessionName = session.name;
+    item.textContent = session.name;
+    loadMenu.appendChild(item);
+  }
 }
 
 function initZoomControl() {
@@ -197,9 +312,9 @@ function refreshDataView(view) {
   }
 
   view.viewer.setData(data, view.portName);
-  const errorMessage = pipe.errors[0]?.message ?? '';
-  view.error.textContent = errorMessage;
-  view.error.hidden = !errorMessage;
+  const selections = pipe.errors.flatMap(error => error.selections ?? []);
+  view.viewer.setSelections(view.portType === 'input' ? selections : []);
+  refreshDataViewErrors(view, pipe.errors);
   const portLabel = view.portName === view.portType
     ? view.portName
     : `${view.portType}: ${view.portName}`;
@@ -218,6 +333,32 @@ function refreshDataView(view) {
     editor.setInputText(pipe.id, pipe.getConfig('text').value);
     graph.processFrom(pipe.id).catch(console.error);
   } : null);
+}
+
+function refreshDataViewErrors(view, errors) {
+  view.errors.replaceChildren();
+  view.errors.hidden = errors.length === 0;
+  for (const error of errors) {
+    const item = document.createElement('div');
+    item.className = 'data-view-error';
+    const message = document.createElement('div');
+    message.className = 'data-view-error-message';
+    message.textContent = error.message;
+    item.appendChild(message);
+
+    const ranges = (error.selections ?? [])
+      .filter(({ index, length }) => Number.isFinite(index) && Number.isFinite(length) && length > 0)
+      .map(({ index, length }) => length === 1
+        ? `byte ${index}`
+        : `bytes ${index}-${index + length - 1}`);
+    if (ranges.length > 0) {
+      const locations = document.createElement('div');
+      locations.className = 'data-view-error-locations';
+      locations.textContent = `Trigger: ${ranges.join(', ')}`;
+      item.appendChild(locations);
+    }
+    view.errors.appendChild(item);
+  }
 }
 
 function createDataView(pipeId, portName, portType) {
@@ -250,12 +391,12 @@ function createDataView(pipeId, portName, portType) {
 
   controls.append(modeButton, pinButton, minimizeButton);
   header.append(title, controls);
-  const error = document.createElement('div');
-  error.className = 'data-panel-error';
-  error.setAttribute('role', 'alert');
-  error.hidden = true;
+  const errors = document.createElement('div');
+  errors.className = 'data-view-errors';
+  errors.setAttribute('role', 'alert');
+  errors.hidden = true;
   const viewer = document.createElement('data-viewer');
-  element.append(header, error, viewer);
+  element.append(header, errors, viewer);
   dataViewStack.appendChild(element);
 
   const view = {
@@ -263,7 +404,7 @@ function createDataView(pipeId, portName, portType) {
     pinned: false,
     minimized: false,
     mode: 'text',
-    element, title, error, viewer,
+    element, title, errors, viewer,
     pinButton, minimizeButton, modeButton,
   };
   modeButton.addEventListener('click', () =>
@@ -348,6 +489,13 @@ function onPipeSelect(e) {
   if (outName) {
     showDataView(pipeId, outName, 'output');
   }
+}
+
+function onGraphBackgroundClick() {
+  if (!selectedPipeId) return;
+  const selected = dataViews.get(selectedPipeId);
+  selectedPipeId = null;
+  if (selected && !selected.pinned) removeDataView(selected.pipeId);
 }
 
 // ── Connection action popover ────────────────────────────────────
@@ -795,12 +943,19 @@ async function onShare() {
 }
 
 async function onSaveSession() {
-  const name = prompt('Name this session:')?.trim();
-  if (!name) return;
+  const input = document.getElementById('session-name');
+  const name = input.value.trim();
+  if (!name) {
+    showToast('Enter a session name', 'error');
+    input.focus();
+    return;
+  }
+  input.value = name;
   try {
     const existing = (await listIdbSessions()).some(session => session.name === name);
     if (existing && !confirm(`Replace the saved session "${name}"?`)) return;
     await saveToIdb(name, graph.toJSON());
+    await refreshSessionLoadMenu();
     showToast(`Saved session "${name}"`, 'success');
   } catch (e) {
     console.error('Session save failed:', e);
@@ -808,22 +963,15 @@ async function onSaveSession() {
   }
 }
 
-async function onLoadSession() {
+async function onLoadSession(name) {
   try {
-    const sessions = await listIdbSessions();
-    if (sessions.length === 0) {
-      showToast('No saved sessions', 'error');
-      return;
-    }
-    const names = sessions.map(session => session.name);
-    const name = prompt(`Session name to load:\n\n${names.join('\n')}`)?.trim();
-    if (!name) return;
     const data = await loadFromIdb(name);
     if (!data) {
       showToast(`Session "${name}" was not found`, 'error');
       return;
     }
     await replaceGraph(data);
+    document.getElementById('session-name').value = name;
     showToast(`Loaded session "${name}"`, 'success');
   } catch (e) {
     console.error('Session load failed:', e);
@@ -831,10 +979,27 @@ async function onLoadSession() {
   }
 }
 
-async function onGuessEncoding() {
-  const input = prompt('Enter the encoded string to inspect:');
-  if (input == null || input.length === 0) return;
+function initGuessDialog() {
+  const dialog = document.getElementById('guess-dialog');
+  const input = document.getElementById('guess-input');
+  document.getElementById('guess-cancel').addEventListener('click', () => dialog.close());
+  document.getElementById('guess-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const value = input.value;
+    if (!value) return;
+    dialog.close();
+    onGuessEncoding(value);
+  });
+}
 
+function openGuessDialog() {
+  const input = document.getElementById('guess-input');
+  input.value = '';
+  document.getElementById('guess-dialog').showModal();
+  input.focus();
+}
+
+async function onGuessEncoding(input) {
   try {
     const chain = await guessPipeChain(new TextEncoder().encode(input), registry.values());
     _suspendUrlUpdates = true;
@@ -892,6 +1057,7 @@ async function replaceGraph(data) {
 function onClear() {
   if (!confirm('Clear the entire graph?')) return;
   clearGraphWithoutConfirmation();
+  document.getElementById('session-name').value = randomSessionName();
   scheduleUrlUpdate();
 }
 

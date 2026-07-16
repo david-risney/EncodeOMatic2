@@ -8,6 +8,7 @@
  *
  * API:
  *   viewer.setData(bytes, label)   — update displayed data
+ *   viewer.setSelections(ranges)   — highlight byte ranges
  *   viewer.setMode('text'|'hex')   — switch view mode
  *   viewer.setEditable(editable, onChange) — allow editing displayed bytes
  */
@@ -49,6 +50,21 @@ class DataViewer extends HTMLElement {
     this._inner = null;
     this._editable = false;
     this._onChange = null;
+    this._selections = [];
+  }
+
+  /**
+   * @param {{index: number, length: number}[]} selections
+   */
+  setSelections(selections = []) {
+    const changed = selections.length !== this._selections.length ||
+      selections.some((selection, index) =>
+        selection.index !== this._selections[index]?.index ||
+        selection.length !== this._selections[index]?.length);
+    this._selections = selections;
+    if (changed && this._shouldRenderOnDataChange()) {
+      this._render();
+    }
   }
 
   connectedCallback() {
@@ -136,9 +152,20 @@ class DataViewer extends HTMLElement {
       });
       this._inner.appendChild(editor);
     } else {
-      const pre = document.createElement('span');
-      pre.textContent = text;
-      this._inner.appendChild(pre);
+      const ranges = this._selectionRanges();
+      if (ranges.length === 0) {
+        const pre = document.createElement('span');
+        pre.textContent = text;
+        this._inner.appendChild(pre);
+      } else {
+        let offset = 0;
+        for (const range of ranges) {
+          this._appendTextSegment(this._data.slice(offset, range.start), false);
+          this._appendTextSegment(this._data.slice(range.start, range.end), true);
+          offset = range.end;
+        }
+        this._appendTextSegment(this._data.slice(offset), false);
+      }
     }
 
     const info = document.createElement('div');
@@ -171,9 +198,15 @@ class DataViewer extends HTMLElement {
       this._inner.appendChild(editor);
     } else {
       const fragment = document.createDocumentFragment();
-      for (const byte of this._data) {
+      const selected = new Set();
+      for (const range of this._selectionRanges()) {
+        for (let i = range.start; i < range.end; i++) selected.add(i);
+      }
+      for (let i = 0; i < this._data.length; i++) {
+        const byte = this._data[i];
         const span = document.createElement('span');
         span.className = 'hex-byte';
+        if (selected.has(i)) span.classList.add('data-viewer-selection');
         span.textContent = byte.toString(16).toUpperCase().padStart(2, '0');
         span.style.color = byteColor(byte);
         span.title = `0x${byte.toString(16).toUpperCase().padStart(2, '0')} = ${byte} = ${byte < 0x20 || byte > 0x7E ? '(ctrl)' : String.fromCharCode(byte)}`;
@@ -186,6 +219,38 @@ class DataViewer extends HTMLElement {
     info.className = 'data-viewer-info';
     info.textContent = `${this._data.length} byte${this._data.length === 1 ? '' : 's'}`;
     this._inner.appendChild(info);
+  }
+
+  _selectionRanges() {
+    const ranges = this._selections
+      .map(({ index, length }) => ({
+        start: Math.max(0, Math.min(this._data?.length ?? 0, Math.floor(Number(index)))),
+        end: Math.max(0, Math.min(
+          this._data?.length ?? 0,
+          Math.floor(Number(index)) + Math.floor(Number(length))
+        )),
+      }))
+      .filter(({ start, end }) => Number.isFinite(start) && Number.isFinite(end) && end > start)
+      .sort((a, b) => a.start - b.start);
+
+    const merged = [];
+    for (const range of ranges) {
+      const previous = merged.at(-1);
+      if (previous && range.start <= previous.end) {
+        previous.end = Math.max(previous.end, range.end);
+      } else {
+        merged.push(range);
+      }
+    }
+    return merged;
+  }
+
+  _appendTextSegment(bytes, selected) {
+    if (bytes.length === 0) return;
+    const span = document.createElement('span');
+    if (selected) span.className = 'data-viewer-selection';
+    span.textContent = decodeUtf8Lenient(bytes);
+    this._inner.appendChild(span);
   }
 
   _updateInfo(byteCount, charCount = null) {

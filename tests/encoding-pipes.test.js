@@ -76,7 +76,10 @@ describe('source and byte encodings', () => {
     expect([...await processBytes(new HexDecodePipe(), encode('00: 0a-FF'))])
       .toEqual([0, 10, 255]);
     await expect(processText(new HexDecodePipe(), 'abc')).rejects
-      .toMatchObject({ message: 'Hex string has odd number of digits' });
+      .toMatchObject({
+        message: 'Hex string has odd number of digits',
+        selections: [{ index: 2, length: 1 }],
+      });
   });
 
   it('encodes configurable binary and validates tokens', async () => {
@@ -86,7 +89,10 @@ describe('source and byte encodings', () => {
     expect([...await processBytes(new BinaryDecodePipe(), encode('00000001, 11111111'))])
       .toEqual([1, 255]);
     await expect(processText(new BinaryDecodePipe(), '102')).rejects
-      .toMatchObject({ message: 'Invalid binary byte at position 0: "102"' });
+      .toMatchObject({
+        message: 'Invalid binary byte at position 0: "102"',
+        selections: [{ index: 0, length: 3 }],
+      });
   });
 });
 
