@@ -33,7 +33,7 @@ describe('DataViewer', () => {
     viewer.setMode('hex');
     const bytes = [...viewer.querySelectorAll('.hex-byte')];
     expect(bytes.map((node) => node.textContent)).toEqual(['00', '0A', '20', '41', '7F', 'FF']);
-    expect(bytes[0].style.color).toBe('rgb(102, 102, 102)');
+    expect(bytes[0].style.getPropertyValue('--byte-color')).toBe('hsl(0, 0%, 40%)');
     expect(bytes[1].title).toContain('(ctrl)');
     expect(viewer._inner.classList.contains('hex-view')).toBe(true);
     viewer.setData(Uint8Array.of(65));
@@ -158,7 +158,7 @@ describe('GraphEditor', () => {
     editor.addEventListener('pipe-config-click', config);
     editor.addEventListener('pipe-select', select);
     editor.addEventListener('pipe-port-click', port);
-    editor._pipeElements.get(target.id).querySelector('button').click();
+    editor._pipeElements.get(target.id).querySelector('.pipe-node-config-btn').click();
     editor._pipeElements.get(target.id).click();
     editor._portElements.get(`${target.id}:output:output`).click();
     expect(config.mock.calls[0][0].detail).toEqual({ pipeId: target.id });
@@ -166,6 +166,24 @@ describe('GraphEditor', () => {
     expect(port.mock.calls[0][0].detail).toEqual({
       pipeId: target.id, portName: 'output', portType: 'output',
     });
+  });
+
+  it('exposes graph controls to keyboard and assistive technology', () => {
+    const select = vi.fn();
+    editor.addEventListener('pipe-select', select);
+    const node = editor._pipeElements.get(target.id);
+    const config = node.querySelector('.pipe-node-config-btn');
+    const port = editor._portElements.get(`${target.id}:input:input`);
+
+    expect(node.tabIndex).toBe(0);
+    expect(node.getAttribute('role')).toBe('button');
+    expect(node.getAttribute('aria-label')).toBe('Select Hex Encode pipe');
+    expect(config.getAttribute('aria-label')).toBe('Configure Hex Encode');
+    expect(port.tagName).toBe('BUTTON');
+    expect(port.getAttribute('aria-label')).toContain('input port input');
+
+    node.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(select).toHaveBeenCalledOnce();
   });
 
   it('updates input configuration and processes downstream data', async () => {
@@ -259,8 +277,10 @@ describe('GraphEditor', () => {
     });
     vi.spyOn(editor._canvas, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
     editor._onCanvasPointerDown({ button: 0, clientX: 5, clientY: 6, target: editor._canvas });
+    expect(editor._canvas.classList.contains('grabbing')).toBe(true);
     editor._onCanvasPointerMove({ clientX: 25, clientY: 36 });
     editor._onCanvasPointerUp({ clientX: 25, clientY: 36 });
+    expect(editor._canvas.classList.contains('grabbing')).toBe(false);
     expect(editor._panX).toBe(20);
     expect(editor._panY).toBe(30);
 
@@ -280,7 +300,7 @@ describe('GraphEditor', () => {
     expect(editor._dragging).toBeNull();
 
     editor.fitView();
-    expect(editor._inner.style.transform).toContain('scale(');
+    expect(Number(editor._inner.style.getPropertyValue('--graph-scale'))).toBeGreaterThan(0);
   });
 
   it('pans with one touch and pinches around the moving touch center', () => {

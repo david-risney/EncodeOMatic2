@@ -25,6 +25,7 @@
 
 import { Connection } from '../pipes/graph.js';
 import { FileInputPipe } from '../pipes/builtin/file-input-pipe.js';
+import { cloneTemplate } from './templates.js';
 
 /**
  * Compute SVG cubic bezier path between two points.
@@ -75,34 +76,11 @@ class GraphEditor extends HTMLElement {
   }
 
   connectedCallback() {
-    this.innerHTML = '';
-    this.style.display = 'block';
-
-    // Outer canvas (handles pan/zoom)
-    this._canvas = document.createElement('div');
-    this._canvas.className = 'graph-canvas';
-    this.appendChild(this._canvas);
-
-    // Inner div (transformed for pan/zoom)
-    this._inner = document.createElement('div');
-    this._inner.className = 'graph-canvas-inner';
-    this._canvas.appendChild(this._inner);
-
-    // SVG layer for connections — large enough to contain all pipes
-    this._svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    this._svg.classList.add('connections-layer');
-    this._svg.setAttribute('width', '8000');
-    this._svg.setAttribute('height', '6000');
-    this._svg.style.position = 'absolute';
-    this._svg.style.top = '0';
-    this._svg.style.left = '0';
-    this._inner.appendChild(this._svg);
-
-    this._addPipeControl = document.createElement('button');
-    this._addPipeControl.className = 'add-pipe-control';
-    this._addPipeControl.type = 'button';
-    this._addPipeControl.setAttribute('aria-label', 'Add Pipe');
-    this._addPipeControl.innerHTML = '<span>+</span><span>Add Pipe</span>';
+    this.replaceChildren(cloneTemplate('graph-editor-template'));
+    this._canvas = this.querySelector('.graph-canvas');
+    this._inner = this.querySelector('.graph-canvas-inner');
+    this._svg = this.querySelector('.connections-layer');
+    this._addPipeControl = this.querySelector('.add-pipe-control');
     this._addPipeControl.addEventListener('pointerdown', e => e.stopPropagation());
     this._addPipeControl.addEventListener('click', () => this._requestAddPipe());
     this._inner.appendChild(this._addPipeControl);
@@ -276,55 +254,28 @@ class GraphEditor extends HTMLElement {
   // ── Pipe element creation ───────────────────────────────────
 
   _createPipeElement(pipe) {
-    const el = document.createElement('div');
-    el.className = 'pipe-node';
+    const el = cloneTemplate('pipe-node-template');
     el.dataset.pipeId = pipe.id;
-
-    // Input ports row
-    const topPorts = document.createElement('div');
-    topPorts.className = 'pipe-node-ports-top';
-
-    // Header
-    const header = document.createElement('div');
-    header.className = 'pipe-node-header';
-    const nameGroupEl = document.createElement('div');
-    nameGroupEl.className = 'pipe-node-name-group';
-    const nameEl = document.createElement('span');
-    nameEl.className = 'pipe-node-name';
+    const topPorts = el.querySelector('.pipe-node-ports-top');
+    const botPorts = el.querySelector('.pipe-node-ports-bottom');
+    const nameEl = el.querySelector('.pipe-node-name');
     nameEl.textContent = pipe.displayName;
     nameEl.title = pipe.displayName;
-    const errorIndicatorEl = document.createElement('span');
-    errorIndicatorEl.className = 'pipe-node-error-indicator';
-    errorIndicatorEl.textContent = '⚠️';
-    errorIndicatorEl.setAttribute('role', 'img');
-    errorIndicatorEl.setAttribute('aria-hidden', 'true');
-    errorIndicatorEl.hidden = true;
-    nameGroupEl.appendChild(errorIndicatorEl);
-    nameGroupEl.appendChild(nameEl);
-    const cfgBtn = document.createElement('button');
-    cfgBtn.className = 'pipe-node-config-btn';
-    cfgBtn.textContent = '⚙';
-    cfgBtn.title = 'Configure';
+    const cfgBtn = el.querySelector('.pipe-node-config-btn');
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', `Select ${pipe.displayName} pipe`);
+    cfgBtn.setAttribute('aria-label', `Configure ${pipe.displayName}`);
     cfgBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.dispatchEvent(new CustomEvent('pipe-config-click', {
         detail: { pipeId: pipe.id }, bubbles: true
       }));
     });
-    header.appendChild(nameGroupEl);
-    header.appendChild(cfgBtn);
-
-    // Output ports row
-    const botPorts = document.createElement('div');
-    botPorts.className = 'pipe-node-ports-bottom';
-
-    // Input area for InputPipe
     let inputArea = null;
     if (pipe.constructor.typeName === 'InputPipe') {
-      inputArea = document.createElement('div');
-      inputArea.className = 'pipe-input-area';
-      const textarea = document.createElement('textarea');
-      textarea.placeholder = 'Enter input text…';
+      inputArea = cloneTemplate('pipe-text-input-template');
+      const textarea = inputArea.querySelector('textarea');
       textarea.value = pipe.getConfig('text')?.value ?? '';
       textarea.addEventListener('input', () => {
         pipe.setConfig('text', textarea.value);
@@ -333,21 +284,15 @@ class GraphEditor extends HTMLElement {
           this._graph.processFrom(pipe.id).catch(console.error);
         }
       });
-      inputArea.appendChild(textarea);
     } else if (pipe.constructor.typeName === 'FileInputPipe') {
-      inputArea = document.createElement('div');
-      inputArea.className = 'pipe-input-area pipe-file-area';
-      const fileNameEl = document.createElement('div');
-      fileNameEl.className = 'pipe-file-name';
+      inputArea = cloneTemplate('pipe-file-input-template');
+      const fileNameEl = inputArea.querySelector('.pipe-file-name');
       fileNameEl.textContent = pipe.getConfig('fileName')?.value || 'No file selected';
       fileNameEl.title = pipe.getConfig('fileName')?.value || '';
-      const fileBtn = document.createElement('button');
-      fileBtn.className = 'btn btn-sm';
-      fileBtn.textContent = '📁 Choose File';
+      const fileBtn = inputArea.querySelector('button');
       fileBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
+        const fileInput = cloneTemplate('file-input-template');
         fileInput.onchange = async () => {
           const file = fileInput.files[0];
           if (!file) return;
@@ -363,14 +308,9 @@ class GraphEditor extends HTMLElement {
         };
         fileInput.click();
       });
-      inputArea.appendChild(fileNameEl);
-      inputArea.appendChild(fileBtn);
     }
 
-    el.appendChild(topPorts);
-    el.appendChild(header);
-    if (inputArea) el.appendChild(inputArea);
-    el.appendChild(botPorts);
+    if (inputArea) botPorts.before(inputArea);
 
     this._buildPorts(pipe, topPorts, botPorts);
 
@@ -389,12 +329,19 @@ class GraphEditor extends HTMLElement {
         startElemY: pipe.position.y,
       };
       this._interactionPointerId = e.pointerId;
-      el.style.cursor = 'grabbing';
+      el.classList.add('grabbing');
     });
 
     // Select on click
     el.addEventListener('click', (e) => {
       if (e.target.classList.contains('port')) return;
+      this.dispatchEvent(new CustomEvent('pipe-select', {
+        detail: { pipeId: pipe.id }, bubbles: true
+      }));
+    });
+    el.addEventListener('keydown', (e) => {
+      if (e.target !== el || (e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault();
       this.dispatchEvent(new CustomEvent('pipe-select', {
         detail: { pipeId: pipe.id }, bubbles: true
       }));
@@ -408,8 +355,8 @@ class GraphEditor extends HTMLElement {
     for (const [key] of this._portElements) {
       if (key.startsWith(pipe.id + ':')) this._portElements.delete(key);
     }
-    topContainer.innerHTML = '';
-    botContainer.innerHTML = '';
+    topContainer.replaceChildren();
+    botContainer.replaceChildren();
 
     // Input ports
     for (const portDef of pipe.defineInputs()) {
@@ -424,27 +371,18 @@ class GraphEditor extends HTMLElement {
   }
 
   _createPortEl(pipeId, portDef, portType) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'port-wrapper';
-
-    const dot = document.createElement('div');
-    dot.className = `port ${portType}-port`;
+    const wrapper = cloneTemplate('port-template');
+    wrapper.classList.add(`${portType}-port-wrapper`);
+    const dot = wrapper.querySelector('.port');
+    dot.classList.add(`${portType}-port`);
     dot.dataset.pipeId = pipeId;
     dot.dataset.portName = portDef.name;
     dot.dataset.portType = portType;
     dot.title = `${portType}: ${portDef.name} — ${portDef.description}`;
+    dot.setAttribute('aria-label', `${portType} port ${portDef.name}: ${portDef.description}`);
 
-    const label = document.createElement('span');
-    label.className = 'port-name';
+    const label = wrapper.querySelector('.port-name');
     label.textContent = portDef.name;
-
-    if (portType === 'input') {
-      wrapper.appendChild(label);
-      wrapper.appendChild(dot);
-    } else {
-      wrapper.appendChild(dot);
-      wrapper.appendChild(label);
-    }
 
     // Register
     const key = `${pipeId}:${portType}:${portDef.name}`;
@@ -498,7 +436,7 @@ class GraphEditor extends HTMLElement {
       this._isPanning = true;
       this._panStart = { x: e.clientX - this._panX, y: e.clientY - this._panY };
       this._interactionPointerId = e.pointerId;
-      this._canvas.style.cursor = 'grabbing';
+      this._canvas.classList.add('grabbing');
     }
   }
 
@@ -575,9 +513,9 @@ class GraphEditor extends HTMLElement {
   }
 
   _finishDirectInteraction(e) {
-    this._canvas.style.cursor = '';
+    this._canvas.classList.remove('grabbing');
     if (this._dragging) {
-      this._dragging.el.style.cursor = '';
+      this._dragging.el.classList.remove('grabbing');
       this._dragging = null;
       this.dispatchEvent(new CustomEvent('graph-change', { bubbles: true }));
     }
@@ -668,15 +606,15 @@ class GraphEditor extends HTMLElement {
         this._interactionPointerId = pointerId;
         this._isPanning = true;
         this._panStart = { x: pointer.x - this._panX, y: pointer.y - this._panY };
-        this._canvas.style.cursor = 'grabbing';
+        this._canvas.classList.add('grabbing');
       }
     }
     return true;
   }
 
   _cancelDirectInteraction() {
-    this._canvas.style.cursor = '';
-    if (this._dragging) this._dragging.el.style.cursor = '';
+    this._canvas.classList.remove('grabbing');
+    if (this._dragging) this._dragging.el.classList.remove('grabbing');
     this._dragging = null;
     this._isPanning = false;
     if (this._draftFrom) this._cancelDraft();
@@ -742,8 +680,8 @@ class GraphEditor extends HTMLElement {
       detail: {
         input,
         position: {
-          x: parseFloat(this._addPipeControl.style.left) || 60,
-          y: parseFloat(this._addPipeControl.style.top) || 80,
+          x: parseFloat(this._addPipeControl.style.getPropertyValue('--graph-item-x')) || 60,
+          y: parseFloat(this._addPipeControl.style.getPropertyValue('--graph-item-y')) || 80,
         },
       },
       bubbles: true,
@@ -769,13 +707,15 @@ class GraphEditor extends HTMLElement {
 
   _applyTransform() {
     if (this._inner) {
-      this._inner.style.transform = `translate(${this._panX}px, ${this._panY}px) scale(${this._scale})`;
+      this._inner.style.setProperty('--graph-pan-x', `${this._panX}px`);
+      this._inner.style.setProperty('--graph-pan-y', `${this._panY}px`);
+      this._inner.style.setProperty('--graph-scale', this._scale);
     }
   }
 
   _positionElement(el, x, y) {
-    el.style.left = `${x}px`;
-    el.style.top  = `${y}px`;
+    el.style.setProperty('--graph-item-x', `${x}px`);
+    el.style.setProperty('--graph-item-y', `${y}px`);
   }
 
   /** Fit all pipe nodes into view. */
