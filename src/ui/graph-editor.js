@@ -180,6 +180,12 @@ class GraphEditor extends HTMLElement {
     this.updateConnections();
   }
 
+  /** @param {string} pipeId @param {string} text */
+  setInputText(pipeId, text) {
+    const textarea = this._pipeElements.get(pipeId)?.querySelector('.pipe-input-area textarea');
+    if (textarea) textarea.value = text;
+  }
+
   /** Redraws all SVG connection paths. */
   updateConnections() {
     if (!this._graph || !this._svg) return;
@@ -307,6 +313,7 @@ class GraphEditor extends HTMLElement {
       textarea.value = pipe.getConfig('text')?.value ?? '';
       textarea.addEventListener('input', () => {
         pipe.setConfig('text', textarea.value);
+        pipe.setConfig('rawBytes', null);
         if (this._graph) {
           this._graph.processFrom(pipe.id).catch(console.error);
         }

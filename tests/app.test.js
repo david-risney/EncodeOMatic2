@@ -89,9 +89,15 @@ describe('application integration', () => {
     node.click();
     const dataView = document.querySelector('.data-view');
     expect(dataView.querySelector('.data-panel-title').textContent)
-      .toContain('Input Buffer · output: output');
-    dataView.querySelector('[title="View as hex"]').click();
+      .toContain('Input Buffer · output');
+    expect(dataView.querySelector('.data-panel-title').textContent)
+      .not.toContain('output: output');
+    const modeButton = dataView.querySelector('[title="Switch to hex view"]');
+    expect(modeButton.textContent).toBe('Aa');
+    modeButton.click();
     expect(dataView.querySelector('data-viewer')._mode).toBe('hex');
+    expect(modeButton.textContent).toBe('0xFF');
+    expect(dataView.querySelector('[title="Keep this view open"]').textContent).toBe('📍');
 
     node.querySelector('.pipe-node-config-btn').click();
     const configDialog = document.getElementById('config-dialog');

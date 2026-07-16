@@ -27,10 +27,20 @@ export class InputPipe extends Pipe {
         defaultValue: '',
         type: 'text',
       }),
+      new PipeConfig({
+        name: 'rawBytes',
+        description: 'Raw input bytes',
+        defaultValue: null,
+        type: 'hidden',
+      }),
     ];
   }
 
   async process(_inputs) {
+    const rawBytes = this.getConfig('rawBytes')?.value;
+    if (Array.isArray(rawBytes)) {
+      return new Map([['output', Uint8Array.from(rawBytes)]]);
+    }
     const text = this.getConfig('text')?.value ?? '';
     const encoder = new TextEncoder();
     return new Map([['output', encoder.encode(text)]]);

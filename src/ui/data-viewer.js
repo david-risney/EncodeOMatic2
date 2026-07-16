@@ -9,6 +9,7 @@
  * API:
  *   viewer.setData(bytes, label)   — update displayed data
  *   viewer.setMode('text'|'hex')   — switch view mode
+ *   viewer.setEditable(editable, onChange) — allow editing displayed bytes
  */
 
 /**
@@ -37,6 +38,8 @@ function decodeUtf8Lenient(bytes) {
   }
 }
 
+const HEX_BYTES_RE = /^(?:[0-9a-fA-F]{2})(?:\s+[0-9a-fA-F]{2})*$/;
+
 class DataViewer extends HTMLElement {
   constructor() {
     super();
@@ -44,6 +47,8 @@ class DataViewer extends HTMLElement {
     this._data = null;  // Uint8Array | null
     this._label = '';
     this._inner = null;
+    this._editable = false;
+    this._onChange = null;
   }
 
   connectedCallback() {
@@ -60,7 +65,13 @@ class DataViewer extends HTMLElement {
   setData(bytes, label = '') {
     this._data = bytes;
     this._label = label;
-    this._render();
+    if (this._shouldRenderOnDataChange()) {
+      this._render();
+    }
+  }
+
+  _shouldRenderOnDataChange() {
+    return !this._editable || !this.contains(document.activeElement);
   }
 
   /**
@@ -74,10 +85,23 @@ class DataViewer extends HTMLElement {
     this._render();
   }
 
+  /**
+   * @param {boolean} editable
+   * @param {((bytes: Uint8Array, mode: 'text'|'hex') => void)|null} [onChange]
+   */
+  setEditable(editable, onChange = null) {
+    const changed = this._editable !== editable;
+    this._editable = editable;
+    this._onChange = onChange;
+    if (changed) {
+      this._render();
+    }
+  }
+
   _render() {
     if (!this._inner) return;
 
-    if (!this._data || this._data.length === 0) {
+    if (!this._data || (this._data.length === 0 && !this._editable)) {
       this._inner.innerHTML = '';
       const empty = document.createElement('div');
       empty.className = 'data-viewer-empty';
@@ -99,39 +123,76 @@ class DataViewer extends HTMLElement {
 
   _renderText() {
     const text = decodeUtf8Lenient(this._data);
-    // Render as pre-formatted text
-    const pre = document.createElement('span');
-    pre.style.whiteSpace = 'pre-wrap';
-    pre.style.wordBreak = 'break-all';
-    pre.style.fontFamily = 'var(--font-mono, monospace)';
-    pre.style.fontSize = '12px';
-    pre.style.color = 'var(--color-text)';
-    pre.textContent = text;
-    this._inner.appendChild(pre);
+    if (this._editable) {
+      const editor = document.createElement('textarea');
+      editor.className = 'data-viewer-editor';
+      editor.value = text;
+      editor.setAttribute('aria-label', 'Edit input as text');
+      editor.addEventListener('input', () => {
+        const bytes = new TextEncoder().encode(editor.value);
+        this._data = bytes;
+        this._updateInfo(bytes.length, editor.value.length);
+        this._onChange?.(bytes, 'text');
+      });
+      this._inner.appendChild(editor);
+    } else {
+      const pre = document.createElement('span');
+      pre.textContent = text;
+      this._inner.appendChild(pre);
+    }
 
-    // Show byte count
     const info = document.createElement('div');
-    info.style.cssText = 'font-size:10px;color:var(--color-text-dim);margin-top:4px;';
+    info.className = 'data-viewer-info';
     info.textContent = `${this._data.length} byte${this._data.length === 1 ? '' : 's'} · ${text.length} char${text.length === 1 ? '' : 's'}`;
     this._inner.appendChild(info);
   }
 
   _renderHex() {
-    const fragment = document.createDocumentFragment();
-    for (const byte of this._data) {
-      const span = document.createElement('span');
-      span.className = 'hex-byte';
-      span.textContent = byte.toString(16).toUpperCase().padStart(2, '0');
-      span.style.color = byteColor(byte);
-      span.title = `0x${byte.toString(16).toUpperCase().padStart(2, '0')} = ${byte} = ${byte < 0x20 || byte > 0x7E ? '(ctrl)' : String.fromCharCode(byte)}`;
-      fragment.appendChild(span);
+    if (this._editable) {
+      const editor = document.createElement('textarea');
+      editor.className = 'data-viewer-editor hex-editor';
+      editor.value = [...this._data]
+        .map(byte => byte.toString(16).toUpperCase().padStart(2, '0'))
+        .join(' ');
+      editor.setAttribute('aria-label', 'Edit input as hexadecimal bytes');
+      editor.addEventListener('input', () => {
+        const value = editor.value.trim();
+        const valid = value === '' || HEX_BYTES_RE.test(value);
+        editor.classList.toggle('invalid', !valid);
+        editor.setAttribute('aria-invalid', String(!valid));
+        if (!valid) return;
+        const bytes = value === ''
+          ? new Uint8Array()
+          : Uint8Array.from(value.split(/\s+/), token => Number.parseInt(token, 16));
+        this._data = bytes;
+        this._updateInfo(bytes.length);
+        this._onChange?.(bytes, 'hex');
+      });
+      this._inner.appendChild(editor);
+    } else {
+      const fragment = document.createDocumentFragment();
+      for (const byte of this._data) {
+        const span = document.createElement('span');
+        span.className = 'hex-byte';
+        span.textContent = byte.toString(16).toUpperCase().padStart(2, '0');
+        span.style.color = byteColor(byte);
+        span.title = `0x${byte.toString(16).toUpperCase().padStart(2, '0')} = ${byte} = ${byte < 0x20 || byte > 0x7E ? '(ctrl)' : String.fromCharCode(byte)}`;
+        fragment.appendChild(span);
+      }
+      this._inner.appendChild(fragment);
     }
-    this._inner.appendChild(fragment);
 
     const info = document.createElement('div');
-    info.style.cssText = 'width:100%;font-size:10px;color:var(--color-text-dim);margin-top:6px;';
+    info.className = 'data-viewer-info';
     info.textContent = `${this._data.length} byte${this._data.length === 1 ? '' : 's'}`;
     this._inner.appendChild(info);
+  }
+
+  _updateInfo(byteCount, charCount = null) {
+    const info = this._inner.querySelector('.data-viewer-info');
+    if (!info) return;
+    info.textContent = `${byteCount} byte${byteCount === 1 ? '' : 's'}` +
+      (charCount === null ? '' : ` · ${charCount} char${charCount === 1 ? '' : 's'}`);
   }
 }
 

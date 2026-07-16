@@ -39,6 +39,34 @@ describe('DataViewer', () => {
     viewer.setData(Uint8Array.of(65));
     expect(viewer.textContent).toContain('1 byte');
   });
+
+  it('allows text and validated hex editing when enabled', () => {
+    const changed = vi.fn();
+    viewer.setData(new Uint8Array());
+    viewer.setEditable(true, changed);
+    const textEditor = viewer.querySelector('textarea');
+    textEditor.value = 'é';
+    textEditor.dispatchEvent(new Event('input'));
+    expect([...changed.mock.lastCall[0]]).toEqual([0xC3, 0xA9]);
+    expect(changed.mock.lastCall[1]).toBe('text');
+
+    viewer.setMode('hex');
+    const hexEditor = viewer.querySelector('textarea');
+    hexEditor.value = '00 FF 41';
+    hexEditor.dispatchEvent(new Event('input'));
+    expect([...changed.mock.lastCall[0]]).toEqual([0, 255, 65]);
+    expect(changed.mock.lastCall[1]).toBe('hex');
+    hexEditor.value = 'C3 A9';
+    hexEditor.dispatchEvent(new Event('input'));
+    viewer.setMode('text');
+    expect(viewer.querySelector('textarea').value).toBe('é');
+    viewer.setMode('hex');
+    const invalidEditor = viewer.querySelector('textarea');
+    invalidEditor.value = '0G';
+    invalidEditor.dispatchEvent(new Event('input'));
+    expect(invalidEditor.getAttribute('aria-invalid')).toBe('true');
+    expect(changed).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe('GraphEditor', () => {
@@ -94,6 +122,7 @@ describe('GraphEditor', () => {
     textarea.value = 'new input';
     textarea.dispatchEvent(new Event('input'));
     expect(source.getConfig('text').value).toBe('new input');
+    expect(source.getConfig('rawBytes').value).toBeNull();
     expect(process).toHaveBeenCalledWith(source.id);
   });
 

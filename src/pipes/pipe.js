@@ -17,7 +17,7 @@ export class PipeConfig {
    * @param {string} opts.name - Internal identifier
    * @param {string} opts.description - Human-readable description
    * @param {*} opts.defaultValue - Default value (used as initial value)
-   * @param {'string'|'number'|'boolean'|'select'} opts.type - Value type
+   * @param {'string'|'number'|'boolean'|'select'|'hidden'} opts.type - Value type
    * @param {string[]} [opts.options] - Options for 'select' type
    */
   constructor({ name, description, defaultValue, type, options = null }) {

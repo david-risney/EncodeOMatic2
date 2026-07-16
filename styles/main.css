@@ -590,6 +590,36 @@ data-viewer {
   align-content: flex-start;
 }
 
+.data-viewer-editor {
+  display: block;
+  width: 100%;
+  min-height: calc(100% - 24px);
+  resize: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 6px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  line-height: inherit;
+}
+
+.data-viewer-editor:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.data-viewer-editor.invalid {
+  border-color: var(--color-danger);
+}
+
+.data-viewer-info {
+  width: 100%;
+  margin-top: 4px;
+  color: var(--color-text-dim);
+  font-size: 10px;
+}
+
 .data-viewer-empty {
   color: var(--color-text-dim);
   font-style: italic;
