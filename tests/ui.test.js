@@ -158,7 +158,7 @@ describe('GraphEditor', () => {
     editor.addEventListener('pipe-config-click', config);
     editor.addEventListener('pipe-select', select);
     editor.addEventListener('pipe-port-click', port);
-    editor._pipeElements.get(target.id).querySelector('button').click();
+    editor._pipeElements.get(target.id).querySelector('.pipe-node-config-btn').click();
     editor._pipeElements.get(target.id).click();
     editor._portElements.get(`${target.id}:output:output`).click();
     expect(config.mock.calls[0][0].detail).toEqual({ pipeId: target.id });
