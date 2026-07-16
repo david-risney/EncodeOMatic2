@@ -8,6 +8,7 @@
  *   - 'pipe-port-click'  detail: {pipeId, portName, portType, rect}
  *   - 'pipe-config-click' detail: {pipeId}
  *   - 'pipe-select'       detail: {pipeId}
+ *   - 'graph-background-click'
  *   - 'connection-click'  detail: {connection}
  *   - 'add-pipe-request'   detail: {input, position}
  *
@@ -107,6 +108,7 @@ class GraphEditor extends HTMLElement {
     this._canvas.addEventListener('mousedown', this._onCanvasMouseDown.bind(this));
     this._canvas.addEventListener('mousemove', this._onCanvasMouseMove.bind(this));
     this._canvas.addEventListener('mouseup', this._onCanvasMouseUp.bind(this));
+    this._canvas.addEventListener('click', this._onCanvasClick.bind(this));
     this._canvas.addEventListener('wheel', this._onWheel.bind(this), { passive: false });
     this._canvas.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -478,6 +480,11 @@ class GraphEditor extends HTMLElement {
       this._isPanning = true;
       this._panStart = { x: e.clientX - this._panX, y: e.clientY - this._panY };
       this._canvas.style.cursor = 'grabbing';
+    }
+
+    _onCanvasClick(e) {
+      if (e.target.closest('.pipe-node, .connection-hit, .add-pipe-control')) return;
+      this.dispatchEvent(new CustomEvent('graph-background-click', { bubbles: true }));
     }
   }
 

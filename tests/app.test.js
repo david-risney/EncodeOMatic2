@@ -127,6 +127,14 @@ describe('application integration', () => {
     expect(modeButton.textContent).toBe('0xFF');
     expect(dataView.querySelector('[title="Keep this view open"]').textContent).toBe('📍');
 
+    document.querySelector('.graph-canvas').click();
+    expect(dataView.isConnected).toBe(false);
+    expect(document.getElementById('data-panel').hidden).toBe(true);
+
+    node.click();
+    const reopenedDataView = document.querySelector('.data-view');
+    expect(reopenedDataView).not.toBeNull();
+
     const resizer = document.getElementById('data-panel-resizer');
     expect(document.getElementById('data-panel').style.width).toBe('380px');
     resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
@@ -145,7 +153,7 @@ describe('application integration', () => {
       .toBe('Configure: Input Buffer');
     document.getElementById('config-delete-btn').click();
     expect(node.isConnected).toBe(false);
-    expect(dataView.isConnected).toBe(false);
+    expect(reopenedDataView.isConnected).toBe(false);
 
     document.getElementById('btn-share').click();
     await vi.waitFor(() => {
