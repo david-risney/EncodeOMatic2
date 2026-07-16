@@ -50,6 +50,40 @@ describe('DataViewer', () => {
       .map((node) => node.textContent)).toEqual(['62', '63']);
   });
 
+  it('emits byte ranges selected in editable text and hex views', () => {
+    const selected = vi.fn();
+    viewer.addEventListener('selection-change', selected);
+    viewer.setData(encode('aéz'));
+    viewer.setEditable(true);
+
+    let editor = viewer.querySelector('textarea');
+    editor.setSelectionRange(1, 2);
+    editor.dispatchEvent(new Event('select'));
+    expect(selected.mock.lastCall[0].detail.selections).toEqual([{ index: 1, length: 2 }]);
+
+    viewer.setMode('hex');
+    editor = viewer.querySelector('textarea');
+    editor.setSelectionRange(3, 8);
+    editor.dispatchEvent(new Event('select'));
+    expect(selected.mock.lastCall[0].detail.selections).toEqual([{ index: 1, length: 2 }]);
+  });
+
+  it('emits byte ranges selected in rendered hex views', () => {
+    const selected = vi.fn();
+    viewer.addEventListener('selection-change', selected);
+    viewer.setData(encode('abcd'));
+    viewer.setMode('hex');
+    const bytes = viewer.querySelectorAll('.hex-byte');
+    const range = document.createRange();
+    range.setStart(bytes[1].firstChild, 0);
+    range.setEnd(bytes[2].firstChild, 2);
+    const selection = document.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    viewer._inner.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    expect(selected.mock.lastCall[0].detail.selections).toEqual([{ index: 1, length: 2 }]);
+  });
+
   it('allows text and validated hex editing when enabled', () => {
     const changed = vi.fn();
     viewer.setData(new Uint8Array());

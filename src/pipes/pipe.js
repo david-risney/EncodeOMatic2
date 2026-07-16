@@ -189,6 +189,15 @@ export class Pipe {
   }
 
   /**
+   * Translate byte selections between this pipe's input and output ports.
+   * Pipes whose output positions correspond to their inputs should override this.
+   * @returns {{index: number, length: number}[]|null}
+   */
+  translateSelections(fromPortType, fromPortName, toPortType, toPortName, selections) {
+    return null;
+  }
+
+  /**
    * Run the pipe using its current _inputData.
    * Updates _outputData and _errors.
    */

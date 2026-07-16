@@ -82,6 +82,29 @@ describe('source and byte encodings', () => {
       });
   });
 
+  it('translates hex selections in both directions', async () => {
+    const encoder = new HexEncodePipe();
+    encoder.setConfig('separator', ':');
+    encoder.setInputData('input', encode('0123'));
+    await encoder.run();
+    expect(encoder.translateSelections('input', 'input', 'output', 'output', [
+      { index: 2, length: 2 },
+    ])).toEqual([{ index: 6, length: 5 }]);
+    expect(encoder.translateSelections('output', 'output', 'input', 'input', [
+      { index: 6, length: 5 },
+    ])).toEqual([{ index: 2, length: 2 }]);
+
+    const decoder = new HexDecodePipe();
+    decoder.setInputData('input', encode('30:31 32-33'));
+    await decoder.run();
+    expect(decoder.translateSelections('input', 'input', 'output', 'output', [
+      { index: 6, length: 5 },
+    ])).toEqual([{ index: 2, length: 2 }]);
+    expect(decoder.translateSelections('output', 'output', 'input', 'input', [
+      { index: 2, length: 2 },
+    ])).toEqual([{ index: 6, length: 5 }]);
+  });
+
   it('encodes configurable binary and validates tokens', async () => {
     const encoder = new BinaryEncodePipe();
     encoder.setConfig('separator', ',');

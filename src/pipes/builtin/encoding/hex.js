@@ -40,6 +40,35 @@ export class HexEncodePipe extends Pipe {
     const out = hexes.join(sep);
     return new Map([['output', new TextEncoder().encode(out)]]);
   }
+
+  translateSelections(fromPortType, fromPortName, toPortType, toPortName, selections) {
+    const separatorLength = new TextEncoder()
+      .encode(this.getConfig('separator')?.value ?? '').length;
+    const stride = 2 + separatorLength;
+    if (fromPortType === 'input' && toPortType === 'output') {
+      return selections.map(({ index, length }) => ({
+        index: index * stride,
+        length: Math.max(0, length * stride - separatorLength),
+      }));
+    }
+    if (fromPortType === 'output' && toPortType === 'input') {
+      return selections.flatMap(selection => {
+        const inputLength = this.getInputData(toPortName)?.length ?? 0;
+        const start = Math.max(0, Math.floor(selection.index));
+        const end = start + Math.max(0, Math.floor(selection.length));
+        const indexes = [];
+        for (let index = 0; index * stride < end && index < inputLength; index++) {
+          const tokenStart = index * stride;
+          if (tokenStart < end && tokenStart + 2 > start) indexes.push(index);
+        }
+        return indexes.length === 0 ? [] : [{
+          index: indexes[0],
+          length: indexes.at(-1) - indexes[0] + 1,
+        }];
+      });
+    }
+    return null;
+  }
 }
 
 export class HexDecodePipe extends Pipe {
@@ -82,5 +111,37 @@ export class HexDecodePipe extends Pipe {
       bytes[i] = val;
     }
     return new Map([['output', bytes]]);
+  }
+
+  translateSelections(fromPortType, fromPortName, toPortType, toPortName, selections) {
+    const text = new TextDecoder().decode(this.getInputData() ?? new Uint8Array());
+    const digits = [...text.matchAll(/[0-9a-fA-F]/g)].map(match =>
+      new TextEncoder().encode(text.slice(0, match.index)).length);
+    const tokens = [];
+    for (let index = 0; index + 1 < digits.length; index += 2) {
+      tokens.push({ start: digits[index], end: digits[index + 1] + 1 });
+    }
+    if (fromPortType === 'input' && toPortType === 'output') {
+      return selections.flatMap(selection => {
+        const start = selection.index;
+        const end = start + selection.length;
+        const indexes = tokens
+          .map((token, index) => ({ token, index }))
+          .filter(({ token }) => token.start < end && token.end > start)
+          .map(({ index }) => index);
+        return indexes.length === 0 ? [] : [{
+          index: indexes[0],
+          length: indexes.at(-1) - indexes[0] + 1,
+        }];
+      });
+    }
+    if (fromPortType === 'output' && toPortType === 'input') {
+      return selections.flatMap(selection => {
+        const first = tokens[selection.index];
+        const last = tokens[selection.index + selection.length - 1];
+        return first && last ? [{ index: first.start, length: last.end - first.start }] : [];
+      });
+    }
+    return null;
   }
 }

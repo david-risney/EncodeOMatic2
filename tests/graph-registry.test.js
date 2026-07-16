@@ -66,6 +66,27 @@ describe('PipeGraph mutation and traversal', () => {
     expect(graph._downstreamFrom(a.id)).toEqual([a.id, b.id, c.id]);
   });
 
+  it('translates selections through connections and pipe interfaces', async () => {
+    const graph = new PipeGraph();
+    const source = new InputPipe();
+    const hex = new HexEncodePipe();
+    source.setConfig('text', '0123');
+    graph.addPipe(source);
+    graph.addPipe(hex);
+    graph.connect(source.id, 'output', hex.id, 'input');
+    await graph.processAll();
+
+    const forward = graph.translateSelections(source.id, 'output', 'output', [
+      { index: 2, length: 2 },
+    ]);
+    expect(forward.get(`${hex.id}:output:output`)).toEqual([{ index: 4, length: 4 }]);
+
+    const backward = graph.translateSelections(hex.id, 'output', 'output', [
+      { index: 4, length: 4 },
+    ]);
+    expect(backward.get(`${source.id}:output:output`)).toEqual([{ index: 2, length: 2 }]);
+  });
+
   it('reconnects upstream and downstream pipes after removing a pipe', () => {
     const graph = new PipeGraph();
     const [source, removed, firstTarget, secondTarget] =
