@@ -26,7 +26,8 @@ Production has no runtime package dependencies. The packages in
 - `src/app.js` creates the graph and worker pool, registers UI handlers, loads
   state, and coordinates processing and rendering.
 - `src/worker/pipe-worker.js` is the module worker entry point.
-- `styles/main.css` contains all application styling.
+- `styles/main.css` contains shared tokens and shell styling; focused
+  stylesheets cover controls, the graph, data views, dialogs, and feedback.
 
 ## Directory layout
 
@@ -50,7 +51,13 @@ Production has no runtime package dependencies. The packages in
 │   └── worker/
 │       ├── worker-pool.js     Worker lifecycle and task queue
 │       └── pipe-worker.js     Worker-side pipe dispatch
-├── styles/main.css
+├── styles/
+│   ├── main.css            Shared tokens, reset, and shell layout
+│   ├── controls.css        Buttons, menus, and toolbar controls
+│   ├── graph.css           Graph editor, nodes, ports, and connections
+│   ├── data-viewer.css     Data panel and byte viewers
+│   ├── dialogs.css         Dialogs and configuration forms
+│   └── feedback.css        Popovers, scrollbars, and toasts
 ├── tests/                     Vitest unit and integration tests
 ├── assets/                    Static artwork
 └── .github/workflows/         CI, Pages deployment, and agent setup

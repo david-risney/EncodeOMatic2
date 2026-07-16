@@ -6,6 +6,11 @@
   <title>Encode-O-Matic 2</title>
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/controls.css">
+  <link rel="stylesheet" href="styles/graph.css">
+  <link rel="stylesheet" href="styles/data-viewer.css">
+  <link rel="stylesheet" href="styles/dialogs.css">
+  <link rel="stylesheet" href="styles/feedback.css">
 </head>
 <body>
   <header class="app-header">
@@ -99,6 +104,138 @@
       </footer>
     </form>
   </dialog>
+
+  <div id="conn-action-popover" class="conn-action-popover" hidden>
+    <button data-action="delete" class="btn btn-sm btn-danger">Delete</button>
+    <button data-action="add" class="btn btn-sm btn-primary">Add Pipe</button>
+  </div>
+
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <template id="graph-editor-template">
+    <div class="graph-canvas">
+      <div class="graph-canvas-inner">
+        <svg class="connections-layer" width="8000" height="6000" aria-hidden="true"></svg>
+        <button class="add-pipe-control" type="button" aria-label="Add Pipe">
+          <span aria-hidden="true">+</span><span>Add Pipe</span>
+        </button>
+      </div>
+    </div>
+  </template>
+
+  <template id="pipe-node-template">
+    <div class="pipe-node">
+      <div class="pipe-node-ports-top"></div>
+      <div class="pipe-node-header">
+        <div class="pipe-node-name-group">
+          <span class="pipe-node-error-indicator" role="img" aria-hidden="true" hidden>⚠️</span>
+          <span class="pipe-node-name"></span>
+        </div>
+        <button class="pipe-node-config-btn" type="button" title="Configure" aria-label="Configure pipe">⚙</button>
+      </div>
+      <div class="pipe-node-ports-bottom"></div>
+    </div>
+  </template>
+
+  <template id="pipe-text-input-template">
+    <div class="pipe-input-area">
+      <textarea placeholder="Enter input text…" aria-label="Pipe input text"></textarea>
+    </div>
+  </template>
+
+  <template id="pipe-file-input-template">
+    <div class="pipe-input-area pipe-file-area">
+      <div class="pipe-file-name"></div>
+      <button class="btn btn-sm" type="button">📁 Choose File</button>
+    </div>
+  </template>
+
+  <template id="file-input-template">
+    <input type="file" hidden>
+  </template>
+
+  <template id="port-template">
+    <div class="port-wrapper">
+      <span class="port-name"></span>
+      <button class="port" type="button"></button>
+    </div>
+  </template>
+
+  <template id="data-viewer-template">
+    <div class="data-viewer-inner"></div>
+  </template>
+
+  <template id="data-viewer-empty-template">
+    <div class="data-viewer-empty"></div>
+  </template>
+
+  <template id="data-viewer-editor-template">
+    <textarea class="data-viewer-editor"></textarea>
+  </template>
+
+  <template id="data-viewer-info-template">
+    <div class="data-viewer-info"></div>
+  </template>
+
+  <template id="data-view-template">
+    <section class="data-view">
+      <div class="data-panel-header">
+        <span class="data-panel-title"></span>
+        <div class="data-panel-controls">
+          <button data-action="mode" class="btn btn-sm active" type="button"
+                  title="Switch to hex view" aria-label="Text view; switch to hex">Aa</button>
+          <button data-action="pin" class="btn btn-sm" type="button"
+                  title="Keep this view open" aria-label="Keep this view open" aria-pressed="false">📍</button>
+          <button data-action="minimize" class="btn btn-sm" type="button"
+                  title="Minimize this view" aria-label="Minimize this view"
+                  aria-pressed="false" hidden>_</button>
+        </div>
+      </div>
+      <div class="data-view-errors" role="alert" hidden></div>
+      <data-viewer></data-viewer>
+    </section>
+  </template>
+
+  <template id="data-view-error-template">
+    <div class="data-view-error">
+      <div class="data-view-error-message"></div>
+      <div class="data-view-error-locations" hidden></div>
+    </div>
+  </template>
+
+  <template id="session-menu-item-template">
+    <button type="button" role="menuitem"></button>
+  </template>
+
+  <template id="pipe-list-item-template">
+    <button class="pipe-list-item" type="button">
+      <span class="pipe-list-item-name"></span>
+      <span class="pipe-list-item-desc"></span>
+    </button>
+  </template>
+
+  <template id="config-empty-template">
+    <p class="config-empty">This pipe has no configuration.</p>
+  </template>
+
+  <template id="config-field-template">
+    <div class="config-field">
+      <label></label>
+      <div class="config-control"></div>
+      <div class="field-desc"></div>
+    </div>
+  </template>
+
+  <template id="config-file-picker-template">
+    <div class="config-file-picker">
+      <span class="config-file-name"></span>
+      <button type="button" class="btn btn-sm">📁 Choose File</button>
+    </div>
+  </template>
+
+  <template id="toast-template">
+    <div class="toast"></div>
+  </template>
 
   <script type="module" src="src/app.js"></script>
 </body>

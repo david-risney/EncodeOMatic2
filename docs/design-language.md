@@ -24,8 +24,10 @@ and usability take precedence when a rule needs an exception.
 
 ## Design tokens
 
-Canonical tokens live in `styles/main.css` under `:root`. Reuse them rather
-than adding local colors, fonts, radii, shadows, or type sizes.
+The canonical tokens live in `styles/main.css` under `:root`. Component styles
+are split across `controls.css`, `graph.css`, `data-viewer.css`, `dialogs.css`,
+and `feedback.css`. Reuse the shared tokens rather than adding local colors,
+fonts, radii, or shadows.
 
 ### Color
 
@@ -159,5 +161,18 @@ alignment.
    with the default state.
 8. Check contrast, focus visibility, target size, clipping, zoom, and reduced
    motion before completing a visual change.
+
+## HTML-first implementation
+
+Prefer semantic, declarative HTML and CSS over JavaScript-created structure or
+presentation. Reusable and conditional UI structure belongs in `<template>`
+elements in `index.html`; JavaScript clones those templates, supplies data, and
+wires behavior. Keep component styles in the focused stylesheet for that UI
+area and use native CSS nesting to colocate states and descendants.
+
+JavaScript may set CSS custom properties for values that only exist at runtime,
+such as graph coordinates, zoom, popover placement, panel width, and byte
+colors. It should not set fixed presentation properties or embed HTML/CSS
+strings. Continue to assign user-controlled content with `textContent`.
 
 [safe-rules]: https://anthonyhobday.com/sideprojects/saferules/

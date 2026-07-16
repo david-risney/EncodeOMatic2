@@ -23,6 +23,7 @@ import { randomSessionName } from './session-name.js';
 import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
+import { cloneTemplate } from './ui/templates.js';
 
 // ── App state ────────────────────────────────────────────────────
 
@@ -123,11 +124,6 @@ async function init() {
   initConnActionPopover();
   initGuessDialog();
 
-  // Toast container
-  const toast = document.createElement('div');
-  toast.className = 'toast-container';
-  toast.id = 'toast-container';
-  document.body.appendChild(toast);
   scheduleUrlUpdate();
 }
 
@@ -148,6 +144,7 @@ function initDataPanelResizer() {
     // Hidden panels have no layout width, so fall back to their computed width
     // and finally the stylesheet's default custom property.
     return dataPanel.getBoundingClientRect().width
+      || Number.parseFloat(dataPanel.style.getPropertyValue('--data-panel-width'))
       || Number.parseFloat(getComputedStyle(dataPanel).width)
       || Number.parseFloat(getComputedStyle(document.documentElement)
         .getPropertyValue('--data-panel-width'));
@@ -156,7 +153,7 @@ function initDataPanelResizer() {
   function setWidth(width) {
     const bounds = widthBounds();
     const nextWidth = Math.round(Math.min(bounds.max, Math.max(bounds.min, width)));
-    dataPanel.style.width = `${nextWidth}px`;
+    dataPanel.style.setProperty('--data-panel-width', `${nextWidth}px`);
     dataPanelResizer.setAttribute('aria-valuemin', String(bounds.min));
     dataPanelResizer.setAttribute('aria-valuemax', String(Math.round(bounds.max)));
     dataPanelResizer.setAttribute('aria-valuenow', String(nextWidth));
@@ -265,8 +262,7 @@ async function refreshSessionLoadMenu() {
   loadMenu.replaceChildren();
 
   if (sessions.length === 0) {
-    const empty = document.createElement('button');
-    empty.type = 'button';
+    const empty = cloneTemplate('session-menu-item-template');
     empty.disabled = true;
     empty.textContent = 'No saved sessions';
     loadMenu.appendChild(empty);
@@ -274,9 +270,7 @@ async function refreshSessionLoadMenu() {
   }
 
   for (const session of sessions) {
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.role = 'menuitem';
+    const item = cloneTemplate('session-menu-item-template');
     item.dataset.sessionName = session.name;
     item.textContent = session.name;
     loadMenu.appendChild(item);
@@ -343,12 +337,9 @@ function refreshDataViewErrors(view, errors) {
   view.errors.replaceChildren();
   view.errors.hidden = errors.length === 0;
   for (const error of errors) {
-    const item = document.createElement('div');
-    item.className = 'data-view-error';
-    const message = document.createElement('div');
-    message.className = 'data-view-error-message';
+    const item = cloneTemplate('data-view-error-template');
+    const message = item.querySelector('.data-view-error-message');
     message.textContent = error.message;
-    item.appendChild(message);
 
     const ranges = (error.selections ?? [])
       .filter(({ index, length }) => Number.isFinite(index) && Number.isFinite(length) && length > 0)
@@ -356,53 +347,22 @@ function refreshDataViewErrors(view, errors) {
         ? `byte ${index}`
         : `bytes ${index}-${index + length - 1}`);
     if (ranges.length > 0) {
-      const locations = document.createElement('div');
-      locations.className = 'data-view-error-locations';
+      const locations = item.querySelector('.data-view-error-locations');
+      locations.hidden = false;
       locations.textContent = `Trigger: ${ranges.join(', ')}`;
-      item.appendChild(locations);
     }
     view.errors.appendChild(item);
   }
 }
 
 function createDataView(pipeId, portName, portType) {
-  const element = document.createElement('section');
-  element.className = 'data-view';
-
-  const header = document.createElement('div');
-  header.className = 'data-panel-header';
-  const title = document.createElement('span');
-  title.className = 'data-panel-title';
-  const controls = document.createElement('div');
-  controls.className = 'data-panel-controls';
-
-  const modeButton = document.createElement('button');
-  modeButton.className = 'btn btn-sm';
-  modeButton.textContent = 'Aa';
-  modeButton.title = 'Switch to hex view';
-  modeButton.setAttribute('aria-label', 'Text view; switch to hex');
-  const pinButton = document.createElement('button');
-  pinButton.className = 'btn btn-sm';
-  pinButton.textContent = '📍';
-  pinButton.title = 'Keep this view open';
-  pinButton.setAttribute('aria-label', 'Keep this view open');
-  pinButton.setAttribute('aria-pressed', 'false');
-  const minimizeButton = document.createElement('button');
-  minimizeButton.className = 'btn btn-sm';
-  minimizeButton.textContent = '_';
-  minimizeButton.title = 'Minimize this view';
-  minimizeButton.setAttribute('aria-label', 'Minimize this view');
-  minimizeButton.setAttribute('aria-pressed', 'false');
-  minimizeButton.hidden = true;
-
-  controls.append(modeButton, pinButton, minimizeButton);
-  header.append(title, controls);
-  const errors = document.createElement('div');
-  errors.className = 'data-view-errors';
-  errors.setAttribute('role', 'alert');
-  errors.hidden = true;
-  const viewer = document.createElement('data-viewer');
-  element.append(header, errors, viewer);
+  const element = cloneTemplate('data-view-template');
+  const title = element.querySelector('.data-panel-title');
+  const errors = element.querySelector('.data-view-errors');
+  const viewer = element.querySelector('data-viewer');
+  const modeButton = element.querySelector('[data-action="mode"]');
+  const pinButton = element.querySelector('[data-action="pin"]');
+  const minimizeButton = element.querySelector('[data-action="minimize"]');
   dataViewStack.appendChild(element);
 
   const view = {
@@ -527,13 +487,8 @@ function onGraphBackgroundClick() {
  * The popover shows Delete and Add Pipe actions for the clicked connection.
  */
 function initConnActionPopover() {
-  const popover = document.createElement('div');
-  popover.className = 'conn-action-popover';
-  popover.style.display = 'none';
-
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className = 'btn btn-sm btn-danger';
-  deleteBtn.textContent = 'Delete';
+  const popover = document.getElementById('conn-action-popover');
+  const deleteBtn = popover.querySelector('[data-action="delete"]');
   deleteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (_connActionTarget) {
@@ -544,9 +499,7 @@ function initConnActionPopover() {
     hideConnActionPopover();
   });
 
-  const addPipeBtn = document.createElement('button');
-  addPipeBtn.className = 'btn btn-sm btn-primary';
-  addPipeBtn.textContent = 'Add Pipe';
+  const addPipeBtn = popover.querySelector('[data-action="add"]');
   addPipeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const conn = _connActionTarget;
@@ -559,14 +512,11 @@ function initConnActionPopover() {
     });
   });
 
-  popover.appendChild(deleteBtn);
-  popover.appendChild(addPipeBtn);
-  document.body.appendChild(popover);
   _connActionPopover = popover;
 
   // Close popover when clicking outside of it
   document.addEventListener('click', (e) => {
-    if (_connActionPopover && _connActionPopover.style.display !== 'none' &&
+    if (_connActionPopover && !_connActionPopover.hidden &&
         !_connActionPopover.contains(e.target)) {
       hideConnActionPopover();
     }
@@ -584,19 +534,25 @@ function showConnActionPopover(clientX, clientY, conn) {
   _connActionTarget = conn;
 
   // Show at the click offset first, then measure and clamp within the viewport
-  _connActionPopover.style.left = `${clientX + 6}px`;
-  _connActionPopover.style.top  = `${clientY + 6}px`;
-  _connActionPopover.style.display = '';
+  _connActionPopover.style.setProperty('--popover-x', `${clientX + 6}px`);
+  _connActionPopover.style.setProperty('--popover-y', `${clientY + 6}px`);
+  _connActionPopover.hidden = false;
 
   const pw = _connActionPopover.offsetWidth;
   const ph = _connActionPopover.offsetHeight;
-  _connActionPopover.style.left = `${Math.min(clientX + 6, window.innerWidth  - pw - 8)}px`;
-  _connActionPopover.style.top  = `${Math.min(clientY + 6, window.innerHeight - ph - 8)}px`;
+  _connActionPopover.style.setProperty(
+    '--popover-x',
+    `${Math.min(clientX + 6, window.innerWidth - pw - 8)}px`
+  );
+  _connActionPopover.style.setProperty(
+    '--popover-y',
+    `${Math.min(clientY + 6, window.innerHeight - ph - 8)}px`
+  );
 }
 
 /** Hides the connection action popover. */
 function hideConnActionPopover() {
-  if (_connActionPopover) _connActionPopover.style.display = 'none';
+  if (_connActionPopover) _connActionPopover.hidden = true;
   _connActionTarget = null;
 }
 
@@ -635,49 +591,37 @@ function onConfigClick(e) {
   const fields = document.getElementById('config-fields');
 
   title.textContent = `Configure: ${pipe.displayName}`;
-  fields.innerHTML = '';
+  fields.replaceChildren();
 
   const configEntries = [...pipe.configs.values()].filter(cfg => cfg.type !== 'hidden');
   if (configEntries.length === 0) {
-    const p = document.createElement('p');
-    p.style.color = 'var(--color-text-dim)';
-    p.textContent = 'This pipe has no configuration.';
-    fields.appendChild(p);
+    fields.appendChild(cloneTemplate('config-empty-template'));
   }
 
   // Keep references to inputs for saving
   const inputs = new Map();
 
   for (const cfg of configEntries) {
-    const field = document.createElement('div');
-    field.className = 'config-field';
-
-    const label = document.createElement('label');
+    const field = cloneTemplate('config-field-template');
+    const label = field.querySelector('label');
     label.textContent = cfg.name;
     label.title = cfg.description;
-
-    const desc = document.createElement('div');
-    desc.className = 'field-desc';
+    const desc = field.querySelector('.field-desc');
     desc.textContent = cfg.description;
+    const control = field.querySelector('.config-control');
 
     let input;
     if (cfg.type === 'bytes') {
       // Show a file picker for binary data configs
-      const wrapper = document.createElement('div');
-      wrapper.className = 'config-file-picker';
-      const fileNameDisplay = document.createElement('span');
-      fileNameDisplay.className = 'config-file-name';
+      const wrapper = cloneTemplate('config-file-picker-template');
+      const fileNameDisplay = wrapper.querySelector('.config-file-name');
       const currentName = pipe.getConfig('fileName')?.value;
       fileNameDisplay.textContent = currentName || 'No file selected';
-      const fileBtn = document.createElement('button');
-      fileBtn.type = 'button';
-      fileBtn.className = 'btn btn-sm';
-      fileBtn.textContent = '📁 Choose File';
+      const fileBtn = wrapper.querySelector('button');
       // state tracks file data changes made within this dialog session
       const state = { base64: cfg.value || '', fileName: currentName || '' };
       fileBtn.addEventListener('click', () => {
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
+        const fileInput = cloneTemplate('file-input-template');
         fileInput.onchange = async () => {
           const file = fileInput.files[0];
           if (!file) return;
@@ -688,13 +632,9 @@ function onConfigClick(e) {
         };
         fileInput.click();
       });
-      wrapper.appendChild(fileNameDisplay);
-      wrapper.appendChild(fileBtn);
       input = wrapper;
       inputs.set(cfg.name, { input, type: cfg.type, state });
-      field.appendChild(label);
-      field.appendChild(input);
-      field.appendChild(desc);
+      control.appendChild(input);
       fields.appendChild(field);
       continue;
     } else if (cfg.type === 'select' && cfg.options) {
@@ -721,9 +661,7 @@ function onConfigClick(e) {
     }
 
     inputs.set(cfg.name, { input, type: cfg.type, state: null });
-    field.appendChild(label);
-    field.appendChild(input);
-    field.appendChild(desc);
+    control.appendChild(input);
     fields.appendChild(field);
   }
 
@@ -786,7 +724,7 @@ function initAddPipeDialog() {
 
 function renderPipeList(query) {
   const list = document.getElementById('pipe-list');
-  list.innerHTML = '';
+  list.replaceChildren();
   const q = query.toLowerCase();
   const inputData = _addPipeContext?.sourceData ?? null;
   const pipes = [...getPipesByCategory().values()]
@@ -807,20 +745,11 @@ function renderPipeList(query) {
     .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
 
   for (const pipe of pipes) {
-    const item = document.createElement('button');
-    item.className = 'pipe-list-item';
-    item.type = 'button';
-
-    const name = document.createElement('div');
-    name.className = 'pipe-list-item-name';
+    const item = cloneTemplate('pipe-list-item-template');
+    const name = item.querySelector('.pipe-list-item-name');
     name.textContent = pipe.typeDescription;
-
-    const desc = document.createElement('div');
-    desc.className = 'pipe-list-item-desc';
+    const desc = item.querySelector('.pipe-list-item-desc');
     desc.textContent = pipe.categoryDescription;
-
-    item.appendChild(name);
-    item.appendChild(desc);
     item.addEventListener('click', () => addPipe(pipe.typeName));
     list.appendChild(item);
   }
@@ -1099,13 +1028,12 @@ function clearGraphWithoutConfirmation() {
 function showToast(msg, type = '') {
   const container = document.getElementById('toast-container');
   if (!container) return;
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
+  const toast = cloneTemplate('toast-template');
+  if (type) toast.classList.add(type);
   toast.textContent = msg;
   container.appendChild(toast);
   setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s';
+    toast.classList.add('leaving');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
