@@ -21,8 +21,35 @@ import {
 import { guessPipeChain } from './guess.js';
 import { randomSessionName } from './session-name.js';
 import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
+import { APP_VERSION } from './version.js';
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+
+  try {
+    const registration = await navigator.serviceWorker.register('./sw.js');
+    const versionUrl = new URL('./version.js', import.meta.url);
+    versionUrl.searchParams.set('cache', 'off');
+    versionUrl.searchParams.set('v', Date.now());
+    const { APP_VERSION: latestVersion } = await import(versionUrl.href);
+
+    if (latestVersion !== APP_VERSION) {
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+      await registration.update();
+    }
+  } catch (error) {
+    console.warn('Service worker registration failed:', error);
+  }
+}
+
+registerServiceWorker();
 
 // ── App state ────────────────────────────────────────────────────
 

@@ -13,6 +13,7 @@ named local session.
 - Web Workers for off-main-thread pipe processing.
 - `Uint8Array`, `TextEncoder`, and `TextDecoder` for data handling.
 - IndexedDB for local sessions and base64url JSON for shared URL state.
+- A web app manifest and service worker for installation and offline use.
 - Vitest with jsdom and fake-indexeddb for tests.
 - GitHub Actions for Node 22 CI and static GitHub Pages deployment.
 
@@ -27,12 +28,16 @@ Production has no runtime package dependencies. The packages in
   state, and coordinates processing and rendering.
 - `src/worker/pipe-worker.js` is the module worker entry point.
 - `styles/main.css` contains all application styling.
+- `sw.js` precaches the application shell and `manifest.json` describes the
+  installable app.
 
 ## Directory layout
 
 ```text
 .
 ├── index.html
+├── manifest.json
+├── sw.js
 ├── src/
 │   ├── app.js                 Application composition and UI orchestration
 │   ├── guess.js               Decoding-chain search

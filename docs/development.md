@@ -19,6 +19,19 @@ Then open `http://localhost:8080`. Opening `index.html` directly with a
 `file:` URL is not equivalent because browser module and worker restrictions
 apply.
 
+The service worker precaches the full application shell. When adding or
+renaming a runtime asset, update `PRECACHE_URLS` in `sw.js`. Release versions
+must keep `src/version.js` and the service worker cache name synchronized; use:
+
+```powershell
+pwsh scripts/bump-version.ps1 1.2.0
+```
+
+The app checks `src/version.js?cache=off` for a newer deployed version. The
+service worker intentionally leaves requests with `cache=off` untouched so
+that check can reach the network while ordinary app requests remain
+cache-first.
+
 ## Validation
 
 Run both required checks before completing a change:
