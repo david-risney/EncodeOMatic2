@@ -65,9 +65,13 @@ class DataViewer extends HTMLElement {
   setData(bytes, label = '') {
     this._data = bytes;
     this._label = label;
-    if (!this._editable || !this.contains(document.activeElement)) {
+    if (this._shouldRenderOnDataChange()) {
       this._render();
     }
+  }
+
+  _shouldRenderOnDataChange() {
+    return !this._editable || !this.contains(document.activeElement);
   }
 
   /**

@@ -56,10 +56,16 @@ describe('DataViewer', () => {
     hexEditor.dispatchEvent(new Event('input'));
     expect([...changed.mock.lastCall[0]]).toEqual([0, 255, 65]);
     expect(changed.mock.lastCall[1]).toBe('hex');
-    hexEditor.value = '0G';
+    hexEditor.value = 'C3 A9';
     hexEditor.dispatchEvent(new Event('input'));
-    expect(hexEditor.getAttribute('aria-invalid')).toBe('true');
-    expect(changed).toHaveBeenCalledTimes(2);
+    viewer.setMode('text');
+    expect(viewer.querySelector('textarea').value).toBe('é');
+    viewer.setMode('hex');
+    const invalidEditor = viewer.querySelector('textarea');
+    invalidEditor.value = '0G';
+    invalidEditor.dispatchEvent(new Event('input'));
+    expect(invalidEditor.getAttribute('aria-invalid')).toBe('true');
+    expect(changed).toHaveBeenCalledTimes(3);
   });
 });
 

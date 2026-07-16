@@ -167,8 +167,7 @@ function refreshDataView(view) {
       pipe.setConfig('rawBytes', [...bytes]);
       pipe.setConfig('text', new TextDecoder().decode(bytes));
     }
-    const textarea = editor._pipeElements.get(pipe.id)?.querySelector('.pipe-input-area textarea');
-    if (textarea) textarea.value = pipe.getConfig('text').value;
+    editor.setInputText(pipe.id, pipe.getConfig('text').value);
     graph.processFrom(pipe.id).catch(console.error);
   } : null);
 }
@@ -529,8 +528,7 @@ function onConfigClick(e) {
       }
       if (pipe.constructor.typeName === 'InputPipe') {
         pipe.setConfig('rawBytes', null);
-        const textarea = editor._pipeElements.get(pipe.id)?.querySelector('.pipe-input-area textarea');
-        if (textarea) textarea.value = pipe.getConfig('text').value;
+        editor.setInputText(pipe.id, pipe.getConfig('text').value);
       }
       // Re-run from this pipe
       graph.processFrom(pipeId).catch(console.error);
