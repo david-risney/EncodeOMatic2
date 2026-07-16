@@ -286,8 +286,8 @@ class GraphEditor extends HTMLElement {
     nameGroupEl.className = 'pipe-node-name-group';
     const nameEl = document.createElement('span');
     nameEl.className = 'pipe-node-name';
-    nameEl.title = pipe.displayName;
     nameEl.textContent = pipe.displayName;
+    nameEl.title = pipe.displayName;
     const errorIndicatorEl = document.createElement('span');
     errorIndicatorEl.className = 'pipe-node-error-indicator';
     errorIndicatorEl.textContent = '❗';
