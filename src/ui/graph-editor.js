@@ -519,7 +519,7 @@ class GraphEditor extends HTMLElement {
       this._updateTouchGesture();
       return;
     }
-    if (this._interactionPointerId != null && e.pointerId !== this._interactionPointerId) return;
+    if (this._interactionPointerId !== null && e.pointerId !== this._interactionPointerId) return;
 
     if (this._isPanning) {
       this._panX = e.clientX - this._panStart.x;
@@ -556,7 +556,7 @@ class GraphEditor extends HTMLElement {
 
   _onCanvasPointerUp(e) {
     if (this._finishTouchGesturePointer(e)) return;
-    if (this._interactionPointerId != null && e.pointerId !== this._interactionPointerId) {
+    if (this._interactionPointerId !== null && e.pointerId !== this._interactionPointerId) {
       this._activePointers.delete(e.pointerId);
       return;
     }
@@ -597,7 +597,7 @@ class GraphEditor extends HTMLElement {
   }
 
   _trackPointerDown(e) {
-    if (e.pointerId == null) return false;
+    if (typeof e.pointerId !== 'number') return false;
     this._activePointers.set(e.pointerId, {
       x: e.clientX,
       y: e.clientY,
