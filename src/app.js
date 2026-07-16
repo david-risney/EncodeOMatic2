@@ -22,6 +22,7 @@ import { guessPipeChain } from './guess.js';
 import { randomSessionName } from './session-name.js';
 import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
 import { APP_VERSION } from './version.js';
+import { getInstallPrompt, clearInstallPrompt, isInstalledPWA } from './services/install.js';
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
 
@@ -156,6 +157,7 @@ function initAboutDialog() {
   document.getElementById('btn-about').addEventListener('click', () => {
     dialog.showModal();
     checkForUpdates();
+    updateInstallStatus();
   });
   updateButton.addEventListener('click', () => {
     if (availableVersion) {
@@ -229,6 +231,56 @@ function initAboutDialog() {
       updateButton.textContent = 'Try again';
       updateButton.hidden = false;
     }
+  }
+
+  function updateInstallStatus() {
+    const container = document.getElementById('install-status');
+
+    if (isInstalledPWA()) {
+      container.hidden = false;
+      container.innerHTML = '';
+      const pill = document.createElement('span');
+      pill.className = 'install-pill install-pill--installed';
+      pill.textContent = '✓ App installed';
+      container.appendChild(pill);
+      return;
+    }
+
+    const prompt = getInstallPrompt();
+    if (prompt) {
+      container.hidden = false;
+      container.innerHTML = '';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'install-pill install-pill--action';
+      btn.textContent = 'Install app';
+      btn.addEventListener('click', async () => {
+        btn.textContent = 'Installing…';
+        btn.disabled = true;
+        try {
+          await prompt.prompt();
+          const { outcome } = await prompt.userChoice;
+          if (outcome === 'accepted') {
+            clearInstallPrompt();
+            container.innerHTML = '';
+            const donePill = document.createElement('span');
+            donePill.className = 'install-pill install-pill--installed';
+            donePill.textContent = '✓ App installed';
+            container.appendChild(donePill);
+          } else {
+            btn.textContent = 'Install app';
+            btn.disabled = false;
+          }
+        } catch {
+          btn.textContent = 'Install app';
+          btn.disabled = false;
+        }
+      });
+      container.appendChild(btn);
+      return;
+    }
+
+    container.hidden = true;
   }
 }
 

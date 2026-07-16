@@ -60,6 +60,7 @@ function appMarkup() {
       <span id="about-version"></span>
       <span id="update-status"></span>
       <button id="btn-update" hidden></button>
+      <div id="install-status" hidden></div>
     </dialog>
   `;
 }

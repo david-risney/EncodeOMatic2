@@ -5,6 +5,10 @@ if (!globalThis.crypto.randomUUID) {
   globalThis.crypto.randomUUID = () => '00000000-0000-4000-8000-000000000000';
 }
 
+if (!window.matchMedia) {
+  window.matchMedia = () => ({ matches: false });
+}
+
 if (!HTMLDialogElement.prototype.showModal) {
   HTMLDialogElement.prototype.showModal = function () {
     this.open = true;

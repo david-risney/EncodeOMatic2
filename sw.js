@@ -14,6 +14,7 @@ const PRECACHE_URLS = [
   './assets/screenshots/editor.png',
   './src/app.js',
   './src/version.js',
+  './src/services/install.js',
   './src/guess.js',
   './src/session-name.js',
   './src/state.js',
