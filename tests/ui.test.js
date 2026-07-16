@@ -77,6 +77,15 @@ describe('DataViewer', () => {
     expect(invalidEditor.getAttribute('aria-invalid')).toBe('true');
     expect(changed).toHaveBeenCalledTimes(3);
   });
+
+  it('does not replace a focused editor when unchanged selections refresh', () => {
+    viewer.setData(encode('abc'));
+    viewer.setEditable(true);
+    const editor = viewer.querySelector('textarea');
+    editor.focus();
+    viewer.setSelections([]);
+    expect(viewer.querySelector('textarea')).toBe(editor);
+  });
 });
 
 describe('GraphEditor', () => {

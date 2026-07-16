@@ -57,8 +57,14 @@ class DataViewer extends HTMLElement {
    * @param {{index: number, length: number}[]} selections
    */
   setSelections(selections = []) {
+    const changed = selections.length !== this._selections.length ||
+      selections.some((selection, index) =>
+        selection.index !== this._selections[index]?.index ||
+        selection.length !== this._selections[index]?.length);
     this._selections = selections;
-    this._render();
+    if (changed && this._shouldRenderOnDataChange()) {
+      this._render();
+    }
   }
 
   connectedCallback() {
