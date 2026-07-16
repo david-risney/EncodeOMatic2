@@ -174,12 +174,6 @@ class GraphEditor extends HTMLElement {
         indicatorEl.removeAttribute('aria-label');
       }
     }
-    const errEl = el.querySelector('.pipe-node-error');
-    if (errEl) {
-      errEl.textContent = hasError ? pipe.errors[0].message : '';
-      errEl.style.display = hasError ? '' : 'none';
-    }
-
     // Refresh ports for dynamic-port pipes (URL parser, etc.)
     const topPorts = el.querySelector('.pipe-node-ports-top');
     const botPorts = el.querySelector('.pipe-node-ports-bottom');
@@ -295,7 +289,7 @@ class GraphEditor extends HTMLElement {
     nameEl.title = pipe.displayName;
     const errorIndicatorEl = document.createElement('span');
     errorIndicatorEl.className = 'pipe-node-error-indicator';
-    errorIndicatorEl.textContent = '❗';
+    errorIndicatorEl.textContent = '⚠️';
     errorIndicatorEl.setAttribute('role', 'img');
     errorIndicatorEl.setAttribute('aria-hidden', 'true');
     errorIndicatorEl.hidden = true;
@@ -317,11 +311,6 @@ class GraphEditor extends HTMLElement {
     // Output ports row
     const botPorts = document.createElement('div');
     botPorts.className = 'pipe-node-ports-bottom';
-
-    // Error area
-    const errEl = document.createElement('div');
-    errEl.className = 'pipe-node-error';
-    errEl.style.display = 'none';
 
     // Input area for InputPipe
     let inputArea = null;
@@ -376,7 +365,6 @@ class GraphEditor extends HTMLElement {
     el.appendChild(header);
     if (inputArea) el.appendChild(inputArea);
     el.appendChild(botPorts);
-    el.appendChild(errEl);
 
     this._buildPorts(pipe, topPorts, botPorts);
 

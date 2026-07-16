@@ -47,6 +47,7 @@ const dataViewStack = document.getElementById('data-view-stack');
  *   mode: 'text'|'hex',
  *   element: HTMLElement,
  *   title: HTMLElement,
+ *   error: HTMLElement,
  *   viewer: import('./ui/data-viewer.js').DataViewer,
  *   pinButton: HTMLButtonElement,
  *   minimizeButton: HTMLButtonElement,
@@ -196,6 +197,9 @@ function refreshDataView(view) {
   }
 
   view.viewer.setData(data, view.portName);
+  const errorMessage = pipe.errors[0]?.message ?? '';
+  view.error.textContent = errorMessage;
+  view.error.hidden = !errorMessage;
   const portLabel = view.portName === view.portType
     ? view.portName
     : `${view.portType}: ${view.portName}`;
@@ -246,8 +250,12 @@ function createDataView(pipeId, portName, portType) {
 
   controls.append(modeButton, pinButton, minimizeButton);
   header.append(title, controls);
+  const error = document.createElement('div');
+  error.className = 'data-panel-error';
+  error.setAttribute('role', 'alert');
+  error.hidden = true;
   const viewer = document.createElement('data-viewer');
-  element.append(header, viewer);
+  element.append(header, error, viewer);
   dataViewStack.appendChild(element);
 
   const view = {
@@ -255,7 +263,7 @@ function createDataView(pipeId, portName, portType) {
     pinned: false,
     minimized: false,
     mode: 'text',
-    element, title, viewer,
+    element, title, error, viewer,
     pinButton, minimizeButton, modeButton,
   };
   modeButton.addEventListener('click', () =>

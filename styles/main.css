@@ -152,7 +152,8 @@ body {
   flex: 0 0 auto;
 }
 
-.data-view.minimized data-viewer {
+.data-view.minimized data-viewer,
+.data-view.minimized .data-panel-error {
   display: none;
 }
 
@@ -180,6 +181,15 @@ body {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
+}
+
+.data-panel-error {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-error);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
 }
 
 /* ── Buttons ─────────────────────────────────────────────────── */
@@ -416,6 +426,8 @@ graph-editor {
 .pipe-node-error-indicator {
   flex-shrink: 0;
   margin-right: 4px;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .pipe-node-config-btn {
@@ -432,15 +444,6 @@ graph-editor {
 .pipe-node-config-btn:hover {
   color: var(--color-text);
   background: rgba(255,255,255,0.1);
-}
-
-.pipe-node-error {
-  font-size: 10px;
-  color: var(--color-error);
-  padding: 2px 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Port dot */

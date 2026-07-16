@@ -236,11 +236,11 @@ describe('GraphEditor', () => {
     const element = editor._pipeElements.get(source.id);
     const indicator = element.querySelector('.pipe-node-error-indicator');
     expect(indicator.hidden).toBe(false);
-    expect(indicator.textContent).toBe('❗');
+    expect(indicator.textContent).toBe('⚠️');
     expect(indicator.title).toBe('failed');
     expect(indicator.getAttribute('aria-hidden')).toBe('false');
     expect(indicator.getAttribute('aria-label')).toBe('Error: failed');
-    expect(element.querySelector('.pipe-node-error').textContent).toBe('failed');
+    expect(element.querySelector('.pipe-node-error')).toBeNull();
 
     source._errors = [];
     editor.updatePipeElement(source);

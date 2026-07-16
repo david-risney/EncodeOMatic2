@@ -99,6 +99,24 @@ describe('application integration', () => {
     expect(modeButton.textContent).toBe('0xFF');
     expect(dataView.querySelector('[title="Keep this view open"]').textContent).toBe('📍');
 
+    document.querySelector('.add-pipe-control').click();
+    [...document.querySelectorAll('.pipe-list-item')]
+      .find((item) => item.textContent.includes('Base64 Decode'))
+      .click();
+    const decoderNode = [...document.querySelectorAll('.pipe-node')]
+      .find((element) => element.textContent.includes('Base64 Decode'));
+    node.querySelector('.port[data-port-type="output"]')
+      .dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }));
+    decoderNode.querySelector('.port[data-port-type="input"]')
+      .dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }));
+    decoderNode.click();
+    await vi.waitFor(() => {
+      expect(document.querySelector('.data-panel-error').textContent)
+        .toBe('Invalid Base64 input');
+    });
+    expect(decoderNode.querySelector('.pipe-node-error')).toBeNull();
+    expect(decoderNode.querySelector('.pipe-node-error-indicator').textContent).toBe('⚠️');
+
     node.querySelector('.pipe-node-config-btn').click();
     const configDialog = document.getElementById('config-dialog');
     expect(configDialog.open).toBe(true);
