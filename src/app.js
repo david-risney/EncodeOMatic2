@@ -36,7 +36,7 @@ async function registerServiceWorker() {
   }
 }
 
-const serviceWorkerRegistration = registerServiceWorker();
+const serviceWorkerRegistrationPromise = registerServiceWorker();
 
 // ── App state ────────────────────────────────────────────────────
 
@@ -212,7 +212,7 @@ function initAboutDialog() {
     status.textContent = 'Updating…';
 
     try {
-      const registration = await serviceWorkerRegistration;
+      const registration = await serviceWorkerRegistrationPromise;
       if (!registration) {
         window.location.reload();
         return;
