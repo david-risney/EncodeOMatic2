@@ -26,37 +26,17 @@ import './ui/graph-editor.js';
 import './ui/data-viewer.js';
 
 async function registerServiceWorker() {
-  if (!('serviceWorker' in navigator)) return;
+  if (!('serviceWorker' in navigator)) return null;
 
   try {
-    const registration = await navigator.serviceWorker.register('./sw.js');
-    const versionUrl = new URL('./version.js', import.meta.url);
-    versionUrl.searchParams.set('cache', 'off');
-    versionUrl.searchParams.set('v', Date.now());
-    const { APP_VERSION: latestVersion } = await import(versionUrl.href);
-
-    if (latestVersion !== APP_VERSION) {
-      const reloadForUpdate = () => {
-        navigator.serviceWorker.removeEventListener('controllerchange', reloadForUpdate);
-        window.location.reload();
-      };
-      navigator.serviceWorker.addEventListener('controllerchange', reloadForUpdate);
-      try {
-        await registration.update();
-        if (!registration.installing && !registration.waiting) {
-          navigator.serviceWorker.removeEventListener('controllerchange', reloadForUpdate);
-        }
-      } catch (error) {
-        navigator.serviceWorker.removeEventListener('controllerchange', reloadForUpdate);
-        throw error;
-      }
-    }
+    return await navigator.serviceWorker.register('./sw.js');
   } catch (error) {
     console.warn('Service worker registration failed:', error);
+    return null;
   }
 }
 
-registerServiceWorker();
+const serviceWorkerRegistration = registerServiceWorker();
 
 // ── App state ────────────────────────────────────────────────────
 
@@ -136,6 +116,7 @@ async function init() {
 
   // Wire toolbar controls
   document.getElementById('btn-share').addEventListener('click', onShare);
+  initAboutDialog();
   document.getElementById('btn-clear').addEventListener('click', onClear);
   document.getElementById('btn-session-save').addEventListener('click', onSaveSession);
   document.getElementById('btn-guess').addEventListener('click', openGuessDialog);
@@ -163,6 +144,88 @@ async function init() {
   toast.id = 'toast-container';
   document.body.appendChild(toast);
   scheduleUrlUpdate();
+}
+
+function initAboutDialog() {
+  const dialog = document.getElementById('about-dialog');
+  const updateButton = document.getElementById('btn-update');
+  let availableVersion = null;
+  let checkId = 0;
+
+  document.getElementById('about-version').textContent = APP_VERSION;
+  document.getElementById('btn-about').addEventListener('click', () => {
+    dialog.showModal();
+    checkForUpdates();
+  });
+  updateButton.addEventListener('click', () => {
+    if (availableVersion) {
+      installUpdate();
+    } else {
+      checkForUpdates();
+    }
+  });
+
+  async function checkForUpdates() {
+    const currentCheck = ++checkId;
+    const status = document.getElementById('update-status');
+    availableVersion = null;
+    status.className = 'update-status checking';
+    status.textContent = 'Checking for updates…';
+    updateButton.hidden = true;
+
+    try {
+      const versionUrl = new URL('./version.js', import.meta.url);
+      versionUrl.searchParams.set('cache', 'off');
+      versionUrl.searchParams.set('v', Date.now());
+      const { APP_VERSION: latestVersion } = await import(versionUrl.href);
+      if (currentCheck !== checkId) return;
+
+      if (latestVersion === APP_VERSION) {
+        status.className = 'update-status success';
+        status.textContent = 'Encode-O-Matic 2 is up to date.';
+        return;
+      }
+
+      availableVersion = latestVersion;
+      status.className = 'update-status';
+      status.textContent = `Version ${latestVersion} is available.`;
+      updateButton.textContent = `Update to version ${latestVersion}`;
+      updateButton.hidden = false;
+    } catch (error) {
+      if (currentCheck !== checkId) return;
+      console.warn('Update check failed:', error);
+      status.className = 'update-status error';
+      status.textContent = 'Could not check for updates.';
+      updateButton.textContent = 'Try again';
+      updateButton.hidden = false;
+    }
+  }
+
+  async function installUpdate() {
+    const status = document.getElementById('update-status');
+    updateButton.hidden = true;
+    status.className = 'update-status checking';
+    status.textContent = 'Updating…';
+
+    try {
+      const registration = await serviceWorkerRegistration;
+      if (!registration) {
+        window.location.reload();
+        return;
+      }
+
+      const reloadForUpdate = () => window.location.reload();
+      navigator.serviceWorker.addEventListener('controllerchange', reloadForUpdate, { once: true });
+      await registration.update();
+      status.textContent = 'Update downloaded. Reloading…';
+    } catch (error) {
+      console.warn('Update failed:', error);
+      status.className = 'update-status error';
+      status.textContent = 'Could not install the update.';
+      updateButton.textContent = 'Try again';
+      updateButton.hidden = false;
+    }
+  }
 }
 
 function initDataPanelResizer() {

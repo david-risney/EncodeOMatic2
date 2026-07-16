@@ -105,10 +105,6 @@ body {
   margin-left: auto;
 }
 
-.project-link {
-  text-decoration: none;
-}
-
 .toolbar-sep {
   width: 1px;
   height: 24px;
@@ -785,6 +781,74 @@ data-viewer {
   padding: 12px 20px;
   border-top: 1px solid var(--color-border);
   flex-shrink: 0;
+}
+
+.about-content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: center;
+  min-width: min(360px, var(--dialog-max-width));
+  padding: 20px;
+}
+
+.about-logo {
+  width: 72px;
+  height: 72px;
+}
+
+.about-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--color-text-dim);
+}
+
+.about-name {
+  color: var(--color-accent);
+  font-size: 18px;
+}
+
+.about-details a {
+  color: var(--color-port-input);
+}
+
+.update-status {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+}
+
+.update-status.success {
+  border-color: var(--color-success);
+}
+
+.update-status.error {
+  border-color: var(--color-error);
+}
+
+.update-status.checking::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 8px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: update-spinner 0.8s linear infinite;
+}
+
+#btn-update {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+
+@keyframes update-spinner {
+  to { transform: rotate(360deg); }
 }
 
 .guess-input-label {

@@ -16,6 +16,7 @@ class SilentWorker {
 function appMarkup() {
   return `
     <button id="btn-share">Share</button>
+    <button id="btn-about">About</button>
     <div class="session-controls">
       <div class="session-menu">
         <button id="btn-session-menu">Session</button>
@@ -55,6 +56,11 @@ function appMarkup() {
         <button type="submit">Guess</button>
       </form>
     </dialog>
+    <dialog id="about-dialog">
+      <span id="about-version"></span>
+      <span id="update-status"></span>
+      <button id="btn-update" hidden></button>
+    </dialog>
   `;
 }
 
@@ -80,6 +86,14 @@ describe('application integration', () => {
     expect(document.getElementById('pipe-list').textContent).toContain('Base64 Encode');
     expect(document.getElementById('toast-container')).not.toBeNull();
     expect(document.getElementById('session-name').value).toMatch(/^[a-z]+-[a-z]+$/);
+
+    document.getElementById('btn-about').click();
+    expect(document.getElementById('about-dialog').open).toBe(true);
+    expect(document.getElementById('about-version').textContent).toBe('1.0.0');
+    await vi.waitFor(() => {
+      expect(document.getElementById('update-status').textContent)
+        .toBe('Encode-O-Matic 2 is up to date.');
+    });
 
     const input = document.getElementById('pipe-search-input');
     input.value = 'regex';
