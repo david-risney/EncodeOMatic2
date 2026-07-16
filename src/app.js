@@ -527,6 +527,11 @@ function onConfigClick(e) {
         } else value = input.value;
         pipe.setConfig(name, value);
       }
+      if (pipe.constructor.typeName === 'InputPipe') {
+        pipe.setConfig('rawBytes', null);
+        const textarea = editor._pipeElements.get(pipe.id)?.querySelector('.pipe-input-area textarea');
+        if (textarea) textarea.value = pipe.getConfig('text').value;
+      }
       // Re-run from this pipe
       graph.processFrom(pipeId).catch(console.error);
       editor.updatePipeElement(pipe);
