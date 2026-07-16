@@ -177,7 +177,12 @@ function initAboutDialog() {
       const versionUrl = new URL('./version.js', import.meta.url);
       versionUrl.searchParams.set('cache', 'off');
       versionUrl.searchParams.set('v', Date.now());
-      const { APP_VERSION: latestVersion } = await import(versionUrl.href);
+      const response = await fetch(versionUrl, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Update check returned ${response.status}`);
+      const versionSource = await response.text();
+      const latestVersion = versionSource
+        .match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/)?.[1];
+      if (!latestVersion) throw new Error('Update check returned an invalid version');
       if (currentCheck !== checkId) return;
 
       if (latestVersion === APP_VERSION) {

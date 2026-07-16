@@ -67,6 +67,10 @@ function appMarkup() {
 describe('application integration', () => {
   beforeAll(async () => {
     vi.stubGlobal('Worker', SilentWorker);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => "export const APP_VERSION = '1.0.0';",
+    }));
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText: vi.fn().mockResolvedValue() },
@@ -94,6 +98,25 @@ describe('application integration', () => {
       expect(document.getElementById('update-status').textContent)
         .toBe('Encode-O-Matic 2 is up to date.');
     });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.objectContaining({ search: expect.stringContaining('cache=off') }),
+      { cache: 'no-store' }
+    );
+
+    document.getElementById('about-dialog').close();
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => "export const APP_VERSION = '1.1.0';",
+    });
+    document.getElementById('btn-about').click();
+    await vi.waitFor(() => {
+      expect(document.getElementById('update-status').textContent)
+        .toBe('Version 1.1.0 is available.');
+    });
+    expect(document.getElementById('btn-update').hidden).toBe(false);
+    expect(document.getElementById('btn-update').textContent)
+      .toBe('Update to version 1.1.0');
+    document.getElementById('about-dialog').close();
 
     const input = document.getElementById('pipe-search-input');
     input.value = 'regex';
