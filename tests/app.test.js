@@ -55,6 +55,11 @@ function appMarkup() {
         <button type="submit">Guess</button>
       </form>
     </dialog>
+    <div id="conn-action-popover" hidden>
+      <button data-action="delete">Delete</button>
+      <button data-action="add">Add Pipe</button>
+    </div>
+    <div id="toast-container"></div>
   `;
 }
 
@@ -141,15 +146,15 @@ describe('application integration', () => {
     expect(reopenedDataView).not.toBeNull();
 
     const resizer = document.getElementById('data-panel-resizer');
-    expect(document.getElementById('data-panel').style.width).toBe('380px');
+    expect(document.getElementById('data-panel').style.getPropertyValue('--data-panel-width')).toBe('380px');
     resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
-    expect(document.getElementById('data-panel').style.width).toBe('400px');
+    expect(document.getElementById('data-panel').style.getPropertyValue('--data-panel-width')).toBe('400px');
     resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
-    expect(document.getElementById('data-panel').style.width).toBe('380px');
+    expect(document.getElementById('data-panel').style.getPropertyValue('--data-panel-width')).toBe('380px');
     resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home' }));
-    expect(document.getElementById('data-panel').style.width).toBe('280px');
+    expect(document.getElementById('data-panel').style.getPropertyValue('--data-panel-width')).toBe('280px');
     resizer.dispatchEvent(new KeyboardEvent('keydown', { key: 'End' }));
-    expect(document.getElementById('data-panel').style.width).toBe('512px');
+    expect(document.getElementById('data-panel').style.getPropertyValue('--data-panel-width')).toBe('512px');
 
     node.querySelector('.pipe-node-config-btn').click();
     const configDialog = document.getElementById('config-dialog');

@@ -62,6 +62,11 @@ state.
 `src/ui/data-viewer.js` renders bytes as text or colorized hex and supports
 editing when `app.js` enables it for an Input Buffer output.
 
+Both Web Components clone declarative templates from `index.html` through
+`src/ui/templates.js`. The same templates define repeated application UI such
+as data views and list items, leaving JavaScript responsible for state and
+events rather than markup.
+
 `app.js` translates UI events into graph mutations and translates graph events
 back into editor and data-view updates. Graph and editor state must therefore
 be updated together when importing, adding, or removing nodes.
