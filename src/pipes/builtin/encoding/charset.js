@@ -3,10 +3,12 @@
  *
  * Charset Decode: interprets input bytes as text in the specified encoding,
  *   outputs the decoded string as UTF-8 bytes.
+ *   UTF-32 variants are manually decoded since TextDecoder does not support
+ *   them in all browser environments.
  *
  * Charset Encode: takes UTF-8 text bytes and re-encodes them to the target encoding.
- *   UTF-16 variants are manually encoded to properly handle surrogate pairs.
- *   Other non-UTF-8 encodings fall back to UTF-8 output.
+ *   Supported targets: utf-8, utf-16le, utf-16, utf-16be, utf-32le, utf-32be,
+ *   ascii, iso-8859-1.  All other encodings throw a PipeError.
  */
 
 import { Pipe, PipeConfig, PipeError } from '../../pipe.js';
@@ -33,6 +35,37 @@ const COMMON_ENCODINGS = [
   'ascii',
   'koi8-r',
 ];
+
+/**
+ * Decode UTF-32 bytes to a JS string.
+ * @param {Uint8Array} bytes
+ * @param {boolean} littleEndian
+ * @param {boolean} fatal  throw on invalid code points when true, emit U+FFFD when false
+ * @returns {string}
+ */
+function decodeUtf32(bytes, littleEndian, fatal) {
+  if (bytes.length % 4 !== 0) {
+    throw new PipeError(
+      `UTF-32 input length must be a multiple of 4 bytes, got ${bytes.length}`
+    );
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let result = '';
+  for (let i = 0; i < bytes.length; i += 4) {
+    const cp = view.getUint32(i, littleEndian);
+    if (cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF)) {
+      if (fatal) {
+        throw new PipeError(
+          `Invalid Unicode code point 0x${cp.toString(16).toUpperCase().padStart(8, '0')} in UTF-32 input`
+        );
+      }
+      result += '\uFFFD';
+    } else {
+      result += String.fromCodePoint(cp);
+    }
+  }
+  return result;
+}
 
 /**
  * Encode a JS string to UTF-16 bytes, correctly handling characters outside
@@ -65,6 +98,63 @@ function encodeUtf16(text, littleEndian) {
     view.setUint16(i * 2, units[i], littleEndian);
   }
   return new Uint8Array(buf);
+}
+
+/**
+ * Encode a JS string to UTF-32 bytes.  Each Unicode code point becomes
+ * exactly 4 bytes.
+ * @param {string} text
+ * @param {boolean} littleEndian
+ * @returns {Uint8Array}
+ */
+function encodeUtf32(text, littleEndian) {
+  // Array.from iterates over Unicode code points, correctly splitting
+  // surrogate pairs that JS strings store as two UTF-16 code units.
+  const codePoints = Array.from(text, ch => ch.codePointAt(0));
+  const buf = new ArrayBuffer(codePoints.length * 4);
+  const view = new DataView(buf);
+  for (let i = 0; i < codePoints.length; i++) {
+    view.setUint32(i * 4, codePoints[i], littleEndian);
+  }
+  return new Uint8Array(buf);
+}
+
+/**
+ * Encode a JS string to ASCII bytes (U+0000–U+007F only).
+ * @param {string} text
+ * @returns {Uint8Array}
+ */
+function encodeAscii(text) {
+  const bytes = [];
+  for (const ch of text) {
+    const cp = ch.codePointAt(0);
+    if (cp > 0x7F) {
+      throw new PipeError(
+        `Character '${ch}' (U+${cp.toString(16).toUpperCase().padStart(4, '0')}) cannot be encoded as ASCII`
+      );
+    }
+    bytes.push(cp);
+  }
+  return new Uint8Array(bytes);
+}
+
+/**
+ * Encode a JS string to ISO-8859-1 bytes (U+0000–U+00FF only).
+ * @param {string} text
+ * @returns {Uint8Array}
+ */
+function encodeIso8859_1(text) {
+  const bytes = [];
+  for (const ch of text) {
+    const cp = ch.codePointAt(0);
+    if (cp > 0xFF) {
+      throw new PipeError(
+        `Character '${ch}' (U+${cp.toString(16).toUpperCase().padStart(4, '0')}) cannot be encoded as ISO-8859-1`
+      );
+    }
+    bytes.push(cp);
+  }
+  return new Uint8Array(bytes);
 }
 
 export class CharsetDecodePipe extends Pipe {
@@ -111,9 +201,14 @@ export class CharsetDecodePipe extends Pipe {
 
     let text;
     try {
-      const decoder = new TextDecoder(fromEnc, { fatal });
-      text = decoder.decode(data);
+      if (fromEnc === 'utf-32le' || fromEnc === 'utf-32be') {
+        text = decodeUtf32(data, fromEnc === 'utf-32le', fatal);
+      } else {
+        const decoder = new TextDecoder(fromEnc, { fatal });
+        text = decoder.decode(data);
+      }
     } catch (e) {
+      if (e instanceof PipeError) throw e;
       throw new PipeError(`Cannot decode bytes as ${fromEnc}: ${e.message}`);
     }
 
@@ -162,7 +257,7 @@ export class CharsetEncodePipe extends Pipe {
     }
 
     // Browsers only natively support UTF-8 encoding via TextEncoder.
-    // For other encodings we provide manual encoding with proper surrogate pair handling.
+    // All other encodings are implemented manually below.
     if (toEnc === 'utf-8') {
       return new Map([['output', new TextEncoder().encode(text)]]);
     }
@@ -175,7 +270,22 @@ export class CharsetEncodePipe extends Pipe {
       return new Map([['output', encodeUtf16(text, false)]]);
     }
 
-    // For other encodings: fall back to UTF-8
-    return new Map([['output', new TextEncoder().encode(text)]]);
+    if (toEnc === 'utf-32le') {
+      return new Map([['output', encodeUtf32(text, true)]]);
+    }
+
+    if (toEnc === 'utf-32be') {
+      return new Map([['output', encodeUtf32(text, false)]]);
+    }
+
+    if (toEnc === 'ascii') {
+      return new Map([['output', encodeAscii(text)]]);
+    }
+
+    if (toEnc === 'iso-8859-1') {
+      return new Map([['output', encodeIso8859_1(text)]]);
+    }
+
+    throw new PipeError(`Encoding to '${toEnc}' is not supported`);
   }
 }
