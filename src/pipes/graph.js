@@ -79,8 +79,6 @@ export class PipeGraph {
     const outgoing = [];
     const remaining = [];
     for (const connection of this.connections) {
-      // Ignore self-loops that may have entered through malformed serialized data.
-      if (connection.fromPipeId === pipeId && connection.toPipeId === pipeId) continue;
       if (connection.toPipeId === pipeId) {
         incoming.push(connection);
       } else if (connection.fromPipeId === pipeId) {

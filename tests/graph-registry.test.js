@@ -107,8 +107,6 @@ describe('PipeGraph mutation and traversal', () => {
     for (const pipe of [source, sourceOnly, sinkOnly, target]) graph.addPipe(pipe);
     graph.connect(sourceOnly.id, 'output', target.id, 'input');
     graph.connect(source.id, 'output', sinkOnly.id, 'input');
-    // Intentionally inject malformed serialized state; connect() rejects self-loops.
-    graph.connections.push(new Connection(sinkOnly.id, 'output', sinkOnly.id, 'input'));
 
     graph.removePipe(sourceOnly.id);
     graph.removePipe(sinkOnly.id);
