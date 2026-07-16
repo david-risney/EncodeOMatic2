@@ -166,6 +166,7 @@ class GraphEditor extends HTMLElement {
     const indicatorEl = el.querySelector('.pipe-node-error-indicator');
     if (indicatorEl) {
       indicatorEl.hidden = !hasError;
+      indicatorEl.setAttribute('aria-hidden', String(!hasError));
       indicatorEl.title = hasError ? pipe.errors[0].message : '';
       if (hasError) {
         indicatorEl.setAttribute('aria-label', `Error: ${pipe.errors[0].message}`);
@@ -296,6 +297,7 @@ class GraphEditor extends HTMLElement {
     errorIndicatorEl.className = 'pipe-node-error-indicator';
     errorIndicatorEl.textContent = '❗';
     errorIndicatorEl.setAttribute('role', 'img');
+    errorIndicatorEl.setAttribute('aria-hidden', 'true');
     errorIndicatorEl.hidden = true;
     nameGroupEl.appendChild(errorIndicatorEl);
     nameGroupEl.appendChild(nameEl);
