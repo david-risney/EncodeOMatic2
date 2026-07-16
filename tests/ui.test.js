@@ -40,6 +40,16 @@ describe('DataViewer', () => {
     expect(viewer.textContent).toContain('1 byte');
   });
 
+  it('highlights selected byte ranges in text and hex views', () => {
+    viewer.setData(encode('abcde'));
+    viewer.setSelections([{ index: 1, length: 2 }]);
+    expect(viewer.querySelector('.data-viewer-selection').textContent).toBe('bc');
+
+    viewer.setMode('hex');
+    expect([...viewer.querySelectorAll('.hex-byte.data-viewer-selection')]
+      .map((node) => node.textContent)).toEqual(['62', '63']);
+  });
+
   it('allows text and validated hex editing when enabled', () => {
     const changed = vi.fn();
     viewer.setData(new Uint8Array());
