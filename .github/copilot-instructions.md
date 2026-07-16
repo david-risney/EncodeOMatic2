@@ -3,6 +3,11 @@
 EncodeOMatic2 is a client-side JavaScript application with no build step. Keep
 changes focused and preserve the existing pipe architecture.
 
+Use [`docs/index.md`](../docs/index.md) as the codebase documentation entry
+point. Read only the topic guides relevant to the current task so detailed
+documentation is loaded on demand rather than included in every Copilot
+context.
+
 Before editing:
 
 - Turn the request into explicit acceptance criteria, including relevant edge
