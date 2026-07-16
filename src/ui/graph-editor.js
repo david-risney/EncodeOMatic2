@@ -481,11 +481,11 @@ class GraphEditor extends HTMLElement {
       this._panStart = { x: e.clientX - this._panX, y: e.clientY - this._panY };
       this._canvas.style.cursor = 'grabbing';
     }
+  }
 
-    _onCanvasClick(e) {
-      if (e.target.closest('.pipe-node, .connection-hit, .add-pipe-control')) return;
-      this.dispatchEvent(new CustomEvent('graph-background-click', { bubbles: true }));
-    }
+  _onCanvasClick(e) {
+    if (e.target.closest('.pipe-node, .connection-hit, .add-pipe-control')) return;
+    this.dispatchEvent(new CustomEvent('graph-background-click', { bubbles: true }));
   }
 
   _onCanvasMouseMove(e) {
