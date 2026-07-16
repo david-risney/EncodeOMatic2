@@ -5,6 +5,7 @@
   --color-surface2: #0f3460;
   --color-accent: #e94560;
   --color-accent2: #533483;
+  --color-on-accent: #fff;
   --color-text: #e0e0e0;
   --color-text-dim: #8892a4;
   --color-border: #2a3a5a;
@@ -20,6 +21,11 @@
   --color-connection-hover: #e94560;
   --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
   --font-ui: system-ui, -apple-system, sans-serif;
+  --font-size-title: 18px;
+  --font-size-heading: 16px;
+  --font-size-body: 14px;
+  --font-size-compact: 12px;
+  --font-size-metadata: 10px;
   --radius: 6px;
   --radius-lg: 10px;
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -100,6 +106,7 @@ body {
   }
 }
 
+
 .app-body {
   display: flex;
   flex: 1;
@@ -165,5 +172,16 @@ body {
     max-width: 75vw;
 
     & .data-panel-resizer { display: none; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

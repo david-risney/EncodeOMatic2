@@ -67,9 +67,9 @@
   </div>
 
   <!-- Add Pipe Dialog -->
-  <dialog id="add-pipe-dialog" class="dialog">
+  <dialog id="add-pipe-dialog" class="dialog" aria-labelledby="add-pipe-dialog-title">
     <form method="dialog" class="dialog-form">
-      <h2>Add Pipe</h2>
+      <h2 id="add-pipe-dialog-title">Add Pipe</h2>
       <div class="pipe-search">
         <input type="search" id="pipe-search-input" placeholder="Search pipes..." autocomplete="off">
       </div>
@@ -81,21 +81,21 @@
   </dialog>
 
   <!-- Pipe Config Dialog -->
-  <dialog id="config-dialog" class="dialog">
+  <dialog id="config-dialog" class="dialog" aria-labelledby="config-dialog-title">
     <form method="dialog" class="dialog-form">
       <h2 id="config-dialog-title">Configure Pipe</h2>
       <div id="config-fields" class="config-fields"></div>
       <div class="dialog-footer">
         <button id="config-delete-btn" type="button" class="btn btn-danger">Delete Pipe</button>
-        <button value="ok" class="btn btn-primary">OK</button>
         <button value="cancel" class="btn">Cancel</button>
+        <button value="ok" class="btn btn-primary">OK</button>
       </div>
     </form>
   </dialog>
 
-  <dialog id="guess-dialog" class="dialog">
+  <dialog id="guess-dialog" class="dialog" aria-labelledby="guess-dialog-title">
     <form id="guess-form" class="dialog-form">
-      <h2>Guess Encoding</h2>
+      <h2 id="guess-dialog-title">Guess Encoding</h2>
       <label class="guess-input-label" for="guess-input">Encoded string</label>
       <textarea id="guess-input" rows="6" required></textarea>
       <footer class="dialog-footer">
@@ -157,7 +157,7 @@
   <template id="port-template">
     <div class="port-wrapper">
       <span class="port-name"></span>
-      <div class="port"></div>
+      <button class="port" type="button"></button>
     </div>
   </template>
 

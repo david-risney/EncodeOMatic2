@@ -262,6 +262,10 @@ class GraphEditor extends HTMLElement {
     nameEl.textContent = pipe.displayName;
     nameEl.title = pipe.displayName;
     const cfgBtn = el.querySelector('.pipe-node-config-btn');
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', `Select ${pipe.displayName} pipe`);
+    cfgBtn.setAttribute('aria-label', `Configure ${pipe.displayName}`);
     cfgBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.dispatchEvent(new CustomEvent('pipe-config-click', {
@@ -335,6 +339,13 @@ class GraphEditor extends HTMLElement {
         detail: { pipeId: pipe.id }, bubbles: true
       }));
     });
+    el.addEventListener('keydown', (e) => {
+      if (e.target !== el || (e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault();
+      this.dispatchEvent(new CustomEvent('pipe-select', {
+        detail: { pipeId: pipe.id }, bubbles: true
+      }));
+    });
 
     return el;
   }
@@ -368,6 +379,7 @@ class GraphEditor extends HTMLElement {
     dot.dataset.portName = portDef.name;
     dot.dataset.portType = portType;
     dot.title = `${portType}: ${portDef.name} — ${portDef.description}`;
+    dot.setAttribute('aria-label', `${portType} port ${portDef.name}: ${portDef.description}`);
 
     const label = wrapper.querySelector('.port-name');
     label.textContent = portDef.name;

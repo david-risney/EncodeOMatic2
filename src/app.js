@@ -439,6 +439,7 @@ function togglePinned(view) {
   view.pinButton.textContent = view.pinned ? '📌' : '📍';
   view.pinButton.setAttribute('aria-pressed', String(view.pinned));
   view.pinButton.title = view.pinned ? 'Allow this view to close' : 'Keep this view open';
+  view.pinButton.setAttribute('aria-label', view.pinButton.title);
   view.minimizeButton.hidden = !view.pinned;
 }
 
@@ -449,6 +450,7 @@ function toggleMinimized(view) {
   view.minimizeButton.setAttribute('aria-pressed', String(view.minimized));
   view.minimizeButton.textContent = view.minimized ? '□' : '_';
   view.minimizeButton.title = view.minimized ? 'Restore this view' : 'Minimize this view';
+  view.minimizeButton.setAttribute('aria-label', view.minimizeButton.title);
 }
 
 // ── Port click ───────────────────────────────────────────────────
