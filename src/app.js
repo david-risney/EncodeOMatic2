@@ -57,6 +57,7 @@ const dataViewStack = document.getElementById('data-view-stack');
  * }>} */
 const dataViews = new Map();
 let activeSelections = new Map();
+let selectionRefreshFrame = null;
 let selectedPipeId = null;
 
 /** The connection action popover element. @type {HTMLElement|null} */
@@ -417,7 +418,12 @@ function createDataView(pipeId, portName, portType) {
       view.portName,
       event.detail.selections
     );
-    refreshDataViews();
+    if (selectionRefreshFrame === null) {
+      selectionRefreshFrame = requestAnimationFrame(() => {
+        selectionRefreshFrame = null;
+        refreshDataViews();
+      });
+    }
   });
   modeButton.addEventListener('click', () =>
     setViewMode(view, view.mode === 'text' ? 'hex' : 'text'));

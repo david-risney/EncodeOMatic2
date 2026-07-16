@@ -162,8 +162,9 @@ class DataViewer extends HTMLElement {
       });
       editor.addEventListener('select', () => {
         const start = new TextEncoder().encode(editor.value.slice(0, editor.selectionStart)).length;
-        const end = new TextEncoder().encode(editor.value.slice(0, editor.selectionEnd)).length;
-        this._emitSelection(start, end);
+        const length = new TextEncoder()
+          .encode(editor.value.slice(editor.selectionStart, editor.selectionEnd)).length;
+        this._emitSelection(start, start + length);
       });
       this._inner.appendChild(editor);
     } else {

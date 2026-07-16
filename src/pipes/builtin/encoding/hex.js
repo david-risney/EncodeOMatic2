@@ -115,8 +115,18 @@ export class HexDecodePipe extends Pipe {
 
   translateSelections(fromPortType, fromPortName, toPortType, toPortName, selections) {
     const text = new TextDecoder().decode(this.getInputData() ?? new Uint8Array());
-    const digits = [...text.matchAll(/[0-9a-fA-F]/g)].map(match =>
-      new TextEncoder().encode(text.slice(0, match.index)).length);
+    const digitCharacterIndexes = new Set(
+      [...text.matchAll(/[0-9a-fA-F]/g)].map(match => match.index)
+    );
+    const digits = [];
+    const encoder = new TextEncoder();
+    let byteOffset = 0;
+    for (let characterIndex = 0; characterIndex < text.length;) {
+      if (digitCharacterIndexes.has(characterIndex)) digits.push(byteOffset);
+      const character = String.fromCodePoint(text.codePointAt(characterIndex));
+      byteOffset += encoder.encode(character).length;
+      characterIndex += character.length;
+    }
     const tokens = [];
     for (let index = 0; index + 1 < digits.length; index += 2) {
       tokens.push({ start: digits[index], end: digits[index + 1] + 1 });
