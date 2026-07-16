@@ -287,13 +287,13 @@ class GraphEditor extends HTMLElement {
     const nameEl = document.createElement('span');
     nameEl.className = 'pipe-node-name';
     nameEl.title = pipe.displayName;
+    nameEl.textContent = pipe.displayName;
     const errorIndicatorEl = document.createElement('span');
     errorIndicatorEl.className = 'pipe-node-error-indicator';
     errorIndicatorEl.textContent = '❗';
     errorIndicatorEl.setAttribute('role', 'img');
     errorIndicatorEl.setAttribute('aria-label', 'Error');
     errorIndicatorEl.hidden = true;
-    nameEl.textContent = pipe.displayName;
     nameGroupEl.appendChild(errorIndicatorEl);
     nameGroupEl.appendChild(nameEl);
     const cfgBtn = document.createElement('button');
