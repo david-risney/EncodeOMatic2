@@ -131,50 +131,50 @@ function onGraphEvent(event) {
     removeDataView(event.pipeId);
     return;
   }
-    if (event.type === 'pipe-processed' || event.type === 'processed') {
-      refreshDataViews();
-    }
+  if (event.type === 'pipe-processed' || event.type === 'processed') {
+    refreshDataViews();
   }
+}
 
-  function scheduleUrlUpdate() {
-    if (_suspendUrlUpdates) return;
-    clearTimeout(_urlUpdateTimer);
-    _urlUpdateTimer = setTimeout(() => {
-      saveToUrl(graph.toJSON()).catch(error => {
-        console.error('URL update failed:', error);
-        showToast('Could not update the URL', 'error');
-      });
-    }, 100);
-  }
-
-  function initSessionMenu() {
-    const button = document.getElementById('btn-session-menu');
-    const menu = document.getElementById('session-menu');
-    const close = () => {
-      menu.hidden = true;
-      button.setAttribute('aria-expanded', 'false');
-    };
-
-    button.addEventListener('click', event => {
-      event.stopPropagation();
-      menu.hidden = !menu.hidden;
-      button.setAttribute('aria-expanded', String(!menu.hidden));
+function scheduleUrlUpdate() {
+  if (_suspendUrlUpdates) return;
+  clearTimeout(_urlUpdateTimer);
+  _urlUpdateTimer = setTimeout(() => {
+    saveToUrl(graph.toJSON()).catch(error => {
+      console.error('URL update failed:', error);
+      showToast('Could not update the URL', 'error');
     });
-    menu.addEventListener('click', close);
-    document.addEventListener('click', event => {
-      if (!menu.hidden && !menu.contains(event.target)) close();
-    });
-  }
+  }, 100);
+}
 
-  function initZoomControl() {
-    const range = document.getElementById('zoom-range');
-    const value = document.getElementById('zoom-value');
-    range.addEventListener('input', () => editor.setZoom(range.value));
-    editor.addEventListener('zoom-change', event => {
-      range.value = String(event.detail.percent);
-      value.value = `${event.detail.percent}%`;
-      value.textContent = value.value;
-    });
+function initSessionMenu() {
+  const button = document.getElementById('btn-session-menu');
+  const menu = document.getElementById('session-menu');
+  const close = () => {
+    menu.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  };
+
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    menu.hidden = !menu.hidden;
+    button.setAttribute('aria-expanded', String(!menu.hidden));
+  });
+  menu.addEventListener('click', close);
+  document.addEventListener('click', event => {
+    if (!menu.hidden && !menu.contains(event.target)) close();
+  });
+}
+
+function initZoomControl() {
+  const range = document.getElementById('zoom-range');
+  const value = document.getElementById('zoom-value');
+  range.addEventListener('input', () => editor.setZoom(range.value));
+  editor.addEventListener('zoom-change', event => {
+    range.value = String(event.detail.percent);
+    value.value = `${event.detail.percent}%`;
+    value.textContent = value.value;
+  });
 }
 
 function refreshDataViews() {
