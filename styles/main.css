@@ -632,9 +632,9 @@ data-viewer {
   max-height: 35%;
   overflow: auto;
   padding: 8px 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
-  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
-  color: var(--color-danger);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-error) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-error) 10%, var(--color-surface));
+  color: var(--color-error);
   font-size: 12px;
 }
 
@@ -695,7 +695,7 @@ data-viewer {
 }
 
 .data-viewer-editor.invalid {
-  border-color: var(--color-danger);
+  border-color: var(--color-error);
 }
 
 .data-viewer-info {
@@ -725,9 +725,9 @@ data-viewer {
 }
 
 .data-viewer-selection {
-  background: color-mix(in srgb, var(--color-danger) 32%, transparent);
+  background: color-mix(in srgb, var(--color-error) 32%, transparent);
   color: var(--color-text);
-  outline: 1px solid var(--color-danger);
+  outline: 1px solid var(--color-error);
   border-radius: 2px;
 }
 
