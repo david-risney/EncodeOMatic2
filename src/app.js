@@ -110,6 +110,7 @@ async function init() {
   editor.addEventListener('pipe-port-click',   onPortClick);
   editor.addEventListener('pipe-config-click', onConfigClick);
   editor.addEventListener('pipe-select',        onPipeSelect);
+  editor.addEventListener('graph-background-click', onGraphBackgroundClick);
   editor.addEventListener('connection-click',   onConnectionClick);
   editor.addEventListener('graph-change', scheduleUrlUpdate);
   editor.addEventListener('add-pipe-request',   onAddPipeRequest);
@@ -488,6 +489,13 @@ function onPipeSelect(e) {
   if (outName) {
     showDataView(pipeId, outName, 'output');
   }
+}
+
+function onGraphBackgroundClick() {
+  if (!selectedPipeId) return;
+  const selected = dataViews.get(selectedPipeId);
+  selectedPipeId = null;
+  if (selected && !selected.pinned) removeDataView(selected.pipeId);
 }
 
 // ── Connection action popover ────────────────────────────────────
