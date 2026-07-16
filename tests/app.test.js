@@ -13,7 +13,6 @@ class SilentWorker {
 
 function appMarkup() {
   return `
-    <button id="btn-add-pipe">Add</button>
     <button id="btn-share">Share</button>
     <button id="btn-session-menu">Session</button>
     <div id="session-menu" hidden>
@@ -72,7 +71,8 @@ describe('application integration', () => {
     input.dispatchEvent(new Event('input'));
     expect(document.getElementById('pipe-list').textContent).toContain('Base64 Encode');
 
-    document.getElementById('btn-add-pipe').click();
+    expect(document.querySelector('.add-pipe-control').hidden).toBe(false);
+    document.querySelector('.add-pipe-control').click();
     const dialog = document.getElementById('add-pipe-dialog');
     expect(dialog.open).toBe(true);
     [...document.querySelectorAll('.pipe-list-item')]

@@ -341,6 +341,44 @@ graph-editor {
   border-color: var(--color-error);
 }
 
+.add-pipe-control {
+  position: absolute;
+  width: 140px;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-pipe-bg);
+  border: 2px dashed var(--color-pipe-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  cursor: pointer;
+  font: 600 12px var(--font-ui);
+  box-shadow: var(--shadow);
+  z-index: 2;
+}
+
+.add-pipe-control:hover,
+.add-pipe-control.draft {
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.add-pipe-control span:first-child {
+  color: var(--color-accent);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.add-pipe-control.draft {
+  pointer-events: none;
+}
+
+.add-pipe-control[hidden] {
+  display: none;
+}
+
 .pipe-node-ports-top {
   display: flex;
   justify-content: space-around;

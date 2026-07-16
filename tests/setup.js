@@ -19,6 +19,10 @@ if (!HTMLDialogElement.prototype.close) {
   };
 }
 
+if (!document.elementFromPoint) {
+  document.elementFromPoint = () => null;
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
   document.body.innerHTML = '';
