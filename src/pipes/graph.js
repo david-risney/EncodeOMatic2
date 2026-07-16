@@ -79,6 +79,7 @@ export class PipeGraph {
     const outgoing = [];
     const remaining = [];
     for (const connection of this.connections) {
+      if (connection.fromPipeId === pipeId && connection.toPipeId === pipeId) continue;
       if (connection.toPipeId === pipeId) incoming.push(connection);
       if (connection.fromPipeId === pipeId) outgoing.push(connection);
       if (connection.fromPipeId !== pipeId && connection.toPipeId !== pipeId) {
