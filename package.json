@@ -19,9 +19,15 @@
   },
   "homepage": "https://github.com/david-risney/EncodeOMatic2#readme",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
+    "rollup": "^4.62.2",
     "vitest": "^4.1.10"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "iconv-lite": "^0.7.3"
+  }
 }
