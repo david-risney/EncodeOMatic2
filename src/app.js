@@ -139,6 +139,8 @@ function initDataPanelResizer() {
   }
 
   function currentWidth() {
+    // Hidden panels have no layout width, so fall back to their computed width
+    // and finally the stylesheet's default custom property.
     return dataPanel.getBoundingClientRect().width
       || Number.parseFloat(getComputedStyle(dataPanel).width)
       || Number.parseFloat(getComputedStyle(document.documentElement)
