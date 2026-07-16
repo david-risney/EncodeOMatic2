@@ -14,6 +14,8 @@ automatically loaded context small while making deeper context discoverable.
   dynamic ports, and the steps for adding a pipe.
 - [Development and testing](development.md) — local setup, validation, test
   organization, CI, and deployment.
+- [UX design language](design-language.md) — visual principles, design tokens,
+  spacing, typography, components, interaction patterns, and responsive rules.
 - [Maintainer gotchas](gotchas.md) — constraints and easy-to-miss coupling
   between modules.
 
