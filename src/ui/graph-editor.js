@@ -291,6 +291,7 @@ class GraphEditor extends HTMLElement {
       textarea.value = pipe.getConfig('text')?.value ?? '';
       textarea.addEventListener('input', () => {
         pipe.setConfig('text', textarea.value);
+        pipe.setConfig('rawBytes', null);
         if (this._graph) {
           this._graph.processFrom(pipe.id).catch(console.error);
         }

@@ -43,8 +43,7 @@ const dataViewStack = document.getElementById('data-view-stack');
  *   viewer: import('./ui/data-viewer.js').DataViewer,
  *   pinButton: HTMLButtonElement,
  *   minimizeButton: HTMLButtonElement,
- *   textButton: HTMLButtonElement,
- *   hexButton: HTMLButtonElement
+ *   modeButton: HTMLButtonElement
  * }>} */
 const dataViews = new Map();
 let selectedPipeId = null;
@@ -153,9 +152,25 @@ function refreshDataView(view) {
   }
 
   view.viewer.setData(data, view.portName);
+  const portLabel = view.portName === view.portType
+    ? view.portName
+    : `${view.portType}: ${view.portName}`;
   view.title.textContent =
-    `${pipe.displayName} · ${view.portType}: ${view.portName}` +
+    `${pipe.displayName} · ${portLabel}` +
     (data ? ` (${data.length} bytes)` : ' (no data)');
+  const editable = pipe.constructor.typeName === 'InputPipe' && view.portType === 'output';
+  view.viewer.setEditable(editable, editable ? (bytes, mode) => {
+    if (mode === 'text') {
+      pipe.setConfig('text', new TextDecoder().decode(bytes));
+      pipe.setConfig('rawBytes', null);
+    } else {
+      pipe.setConfig('rawBytes', [...bytes]);
+      pipe.setConfig('text', new TextDecoder().decode(bytes));
+    }
+    const textarea = editor._pipeElements.get(pipe.id)?.querySelector('.pipe-input-area textarea');
+    if (textarea) textarea.value = pipe.getConfig('text').value;
+    graph.processFrom(pipe.id).catch(console.error);
+  } : null);
 }
 
 function createDataView(pipeId, portName, portType) {
@@ -169,27 +184,24 @@ function createDataView(pipeId, portName, portType) {
   const controls = document.createElement('div');
   controls.className = 'data-panel-controls';
 
-  const textButton = document.createElement('button');
-  textButton.className = 'btn btn-sm active';
-  textButton.textContent = 'Text';
-  textButton.title = 'View as text';
-  const hexButton = document.createElement('button');
-  hexButton.className = 'btn btn-sm';
-  hexButton.textContent = 'Hex';
-  hexButton.title = 'View as hex';
+  const modeButton = document.createElement('button');
+  modeButton.className = 'btn btn-sm active';
+  modeButton.textContent = 'Aa';
+  modeButton.title = 'Switch to hex view';
+  modeButton.setAttribute('aria-label', 'Text view; switch to hex');
   const pinButton = document.createElement('button');
   pinButton.className = 'btn btn-sm';
-  pinButton.textContent = 'Pin';
+  pinButton.textContent = '📍';
   pinButton.title = 'Keep this view open';
   pinButton.setAttribute('aria-pressed', 'false');
   const minimizeButton = document.createElement('button');
   minimizeButton.className = 'btn btn-sm';
-  minimizeButton.textContent = 'Minimize';
+  minimizeButton.textContent = '_';
   minimizeButton.title = 'Minimize this view';
   minimizeButton.setAttribute('aria-pressed', 'false');
   minimizeButton.hidden = true;
 
-  controls.append(textButton, hexButton, pinButton, minimizeButton);
+  controls.append(modeButton, pinButton, minimizeButton);
   header.append(title, controls);
   const viewer = document.createElement('data-viewer');
   element.append(header, viewer);
@@ -201,10 +213,10 @@ function createDataView(pipeId, portName, portType) {
     minimized: false,
     mode: 'text',
     element, title, viewer,
-    pinButton, minimizeButton, textButton, hexButton,
+    pinButton, minimizeButton, modeButton,
   };
-  textButton.addEventListener('click', () => setViewMode(view, 'text'));
-  hexButton.addEventListener('click', () => setViewMode(view, 'hex'));
+  modeButton.addEventListener('click', () =>
+    setViewMode(view, view.mode === 'text' ? 'hex' : 'text'));
   pinButton.addEventListener('click', () => togglePinned(view));
   minimizeButton.addEventListener('click', () => toggleMinimized(view));
   dataViews.set(pipeId, view);
@@ -252,6 +264,7 @@ function togglePinned(view) {
   if (wasPinned && view.minimized) toggleMinimized(view);
   view.pinned = !wasPinned;
   view.pinButton.classList.toggle('active', view.pinned);
+  view.pinButton.textContent = view.pinned ? '📌' : '📍';
   view.pinButton.setAttribute('aria-pressed', String(view.pinned));
   view.pinButton.title = view.pinned ? 'Allow this view to close' : 'Keep this view open';
   view.minimizeButton.hidden = !view.pinned;
@@ -262,7 +275,7 @@ function toggleMinimized(view) {
   view.element.classList.toggle('minimized', view.minimized);
   view.minimizeButton.classList.toggle('active', view.minimized);
   view.minimizeButton.setAttribute('aria-pressed', String(view.minimized));
-  view.minimizeButton.textContent = view.minimized ? 'Restore' : 'Minimize';
+  view.minimizeButton.textContent = view.minimized ? '□' : '_';
   view.minimizeButton.title = view.minimized ? 'Restore this view' : 'Minimize this view';
 }
 
@@ -403,7 +416,7 @@ function onConfigClick(e) {
   title.textContent = `Configure: ${pipe.displayName}`;
   fields.innerHTML = '';
 
-  const configEntries = [...pipe.configs.values()];
+  const configEntries = [...pipe.configs.values()].filter(cfg => cfg.type !== 'hidden');
   if (configEntries.length === 0) {
     const p = document.createElement('p');
     p.style.color = 'var(--color-text-dim)';
@@ -526,8 +539,12 @@ function onConfigClick(e) {
 
 function setViewMode(view, mode) {
   view.mode = mode;
-  view.textButton.classList.toggle('active', mode === 'text');
-  view.hexButton.classList.toggle('active', mode === 'hex');
+  view.modeButton.textContent = mode === 'text' ? 'Aa' : '0xFF';
+  view.modeButton.title = mode === 'text' ? 'Switch to hex view' : 'Switch to text view';
+  view.modeButton.setAttribute(
+    'aria-label',
+    mode === 'text' ? 'Text view; switch to hex' : 'Hex view; switch to text'
+  );
   view.viewer.setMode(mode);
 }
 

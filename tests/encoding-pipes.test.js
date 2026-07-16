@@ -13,7 +13,7 @@ import { decode, encode, processBytes, processText } from './helpers.js';
 
 describe('source and byte encodings', () => {
   it.each([
-    [InputPipe, { text: '' }],
+    [InputPipe, { text: '', rawBytes: null }],
     [Base64EncodePipe, {}],
     [Base64DecodePipe, {}],
     [HexEncodePipe, { separator: '', uppercase: true }],
@@ -43,6 +43,13 @@ describe('source and byte encodings', () => {
     expect(pipe.defineInputs()).toEqual([]);
     pipe.setConfig('text', 'Hello 🌍');
     expect(decode((await pipe.process(new Map())).get('output'))).toBe('Hello 🌍');
+  });
+
+  it('preserves raw bytes entered through the input viewer', async () => {
+    const pipe = new InputPipe();
+    pipe.setConfig('rawBytes', [0, 255, 65]);
+    await pipe.run();
+    expect([...pipe.getOutputData()]).toEqual([0, 255, 65]);
   });
 
   it('round trips arbitrary bytes through Base64 and rejects invalid input', async () => {
