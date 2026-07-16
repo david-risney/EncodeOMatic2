@@ -48,6 +48,9 @@ class GraphEditor extends HTMLElement {
     this._panY = 0;
     this._isPanning = false;
     this._panStart = null;
+    this._activePointers = new Map();
+    this._gesture = null;
+    this._interactionPointerId = null;
 
     // Connection draft state
     this._draftFrom = null; // {pipeId, portName, portType, x, y}
@@ -100,14 +103,15 @@ class GraphEditor extends HTMLElement {
     this._addPipeControl.type = 'button';
     this._addPipeControl.setAttribute('aria-label', 'Add Pipe');
     this._addPipeControl.innerHTML = '<span>+</span><span>Add Pipe</span>';
-    this._addPipeControl.addEventListener('mousedown', e => e.stopPropagation());
+    this._addPipeControl.addEventListener('pointerdown', e => e.stopPropagation());
     this._addPipeControl.addEventListener('click', () => this._requestAddPipe());
     this._inner.appendChild(this._addPipeControl);
 
     // Events
-    this._canvas.addEventListener('mousedown', this._onCanvasMouseDown.bind(this));
-    this._canvas.addEventListener('mousemove', this._onCanvasMouseMove.bind(this));
-    this._canvas.addEventListener('mouseup', this._onCanvasMouseUp.bind(this));
+    this._canvas.addEventListener('pointerdown', this._onCanvasPointerDown.bind(this));
+    this._canvas.addEventListener('pointermove', this._onCanvasPointerMove.bind(this));
+    this._canvas.addEventListener('pointerup', this._onCanvasPointerUp.bind(this));
+    this._canvas.addEventListener('pointercancel', this._onCanvasPointerCancel.bind(this));
     this._canvas.addEventListener('click', this._onCanvasClick.bind(this));
     this._canvas.addEventListener('wheel', this._onWheel.bind(this), { passive: false });
     this._canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -371,9 +375,10 @@ class GraphEditor extends HTMLElement {
     this._buildPorts(pipe, topPorts, botPorts);
 
     // Drag to move
-    el.addEventListener('mousedown', (e) => {
+    el.addEventListener('pointerdown', (e) => {
       if (e.target.classList.contains('port') || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
       e.stopPropagation();
+      if (this._trackPointerDown(e)) return;
       const rect = el.getBoundingClientRect();
       this._dragging = {
         pipeId: pipe.id,
@@ -383,6 +388,7 @@ class GraphEditor extends HTMLElement {
         startElemX: pipe.position.x,
         startElemY: pipe.position.y,
       };
+      this._interactionPointerId = e.pointerId;
       el.style.cursor = 'grabbing';
     });
 
@@ -445,8 +451,10 @@ class GraphEditor extends HTMLElement {
     this._portElements.set(key, dot);
 
     // Click to start/finish connection
-    dot.addEventListener('mousedown', (e) => {
+    dot.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
+      if (this._trackPointerDown(e)) return;
+      this._interactionPointerId = e.pointerId;
       this._onPortMouseDown(e, pipeId, portDef.name, portType);
     });
 
@@ -482,11 +490,14 @@ class GraphEditor extends HTMLElement {
     }
   }
 
-  _onCanvasMouseDown(e) {
+  _onCanvasPointerDown(e) {
+    if (this._trackPointerDown(e)) return;
+    if (e.target.closest('button, textarea, input, select')) return;
     if (e.button === 1 || (e.button === 0 && !this._draftFrom && !this._dragging)) {
       // Pan
       this._isPanning = true;
       this._panStart = { x: e.clientX - this._panX, y: e.clientY - this._panY };
+      this._interactionPointerId = e.pointerId;
       this._canvas.style.cursor = 'grabbing';
     }
   }
@@ -496,7 +507,20 @@ class GraphEditor extends HTMLElement {
     this.dispatchEvent(new CustomEvent('graph-background-click', { bubbles: true }));
   }
 
-  _onCanvasMouseMove(e) {
+  _onCanvasPointerMove(e) {
+    if (this._activePointers.has(e.pointerId)) {
+      this._activePointers.set(e.pointerId, {
+        x: e.clientX,
+        y: e.clientY,
+        pointerType: e.pointerType,
+      });
+    }
+    if (this._gesture) {
+      this._updateTouchGesture();
+      return;
+    }
+    if (this._interactionPointerId !== null && e.pointerId !== this._interactionPointerId) return;
+
     if (this._isPanning) {
       this._panX = e.clientX - this._panStart.x;
       this._panY = e.clientY - this._panStart.y;
@@ -530,7 +554,27 @@ class GraphEditor extends HTMLElement {
     }
   }
 
-  _onCanvasMouseUp(e) {
+  _onCanvasPointerUp(e) {
+    if (this._finishTouchGesturePointer(e)) return;
+    if (this._interactionPointerId !== null && e.pointerId !== this._interactionPointerId) {
+      this._activePointers.delete(e.pointerId);
+      return;
+    }
+    this._finishDirectInteraction(e);
+    this._activePointers.delete(e.pointerId);
+    this._interactionPointerId = null;
+    this._releasePointer(e.pointerId);
+  }
+
+  _onCanvasPointerCancel(e) {
+    if (this._finishTouchGesturePointer(e)) return;
+    this._cancelDirectInteraction();
+    this._activePointers.delete(e.pointerId);
+    this._interactionPointerId = null;
+    this._releasePointer(e.pointerId);
+  }
+
+  _finishDirectInteraction(e) {
     this._canvas.style.cursor = '';
     if (this._dragging) {
       this._dragging.el.style.cursor = '';
@@ -550,6 +594,106 @@ class GraphEditor extends HTMLElement {
         this._cancelDraft();
       }
     }
+  }
+
+  _trackPointerDown(e) {
+    if (typeof e.pointerId !== 'number') return false;
+    this._activePointers.set(e.pointerId, {
+      x: e.clientX,
+      y: e.clientY,
+      pointerType: e.pointerType,
+    });
+    if (typeof this._canvas.setPointerCapture === 'function') {
+      this._canvas.setPointerCapture(e.pointerId);
+    }
+
+    const touches = this._touchPointers();
+    if (touches.length < 2) return false;
+    e.preventDefault();
+    this._cancelDirectInteraction();
+    this._interactionPointerId = null;
+    if (touches.length === 2) this._beginTouchGesture(touches);
+    return true;
+  }
+
+  _touchPointers() {
+    return [...this._activePointers.values()].filter(pointer => pointer.pointerType === 'touch');
+  }
+
+  _beginTouchGesture(touches) {
+    const center = this._pointerCenter(touches);
+    this._gesture = {
+      distance: this._pointerDistance(touches),
+      center,
+      scale: this._scale,
+      panX: this._panX,
+      panY: this._panY,
+    };
+  }
+
+  _updateTouchGesture() {
+    const touches = this._touchPointers();
+    if (touches.length < 2 || !this._gesture) return;
+    const center = this._pointerCenter(touches);
+    const distance = this._pointerDistance(touches);
+    const ratio = this._gesture.distance > 0 ? distance / this._gesture.distance : 1;
+    const nextScale = Math.max(0.2, Math.min(3, this._gesture.scale * ratio));
+    const scaleRatio = nextScale / this._gesture.scale;
+    const rect = this._canvas.getBoundingClientRect();
+    const startX = this._gesture.center.x - rect.left;
+    const startY = this._gesture.center.y - rect.top;
+    const currentX = center.x - rect.left;
+    const currentY = center.y - rect.top;
+    this._panX = currentX - (startX - this._gesture.panX) * scaleRatio;
+    this._panY = currentY - (startY - this._gesture.panY) * scaleRatio;
+    this._scale = nextScale;
+    this._applyTransform();
+    this.updateConnections();
+    this._notifyZoom();
+  }
+
+  _finishTouchGesturePointer(e) {
+    if (!this._gesture) return false;
+    this._activePointers.delete(e.pointerId);
+    this._releasePointer(e.pointerId);
+    const touches = this._touchPointers();
+    this._gesture = null;
+    if (touches.length >= 2) {
+      this._beginTouchGesture(touches);
+    } else if (touches.length === 1) {
+      const remainingTouch = [...this._activePointers.entries()]
+        .find(([, value]) => value.pointerType === 'touch');
+      if (remainingTouch) {
+        const [pointerId, pointer] = remainingTouch;
+        this._interactionPointerId = pointerId;
+        this._isPanning = true;
+        this._panStart = { x: pointer.x - this._panX, y: pointer.y - this._panY };
+        this._canvas.style.cursor = 'grabbing';
+      }
+    }
+    return true;
+  }
+
+  _cancelDirectInteraction() {
+    this._canvas.style.cursor = '';
+    if (this._dragging) this._dragging.el.style.cursor = '';
+    this._dragging = null;
+    this._isPanning = false;
+    if (this._draftFrom) this._cancelDraft();
+  }
+
+  _releasePointer(pointerId) {
+    if (this._canvas.hasPointerCapture?.(pointerId)) {
+      this._canvas.releasePointerCapture(pointerId);
+    }
+  }
+
+  _pointerCenter([first, second]) {
+    return { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 };
+  }
+
+  _pointerDistance([first, second]) {
+    return Math.hypot(second.x - first.x, second.y - first.y);
   }
 
   _completeConnection(toPipeId, toPortName) {
