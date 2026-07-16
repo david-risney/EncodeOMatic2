@@ -2,9 +2,16 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 class SilentWorker {
   constructor() {
-    this.postMessage = vi.fn(({ id }) => {
+    this.postMessage = vi.fn(({ id, pipeType }) => {
       queueMicrotask(() => this.onmessage({
-        data: { type: 'result', id, outputs: { output: [] }, errors: [] },
+        data: {
+          type: 'result',
+          id,
+          outputs: { output: [] },
+          errors: pipeType === 'Base64Decode'
+            ? [{ message: 'Invalid Base64 input' }]
+            : [],
+        },
       }));
     });
     this.terminate = vi.fn();
