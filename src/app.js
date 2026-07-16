@@ -11,7 +11,14 @@ import {
 } from './pipes/pipe.js';
 import { registry, createPipe, getPipesByCategory } from './pipes/registry.js';
 import { WorkerPool } from './worker/worker-pool.js';
-import { saveToUrl, loadFromUrl } from './state.js';
+import {
+  saveToUrl,
+  loadFromUrl,
+  saveToIdb,
+  loadFromIdb,
+  listIdbSessions,
+} from './state.js';
+import { guessPipeChain } from './guess.js';
 import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
@@ -63,11 +70,14 @@ let _connActionTarget = null;
  * }|null}
  */
 let _addPipeContext = null;
+let _urlUpdateTimer = null;
+let _suspendUrlUpdates = false;
 
 // ── Initialize ───────────────────────────────────────────────────
 
 async function init() {
   editor.setGraph(graph);
+  initZoomControl();
 
   graph.addListener(onGraphEvent);
 
@@ -83,17 +93,21 @@ async function init() {
     editor.fitView();
   }
 
-  // Wire toolbar buttons
-  document.getElementById('btn-save').addEventListener('click', onSave);
-  document.getElementById('btn-load').addEventListener('click', onLoad);
+  // Wire toolbar controls
+  document.getElementById('btn-share').addEventListener('click', onShare);
   document.getElementById('btn-clear').addEventListener('click', onClear);
+  document.getElementById('btn-session-save').addEventListener('click', onSaveSession);
+  document.getElementById('btn-session-load').addEventListener('click', onLoadSession);
+  document.getElementById('btn-guess').addEventListener('click', onGuessEncoding);
   document.getElementById('btn-zoom-fit').addEventListener('click', () => editor.fitView());
+  initSessionMenu();
 
   // Graph editor events
   editor.addEventListener('pipe-port-click',   onPortClick);
   editor.addEventListener('pipe-config-click', onConfigClick);
   editor.addEventListener('pipe-select',        onPipeSelect);
   editor.addEventListener('connection-click',   onConnectionClick);
+  editor.addEventListener('graph-change', scheduleUrlUpdate);
   editor.addEventListener('add-pipe-request',   onAddPipeRequest);
 
   // Add Pipe dialog setup
@@ -106,11 +120,13 @@ async function init() {
   toast.className = 'toast-container';
   toast.id = 'toast-container';
   document.body.appendChild(toast);
+  scheduleUrlUpdate();
 }
 
 // ── Graph events ─────────────────────────────────────────────────
 
 function onGraphEvent(event) {
+  scheduleUrlUpdate();
   if (event.type === 'pipe-removed') {
     removeDataView(event.pipeId);
     return;
@@ -118,6 +134,47 @@ function onGraphEvent(event) {
   if (event.type === 'pipe-processed' || event.type === 'processed') {
     refreshDataViews();
   }
+}
+
+function scheduleUrlUpdate() {
+  if (_suspendUrlUpdates) return;
+  clearTimeout(_urlUpdateTimer);
+  _urlUpdateTimer = setTimeout(() => {
+    saveToUrl(graph.toJSON()).catch(error => {
+      console.error('URL update failed:', error);
+      showToast('Could not update the URL', 'error');
+    });
+  }, 100);
+}
+
+function initSessionMenu() {
+  const button = document.getElementById('btn-session-menu');
+  const menu = document.getElementById('session-menu');
+  const close = () => {
+    menu.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  };
+
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    menu.hidden = !menu.hidden;
+    button.setAttribute('aria-expanded', String(!menu.hidden));
+  });
+  menu.addEventListener('click', close);
+  document.addEventListener('click', event => {
+    if (!menu.hidden && !menu.contains(event.target)) close();
+  });
+}
+
+function initZoomControl() {
+  const range = document.getElementById('zoom-range');
+  const value = document.getElementById('zoom-value');
+  range.addEventListener('input', () => editor.setZoom(range.value));
+  editor.addEventListener('zoom-change', event => {
+    range.value = String(event.detail.percent);
+    value.value = `${event.detail.percent}%`;
+    value.textContent = value.value;
+  });
 }
 
 function refreshDataViews() {
@@ -691,32 +748,126 @@ function addPipe(typeName) {
   editor.updateConnections();
 }
 
-// ── Save/Load ────────────────────────────────────────────────────
+// ── Sharing and sessions ─────────────────────────────────────────
 
-async function onSave() {
+async function onShare() {
   try {
     const url = await saveToUrl(graph.toJSON());
+    if (navigator.share) {
+      await navigator.share({ title: document.title, url });
+      return;
+    }
     await navigator.clipboard.writeText(url);
     showToast('URL copied to clipboard!', 'success');
   } catch (e) {
-    console.error('Save failed:', e);
-    showToast('Save failed: ' + e.message, 'error');
+    if (e.name === 'AbortError') return;
+    console.error('Share failed:', e);
+    showToast('Share failed: ' + e.message, 'error');
   }
 }
 
-async function onLoad() {
-  const url = prompt('Paste a saved URL to load:');
-  if (!url) return;
+async function onSaveSession() {
+  const name = prompt('Name this session:')?.trim();
+  if (!name) return;
   try {
-    new URL(url); // validate
-    window.location.href = url;
-  } catch {
-    showToast('Invalid URL', 'error');
+    const existing = (await listIdbSessions()).some(session => session.name === name);
+    if (existing && !confirm(`Replace the saved session "${name}"?`)) return;
+    await saveToIdb(name, graph.toJSON());
+    showToast(`Saved session "${name}"`, 'success');
+  } catch (e) {
+    console.error('Session save failed:', e);
+    showToast('Session save failed: ' + e.message, 'error');
+  }
+}
+
+async function onLoadSession() {
+  try {
+    const sessions = await listIdbSessions();
+    if (sessions.length === 0) {
+      showToast('No saved sessions', 'error');
+      return;
+    }
+    const names = sessions.map(session => session.name);
+    const name = prompt(`Session name to load:\n\n${names.join('\n')}`)?.trim();
+    if (!name) return;
+    const data = await loadFromIdb(name);
+    if (!data) {
+      showToast(`Session "${name}" was not found`, 'error');
+      return;
+    }
+    await replaceGraph(data);
+    showToast(`Loaded session "${name}"`, 'success');
+  } catch (e) {
+    console.error('Session load failed:', e);
+    showToast('Session load failed: ' + e.message, 'error');
+  }
+}
+
+async function onGuessEncoding() {
+  const input = prompt('Enter the encoded string to inspect:');
+  if (input == null || input.length === 0) return;
+
+  try {
+    const chain = await guessPipeChain(new TextEncoder().encode(input), registry.values());
+    _suspendUrlUpdates = true;
+    clearGraphWithoutConfirmation();
+
+    const inputPipe = createPipe('InputPipe');
+    inputPipe.setConfig('text', input);
+    inputPipe.position = { x: 60, y: 80 };
+    graph.addPipe(inputPipe);
+    editor.addPipeElement(inputPipe);
+
+    let previous = inputPipe;
+    for (const [index, step] of chain.entries()) {
+      const pipe = createPipe(step.typeName);
+      pipe.position = { x: 260 + index * 200, y: 80 };
+      graph.addPipe(pipe);
+      editor.addPipeElement(pipe);
+      graph.connect(previous.id, previous.defaultOutputName, pipe.id, pipe.defaultInputName);
+      previous = pipe;
+    }
+
+    editor.updateConnections();
+    await graph.processAll();
+    editor.fitView();
+    showToast(
+      chain.length > 0
+        ? `Guessed ${chain.length} pipe${chain.length === 1 ? '' : 's'}`
+        : 'No shortening decode pipes found',
+      chain.length > 0 ? 'success' : ''
+    );
+  } catch (e) {
+    console.error('Encoding guess failed:', e);
+    showToast('Encoding guess failed: ' + e.message, 'error');
+  } finally {
+    _suspendUrlUpdates = false;
+    scheduleUrlUpdate();
+  }
+}
+
+async function replaceGraph(data) {
+  _suspendUrlUpdates = true;
+  try {
+    clearGraphWithoutConfirmation();
+    graph.fromJSON(data, registry);
+    for (const pipe of graph.pipes.values()) editor.addPipeElement(pipe);
+    editor.updateConnections();
+    await graph.processAll();
+    editor.fitView();
+  } finally {
+    _suspendUrlUpdates = false;
+    scheduleUrlUpdate();
   }
 }
 
 function onClear() {
   if (!confirm('Clear the entire graph?')) return;
+  clearGraphWithoutConfirmation();
+  scheduleUrlUpdate();
+}
+
+function clearGraphWithoutConfirmation() {
   const ids = [...graph.pipes.keys()];
   for (const id of ids) {
     graph.removePipe(id);
@@ -724,12 +875,6 @@ function onClear() {
   }
   editor.updateConnections();
   for (const id of Array.from(dataViews.keys())) removeDataView(id);
-
-  // Clear URL state
-  const url = new URL(window.location.href);
-  url.searchParams.delete('g');
-  url.searchParams.delete('gid');
-  window.history.replaceState({}, '', url.toString());
 }
 
 // ── Toast ────────────────────────────────────────────────────────

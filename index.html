@@ -10,11 +10,24 @@
   <header class="app-header">
     <h1 class="app-title">Encode-O-Matic 2</h1>
     <div class="toolbar">
-      <button id="btn-save" class="btn" title="Save graph to URL">Save to URL</button>
-      <button id="btn-load" class="btn" title="Load graph from URL">Load</button>
-      <button id="btn-clear" class="btn btn-danger" title="Clear graph">Clear</button>
+      <button id="btn-share" class="btn btn-icon" title="Share current URL" aria-label="Share current URL">🔗</button>
+      <div class="session-menu">
+        <button id="btn-session-menu" class="btn" aria-haspopup="menu" aria-expanded="false">Session ▾</button>
+        <div id="session-menu" class="menu-popover" role="menu" hidden>
+          <button id="btn-session-save" role="menuitem">Save Session</button>
+          <button id="btn-session-load" role="menuitem">Load Session</button>
+          <button id="btn-guess" role="menuitem">Guess Encoding</button>
+          <div class="menu-sep"></div>
+          <button id="btn-clear" class="menu-danger" role="menuitem">Clear</button>
+        </div>
+      </div>
       <div class="toolbar-sep"></div>
       <button id="btn-zoom-fit" class="btn" title="Fit graph in view">Fit</button>
+      <label class="zoom-control" for="zoom-range">
+        Zoom
+        <input id="zoom-range" type="range" min="20" max="300" value="100" step="10">
+        <output id="zoom-value" for="zoom-range">100%</output>
+      </label>
     </div>
   </header>
 

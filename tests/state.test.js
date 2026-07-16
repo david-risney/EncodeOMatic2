@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadFromIdb, loadFromUrl, saveToIdb, saveToUrl } from '../src/state.js';
+import {
+  listIdbSessions,
+  loadFromIdb,
+  loadFromUrl,
+  saveToIdb,
+  saveToUrl,
+} from '../src/state.js';
 
 describe('state persistence', () => {
   beforeEach(() => {
@@ -16,13 +22,11 @@ describe('state persistence', () => {
     expect(await loadFromUrl()).toEqual(graph);
   });
 
-  it('stores large graphs in IndexedDB and loads by URL id', async () => {
-    vi.spyOn(globalThis.crypto, 'randomUUID')
-      .mockReturnValue('11111111-1111-4111-8111-111111111111');
+  it('keeps large graphs in the shareable URL', async () => {
     const graph = { text: 'x'.repeat(3000) };
     await saveToUrl(graph);
-    expect(new URL(window.location.href).searchParams.get('gid'))
-      .toBe('11111111-1111-4111-8111-111111111111');
+    expect(new URL(window.location.href).searchParams.has('g')).toBe(true);
+    expect(new URL(window.location.href).searchParams.has('gid')).toBe(false);
     expect(await loadFromUrl()).toEqual(graph);
   });
 
@@ -30,6 +34,10 @@ describe('state persistence', () => {
     await saveToIdb('named', { value: 42 });
     expect(await loadFromIdb('named')).toEqual({ value: 42 });
     expect(await loadFromIdb('missing')).toBeNull();
+    expect(await listIdbSessions()).toContainEqual({
+      name: 'named',
+      savedAt: expect.any(Number),
+    });
   });
 
   it('returns null with no or malformed state parameters', async () => {
