@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](https://david-risney.github.io/EncodeOMatic2/).",
   "scripts": {
+    "build:vendor": "rollup -c rollup.config.vendor.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "node --check sw.js && find src tests -name \"*.js\" -print0 | xargs -0 -n1 node --check"
@@ -19,9 +20,18 @@
   },
   "homepage": "https://github.com/david-risney/EncodeOMatic2#readme",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "buffer": "^6.0.3",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
+    "rollup": "^4.62.2",
+    "string_decoder": "^1.3.0",
     "vitest": "^4.1.10"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "iconv-lite": "^0.7.3"
+  }
 }

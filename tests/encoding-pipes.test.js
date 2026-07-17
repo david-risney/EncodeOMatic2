@@ -7,6 +7,7 @@ import { BinaryEncodePipe, BinaryDecodePipe } from '../src/pipes/builtin/encodin
 import { HtmlEncodePipe, HtmlDecodePipe } from '../src/pipes/builtin/encoding/html-encode.js';
 import { XmlEncodePipe, XmlDecodePipe } from '../src/pipes/builtin/encoding/xml-encode.js';
 import { CharsetDecodePipe, CharsetEncodePipe } from '../src/pipes/builtin/encoding/charset.js';
+import { ALL_ENCODINGS } from '../src/pipes/builtin/encoding/charset.js';
 import { SlashEscapePipe, SlashUnescapePipe } from '../src/pipes/builtin/encoding/slash-escape.js';
 import { UrlEncodePipe, UrlDecodePipe } from '../src/pipes/builtin/encoding/url-encode.js';
 import { decode, encode, processBytes, processText } from './helpers.js';
@@ -199,29 +200,85 @@ describe('charset encodings', () => {
   it.each([
     ['utf-16le', [0x41, 0, 0x3d, 0xd8, 0, 0xde]],
     ['utf-16be', [0, 0x41, 0xd8, 0x3d, 0xde, 0]],
+    ['utf-32le', [0x41, 0x00, 0x00, 0x00, 0x00, 0xF6, 0x01, 0x00]],
+    // 'A' = U+0041 → 00 00 00 41 (BE) / 41 00 00 00 (LE)
+    // '😀' = U+1F600 → 00 01 F6 00 (BE) / 00 F6 01 00 (LE)
+    ['utf-32be', [0x00, 0x00, 0x00, 0x41, 0x00, 0x01, 0xF6, 0x00]],
     ['iso-8859-1', [0x41, 0xe9]],
     ['shift_jis', [0x41]],
   ])('decodes representative %s input', async (encoding, bytes) => {
     const pipe = new CharsetDecodePipe();
     pipe.setConfig('fromEncoding', encoding);
-    const expected = new TextDecoder(encoding, { fatal: true }).decode(Uint8Array.from(bytes));
-    expect(decode(await processBytes(pipe, bytes))).toBe(expected);
+    // Use our pipe result as the source of truth; cross-check against TextDecoder
+    // where it is supported in the test environment. utf-32 is not in the WHATWG
+    // Encoding spec, so TextDecoder cross-checks are skipped for utf-32 encodings.
+    const result = decode(await processBytes(pipe, bytes));
+    if (!encoding.startsWith('utf-32')) {
+      const expected = new TextDecoder(encoding, { fatal: true }).decode(Uint8Array.from(bytes));
+      expect(result).toBe(expected);
+    } else {
+      expect(result).toBe('A😀');
+    }
   });
 
-  it('encodes UTF-8 to UTF-8 and both UTF-16 byte orders', async () => {
+  it('encodes UTF-8 to all supported encodings via iconv-lite', async () => {
     const pipe = new CharsetEncodePipe();
+    // UTF-8 passthrough
     expect([...await processBytes(pipe, encode('A😀'))]).toEqual([...encode('A😀')]);
+    // UTF-16 variants
     pipe.setConfig('toEncoding', 'utf-16le');
     expect([...await processBytes(pipe, encode('A😀'))])
       .toEqual([0x41, 0, 0x3d, 0xd8, 0, 0xde]);
     pipe.setConfig('toEncoding', 'utf-16be');
     expect([...await processBytes(pipe, encode('A😀'))])
       .toEqual([0, 0x41, 0xd8, 0x3d, 0xde, 0]);
+    // UTF-32 variants (4 bytes per code point)
+    pipe.setConfig('toEncoding', 'utf-32le');
+    expect([...await processBytes(pipe, encode('A😀'))])
+      .toEqual([0x41, 0x00, 0x00, 0x00, 0x00, 0xF6, 0x01, 0x00]);
+    pipe.setConfig('toEncoding', 'utf-32be');
+    expect([...await processBytes(pipe, encode('A😀'))])
+      .toEqual([0x00, 0x00, 0x00, 0x41, 0x00, 0x01, 0xF6, 0x00]);
+    // ASCII - unmappable characters are substituted with '?'
+    pipe.setConfig('toEncoding', 'ascii');
+    expect([...await processBytes(pipe, encode('Hello'))]).toEqual([72, 101, 108, 108, 111]);
+    expect(await processText(pipe, '€')).toBe('?');
+    // ISO-8859-1 - unmappable characters are substituted with '?'
+    pipe.setConfig('toEncoding', 'iso-8859-1');
+    expect([...await processBytes(pipe, encode('Aé'))]).toEqual([0x41, 0xE9]);
+    expect(await processText(pipe, '€')).toBe('?');
+    // windows-1252 — '€' is U+20AC → 0x80
     pipe.setConfig('toEncoding', 'windows-1252');
-    expect(decode(await processBytes(pipe, encode('fallback')))).toBe('fallback');
+    expect([...await processBytes(pipe, encode('€'))]).toEqual([0x80]);
+    // shift_jis
+    pipe.setConfig('toEncoding', 'shift_jis');
+    expect([...await processBytes(pipe, encode('Hello'))]).toEqual([72, 101, 108, 108, 111]);
+    // Non-UTF-8 input always rejected first
+    pipe.setConfig('toEncoding', 'utf-8');
     await expect(processBytes(pipe, [0xff])).rejects.toMatchObject({
       message: expect.stringContaining('Input bytes are not valid UTF-8'),
     });
+  });
+
+  it('exposes all iconv-lite encoding names as options on both pipes', () => {
+    const decodePipe = new CharsetDecodePipe();
+    const encodePipe = new CharsetEncodePipe();
+    const decodeOptions = [...decodePipe.configs.get('fromEncoding').options];
+    const encodeOptions = [...encodePipe.configs.get('toEncoding').options];
+    expect(decodeOptions).toEqual(ALL_ENCODINGS);
+    expect(encodeOptions).toEqual(ALL_ENCODINGS);
+    // Spot-check a selection of encodings from different families
+    const expected = [
+      'utf-8', 'utf-16be', 'utf-16le', 'utf-32be', 'utf-32le',
+      'iso-8859-1', 'iso-8859-15', 'windows-1252', 'windows-1251',
+      'shift_jis', 'euc-jp', 'euc-kr', 'gbk', 'gb18030', 'big5',
+      'koi8-r', 'koi8-u', 'ascii', 'macintosh', 'cp437', 'cp866',
+      'ibm437', 'viscii', 'tis620', 'armscii8', 'mik',
+    ];
+    for (const enc of expected) {
+      expect(decodeOptions).toContain(enc);
+    }
+    expect(ALL_ENCODINGS.length).toBeGreaterThan(400);
   });
 });
 
