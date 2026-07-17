@@ -164,7 +164,6 @@ graph-editor {
 
 .port {
   position: relative;
-  flex-shrink: 0;
   border: none;
   cursor: crosshair;
   transition: transform 0.1s;
