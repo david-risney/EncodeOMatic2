@@ -149,7 +149,7 @@ function initHeaderInteractionGuards() {
   if (!header) return;
 
   const preventHeaderZoom = (event) => {
-    if (event.type.startsWith('gesture')) {
+    if (event.type === 'gesturestart' || event.type === 'gesturechange') {
       event.preventDefault();
       return;
     }
