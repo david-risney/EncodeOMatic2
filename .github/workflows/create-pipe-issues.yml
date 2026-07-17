@@ -1,0 +1,565 @@
+name: Create missing web-standards pipe issues
+
+# Run once manually, then delete this file.
+on:
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  create-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create copilot label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "copilot" \
+            --description "Task for Copilot coding agent to implement" \
+            --color "6E40C9" \
+            --repo "${{ github.repository }}" \
+            || echo "Label already exists, continuing"
+
+      - name: Base64url Encode/Decode
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add Base64url Encode/Decode pipe" \
+            --body "## Summary
+
+Add **Base64url Encode** and **Base64url Decode** pipes to the Encoding category.
+
+Base64url is the URL-safe variant of Base64 defined in [RFC 4648 §5](https://datatracker.ietf.org/doc/html/rfc4648#section-5): it replaces \`+\` with \`-\` and \`/\` with \`_\`, and omits \`=\` padding. It is used in JWT, OAuth 2.0, WebAuthn, and the Fetch API.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/base64url.js\` with two classes:
+  - \`Base64urlEncodePipe\` (\`typeName: 'Base64urlEncode'\`) — bytes → ASCII string
+  - \`Base64urlDecodePipe\` (\`typeName: 'Base64urlDecode'\`) — ASCII string → bytes
+- Extend \`Pipe\` (not \`StringPipe\`); use \`input\`/\`output\` port names.
+- Encode: convert each byte to standard Base64 then replace \`+\`→\`-\`, \`/\`→\`_\`, strip \`=\`.
+- Decode: restore \`-\`→\`+\`, \`_\`→\`/\`, re-pad to multiple of 4, then standard atob.
+- Throw \`PipeError\` with a descriptive message for invalid input characters.
+- Add to \`src/pipes/registry.js\` (main-thread) and \`src/worker/pipe-worker.js\` (worker allowlist).
+- Add \`getInputAppropriateness\` scoring that returns a medium score for strings that look like base64url (only \`[A-Za-z0-9_-]\` chars, no padding).
+- Add focused tests: encode/decode round-trip, empty input, padding edge cases, invalid chars.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: application/x-www-form-urlencoded Parse/Format
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add application/x-www-form-urlencoded Parse and Format pipes" \
+            --body "## Summary
+
+Add **Form URL Encode** and **Form URL Decode** pipes to the Encoding category.
+
+\`application/x-www-form-urlencoded\` is distinct from plain percent-encoding: spaces become \`+\`, and the safe-character set differs. It is used in HTML form submissions and \`URLSearchParams\`. See [URL Standard §5](https://url.spec.whatwg.org/#urlencoded-parsing).
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/form-urlencoded.js\` with two classes:
+  - \`FormUrlencodedEncodePipe\` (\`typeName: 'FormUrlencodedEncode'\`) — UTF-8 text → encoded bytes
+  - \`FormUrlencodedDecodePipe\` (\`typeName: 'FormUrlencodedDecode'\`) — encoded bytes → UTF-8 text
+- Use \`URLSearchParams\` for both directions (\`new URLSearchParams(str).toString()\` for encoding, \`new URLSearchParams(str)\` for decoding).
+- For decode, output the reconstructed key=value string (not split into ports—keep it simple and consistent with existing encoding pipes).
+- Extend \`StringPipe\` since input and output are text.
+- Add to registry and worker allowlist.
+- Throw \`PipeError\` for malformed input.
+- Add focused tests covering \`+\`-for-space, multi-value keys, non-ASCII chars, empty input.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: Data URL Parse/Format
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add Data URL Parse and Format pipes" \
+            --body "## Summary
+
+Add **Data URL Parse** and **Data URL Format** pipes to the Parsing category.
+
+A data URL has the form \`data:<mediatype>[;base64],<data>\` ([RFC 2397](https://datatracker.ietf.org/doc/html/rfc2397)). These pipes let users decompose an embedded resource from HTML/CSS or reconstruct one from raw bytes.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/parsing/data-url.js\`.
+- **Data URL Parse** (\`typeName: 'DataUrlParse'\`):
+  - Input port: \`input\` (bytes, the full data URL as UTF-8 text).
+  - Output ports: \`mediaType\` (UTF-8 text), \`data\` (bytes — decoded if base64, percent-decoded otherwise), \`isBase64\` (UTF-8 text \`\"true\"\`/\`\"false\"\`).
+  - Throw \`PipeError\` with selection if the URL doesn't start with \`data:\`.
+- **Data URL Format** (\`typeName: 'DataUrlFormat'\`):
+  - Input ports: \`data\` (bytes), \`mediaType\` (UTF-8 text, default \`text/plain;charset=US-ASCII\`).
+  - Config: boolean \`useBase64\` (default true).
+  - Output port: \`output\` (UTF-8 text).
+- Add to registry and worker allowlist.
+- Add \`getInputAppropriateness\` on the Parse pipe that returns high score for strings starting with \`data:\`.
+- Add tests: round-trip, base64 vs. plain, missing mediatype, malformed input.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: Gzip/Deflate Compress/Decompress
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add Gzip and Deflate Compress/Decompress pipes" \
+            --body "## Summary
+
+Add **Gzip Compress**, **Gzip Decompress**, **Deflate Compress**, and **Deflate Decompress** pipes to the Encoding category.
+
+These use the browser-native \`CompressionStream\` / \`DecompressionStream\` APIs (no extra dependencies) and are essential for decoding compressed HTTP response bodies.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/compression.js\`.
+- Four classes, each extending \`Pipe\`, with \`input\`/\`output\` byte ports:
+  - \`GzipCompressPipe\` (\`typeName: 'GzipCompress'\`)
+  - \`GzipDecompressPipe\` (\`typeName: 'GzipDecompress'\`)
+  - \`DeflateCompressPipe\` (\`typeName: 'DeflateCompress'\`)
+  - \`DeflateDecompressPipe\` (\`typeName: 'DeflateDecompress'\`)
+- Use \`new CompressionStream('gzip')\` / \`new DecompressionStream('gzip')\` etc. with the Streams API in \`process()\`.
+- Because these pipes use async streaming, \`process()\` must return a Promise (the Pipe base class supports async process).
+- Throw \`PipeError\` for decompression failures (truncated/corrupt data).
+- Add all four to registry (Encoding category) and worker allowlist.
+- Add tests: compress then decompress round-trip, empty input, corrupt data error.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: SHA Hash pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add SHA Hash pipe (SHA-1, SHA-256, SHA-384, SHA-512)" \
+            --body "## Summary
+
+Add a **SHA Hash** pipe to a new **Hashing** category (or Encoding). It computes SHA-1, SHA-256, SHA-384, or SHA-512 digests using the browser-native \`crypto.subtle.digest()\` API with no extra dependencies.
+
+Common uses: verifying Subresource Integrity (SRI) hashes, checking file integrity, CSP hash computation.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/sha-hash.js\`.
+- One class \`ShaHashPipe\` (\`typeName: 'ShaHash'\`) extending \`Pipe\`.
+- Input: \`input\` (bytes). Output: \`output\` (raw digest bytes).
+- Config: \`select\` named \`algorithm\` with options \`SHA-1\`, \`SHA-256\` (default), \`SHA-384\`, \`SHA-512\`.
+- \`process()\` is async: \`await crypto.subtle.digest(algorithm, input)\`.
+- Add to registry and worker allowlist.
+- Note: \`crypto.subtle\` is available in workers. If running in a Worker context where \`crypto.subtle\` may be \`undefined\`, fall back gracefully with a \`PipeError\`.
+- Add tests: known SHA-256 digest of empty and non-empty input, all four algorithm options.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: JWT Parse pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add JWT Parse pipe" \
+            --body "## Summary
+
+Add a **JWT Parse** pipe to the Parsing category. It splits a JSON Web Token into its three Base64url-encoded parts and exposes them as separate outputs.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/parsing/jwt-parser.js\`.
+- Class \`JwtParserPipe\` (\`typeName: 'JwtParser'\`) extending \`Pipe\`.
+- Input: \`input\` (bytes — the JWT as UTF-8 text, with or without leading/trailing whitespace).
+- Output ports: \`header\` (decoded JSON bytes), \`payload\` (decoded JSON bytes), \`signature\` (raw bytes).
+- Split on \`.\`, Base64url-decode each part (header and payload to UTF-8 JSON, signature to raw bytes).
+- Throw \`PipeError\` if the token doesn't have exactly three dot-separated parts, or if Base64url decoding fails.
+- Add \`getInputAppropriateness\` that returns a high score for strings matching \`^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$\`.
+- Add to registry and worker allowlist.
+- Add tests: valid JWT, missing parts, invalid Base64url in header, empty input.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: Punycode/IDNA Encode/Decode
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add Punycode/IDNA Encode and Decode pipes" \
+            --body "## Summary
+
+Add **Punycode Encode** and **Punycode Decode** pipes to the Encoding category. Punycode ([RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492)) is used to encode internationalized domain names (IDNA) as ASCII-compatible labels (\`xn--...\`). Exposing it is valuable for understanding IDN homograph attacks.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/punycode.js\`.
+- **Punycode Encode** (\`typeName: 'PunycodeEncode'\`): input is a UTF-8 domain name (e.g. \`münchen.de\`), output is the ACE/IDNA form (e.g. \`xnbchen-gra.de\`). Use the browser \`URL\` constructor: \`new URL('http://' + domain).hostname\`.
+- **Punycode Decode** (\`typeName: 'PunycodeDecode'\`): input is an ACE domain (\`xn--...\`), output is the Unicode form. Use \`new URL('http://' + domain).hostname\` which browsers decode automatically, but note this only works for valid ASCII hostnames; for decode you may need a small JS Punycode library or use \`URL\` with the encoded form.
+- Extend \`StringPipe\` for both (input and output are text).
+- Throw \`PipeError\` for invalid input.
+- \`getInputAppropriateness\`: encode scores high for strings containing non-ASCII hostname characters; decode scores high for strings containing \`xn--\`.
+- Add to registry and worker allowlist.
+- Add tests: \`münchen.de\` round-trip, ASCII passthrough, invalid label errors.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: Cookie Parser pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add Cookie Parser pipe" \
+            --body "## Summary
+
+Add a **Cookie Parser** pipe to the Parsing category. It parses a \`Cookie:\` request header value (or a \`Set-Cookie:\` response header) into its constituent fields, exposing each as a named dynamic output.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/parsing/cookie-parser.js\`.
+- Class \`CookieParserPipe\` (\`typeName: 'CookieParser'\`) extending \`Pipe\`.
+- Config: \`select\` named \`mode\` with options \`Cookie\` (default) and \`Set-Cookie\`.
+- **Cookie mode**: parse \`name=value; name2=value2\` — emit each name as a dynamic output port \`key:\${name}\` (consistent with JSON parser naming pattern), value is UTF-8 text bytes.
+- **Set-Cookie mode**: parse \`name=value; Path=/; Domain=...; Secure; HttpOnly; SameSite=Lax; Expires=...\` — emit \`key:name\`, \`key:value\`, plus attribute ports for \`Path\`, \`Domain\`, \`Expires\`, \`SameSite\`, \`Secure\`, \`HttpOnly\`, \`Max-Age\` where present.
+- Rebuild \`_dynamicOutputs\` in \`process()\`, return definitions in worker results so \`PipeGraph\` can update ports.
+- Throw \`PipeError\` for completely malformed input.
+- Add to registry and worker allowlist.
+- Add tests: simple Cookie header, Set-Cookie with all attributes, empty/missing values, URL-encoded cookie values.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: Quoted-Printable Encode/Decode
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add Quoted-Printable Encode/Decode pipes" \
+            --body "## Summary
+
+Add **Quoted-Printable Encode** and **Quoted-Printable Decode** pipes to the Encoding category. Quoted-Printable ([RFC 2045 §6.7](https://datatracker.ietf.org/doc/html/rfc2045#section-6.7)) encodes non-ASCII and special bytes as \`=XX\` hex sequences and is used in MIME email bodies.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/quoted-printable.js\`.
+- **QP Encode** (\`typeName: 'QuotedPrintableEncode'\`): bytes → ASCII bytes. Encode bytes > 0x7E, \`=\`, and control chars (except tab/CRLF) as \`=XX\`. Insert soft line breaks (\`=\\r\\n\`) at column 76.
+- **QP Decode** (\`typeName: 'QuotedPrintableDecode'\`): ASCII bytes → raw bytes. Decode \`=XX\` sequences; strip soft line breaks (\`=\\r\\n\` or \`=\\n\`). Throw \`PipeError\` for invalid \`=\` sequences.
+- Extend \`Pipe\` (not \`StringPipe\`) since the encode input and decode output are raw bytes.
+- Add \`getInputAppropriateness\` on decode: score high for text containing \`=\` followed by two hex digits.
+- Add to registry and worker allowlist.
+- Add tests: encode/decode round-trip, soft line break handling, \`=\` at end of line, non-ASCII bytes, empty input.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: MIME Header RFC 2047 Decode
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add MIME Header (RFC 2047) Decode pipe" \
+            --body "## Summary
+
+Add a **MIME Header Decode** pipe to the Encoding category. RFC 2047 encoded words have the form \`=?charset?encoding?text?=\` where encoding is \`B\` (Base64) or \`Q\` (Quoted-Printable). They appear in email \`Subject:\`, \`From:\`, and \`To:\` headers.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/mime-header.js\`.
+- Class \`MimeHeaderDecodePipe\` (\`typeName: 'MimeHeaderDecode'\`) extending \`StringPipe\`.
+- Find all \`=?...?...?...?=\` patterns in the input text.
+- For each encoded word: extract charset and encoding type, decode the text part (Base64 or QP), then re-encode to UTF-8 using \`TextDecoder\` with the specified charset.
+- Replace each encoded word with the decoded UTF-8 text in the output.
+- Throw \`PipeError\` with selection for unknown charset or malformed encoded word.
+- \`getInputAppropriateness\`: score high for strings matching \`=?[^?]+?[BbQq]?[^?]*?=\`.
+- Add to registry and worker allowlist.
+- Add tests: Base64 encoded word, QP encoded word, multiple encoded words, plain text passthrough, unknown charset error.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: Unicode Escape Encode/Decode
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add Unicode Escape Encode/Decode pipes (\\uXXXX)" \
+            --body "## Summary
+
+Add **Unicode Escape Encode** and **Unicode Escape Decode** pipes to the Encoding category. These handle JavaScript/JSON \`\\uXXXX\` and \`\\u{XXXXX}\` Unicode escape sequences, which are distinct from the existing slash-escape pipe (which handles C-style escapes like \`\\n\`, \`\\t\`, etc.).
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/unicode-escape.js\`.
+- **Unicode Escape Encode** (\`typeName: 'UnicodeEscapeEncode'\`): UTF-8 text → ASCII text. Config \`select\` named \`mode\`: \`non-ASCII only\` (default, escapes only code points > U+007F) and \`all\` (escapes every code point).
+- **Unicode Escape Decode** (\`typeName: 'UnicodeEscapeDecode'\`): ASCII text → UTF-8 text. Decode both \`\\uXXXX\` (BMP) and \`\\u{XXXXX}\` (full Unicode) forms. Surrogate pairs (\`\\uD83D\\uDE00\`) should be decoded to the corresponding code point.
+- Extend \`StringPipe\` for both classes.
+- Throw \`PipeError\` for invalid escape sequences (e.g. \`\\uZZZZ\`).
+- Add to registry and worker allowlist.
+- Add tests: ASCII passthrough, BMP escape, supplementary plane (\`\\u{1F600}\`), surrogate pair, invalid escape error, encode-all mode.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: Unicode Normalization pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add Unicode Normalization pipe (NFC/NFD/NFKC/NFKD)" \
+            --body "## Summary
+
+Add a **Unicode Normalize** pipe to the Encoding category. It applies one of the four Unicode normalization forms (NFC, NFD, NFKC, NFKD) using the standard \`String.prototype.normalize()\` method.
+
+Normalization matters for security (canonicalization bypasses), internationalization, and correct string comparison.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/unicode-normalize.js\`.
+- Class \`UnicodeNormalizePipe\` (\`typeName: 'UnicodeNormalize'\`) extending \`StringPipe\`.
+- Config: \`select\` named \`form\` with options \`NFC\` (default), \`NFD\`, \`NFKC\`, \`NFKD\`.
+- \`processString(str)\` returns \`str.normalize(form)\`.
+- Add to registry and worker allowlist.
+- Add tests: composed vs. decomposed form, compatibility normalization (NFKC), ASCII passthrough, empty input.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: ROT13 pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add ROT13 pipe" \
+            --body "## Summary
+
+Add a **ROT13** pipe to the Encoding category. ROT13 is a simple letter substitution cipher (shift by 13) that is self-inverse — encoding and decoding are the same operation. It is frequently encountered in CTF challenges, Usenet, and programming puzzles.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/rot13.js\`.
+- Class \`Rot13Pipe\` (\`typeName: 'Rot13'\`) extending \`StringPipe\`.
+- Shift A–Z and a–z by 13; leave all other characters unchanged.
+- Since the operation is symmetric, a single pipe handles both encode and decode — label it \`ROT13\` with \`typeDescription: 'ROT13'\`.
+- Add to registry and worker allowlist.
+- Add tests: basic letter rotation, non-alpha passthrough, full round-trip, empty input, mixed case.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: URLSearchParams Parser pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add URLSearchParams Parser pipe" \
+            --body "## Summary
+
+Add a **URL Search Params Parser** pipe to the Parsing category. It parses a query string (with or without the leading \`?\`) into key-value pairs, exposing each unique key as a dynamic output port. Multi-value keys emit the last value (or a newline-joined list — see config below).
+
+This builds on the existing URL Parser pipe and handles \`+\`-for-space decoding per the \`application/x-www-form-urlencoded\` spec.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/parsing/search-params-parser.js\`.
+- Class \`SearchParamsParserPipe\` (\`typeName: 'SearchParamsParser'\`) extending \`Pipe\`.
+- Input: \`input\` (UTF-8 text bytes, the query string).
+- Strip a leading \`?\` if present before parsing.
+- Use \`new URLSearchParams(str)\` to parse.
+- Dynamic output ports using prefix \`query:\${key}\` (consistent with URL Parser naming).
+- Config: \`select\` named \`multiValue\` — \`last\` (default, emit only the last value for duplicate keys) or \`join\` (join all values with newline).
+- Rebuild \`_dynamicOutputs\` in \`process()\`; return definitions in worker results.
+- Add \`getInputAppropriateness\`: score high for strings that look like query strings (\`key=value&...\` pattern).
+- Add to registry and worker allowlist.
+- Add tests: simple query, multi-value key, \`+\`-encoded spaces, empty string, leading \`?\`, URL-encoded special chars.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: multipart/form-data Parser pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add multipart/form-data Parser pipe" \
+            --body "## Summary
+
+Add a **Multipart Parser** pipe to the Parsing category. It parses a \`multipart/form-data\` body ([RFC 2046](https://datatracker.ietf.org/doc/html/rfc2046)) into its constituent parts, exposing each field as a named dynamic output port.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/parsing/multipart-parser.js\`.
+- Class \`MultipartParserPipe\` (\`typeName: 'MultipartParser'\`) extending \`Pipe\`.
+- Config: \`string\` named \`boundary\` — the multipart boundary string (required; if empty, try to auto-detect from the first line of input).
+- Input: \`input\` (raw bytes of the multipart body, not including the \`Content-Type:\` header).
+- Parse by splitting on \`--{boundary}\` delimiters; for each part, strip part headers and expose the body bytes.
+- Dynamic output ports: \`part:0\`, \`part:1\`, … for unnamed parts; \`field:{name}\` for parts with a \`Content-Disposition: form-data; name=\"...\"\` header.
+- Throw \`PipeError\` if boundary is absent and cannot be detected, or if the body is malformed.
+- Rebuild \`_dynamicOutputs\` in \`process()\`.
+- Add to registry and worker allowlist.
+- Add tests: simple two-field form, file upload part, missing boundary error, empty body.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: HTTP Request Parser pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add HTTP Request Parser pipe" \
+            --body "## Summary
+
+Add an **HTTP Request Parser** pipe to the Parsing category. It parses a raw HTTP/1.1 request (method line, headers, and optional body) into named output ports.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/parsing/http-request-parser.js\`.
+- Class \`HttpRequestParserPipe\` (\`typeName: 'HttpRequestParser'\`) extending \`Pipe\`.
+- Input: \`input\` (raw bytes of the HTTP request).
+- Fixed output ports: \`method\` (UTF-8 text), \`path\` (UTF-8 text), \`version\` (UTF-8 text, e.g. \`HTTP/1.1\`), \`body\` (raw bytes).
+- Dynamic output ports: \`header:{name}\` for each request header (lower-cased name), consistent with the \`key:\` prefix pattern.
+- Parse the request-line (\`METHOD SP path SP HTTP/x.y CRLF\`), then headers (\`name: value CRLF\`), then body after the blank line.
+- Throw \`PipeError\` with byte selection if the request line is malformed.
+- Add \`getInputAppropriateness\`: score high for bytes starting with a known HTTP method (\`GET\`, \`POST\`, \`PUT\`, \`DELETE\`, \`PATCH\`, \`HEAD\`, \`OPTIONS\`) followed by a space.
+- Add to registry and worker allowlist.
+- Add tests: GET with no body, POST with body, missing blank line, malformed request line, headers with duplicate names.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: HTTP Response Parser pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add HTTP Response Parser pipe" \
+            --body "## Summary
+
+Add an **HTTP Response Parser** pipe to the Parsing category. It parses a raw HTTP/1.1 response (status line, headers, and body) into named output ports.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/parsing/http-response-parser.js\`.
+- Class \`HttpResponseParserPipe\` (\`typeName: 'HttpResponseParser'\`) extending \`Pipe\`.
+- Input: \`input\` (raw bytes of the HTTP response).
+- Fixed output ports: \`statusCode\` (UTF-8 text of the integer, e.g. \`200\`), \`statusText\` (UTF-8 text, e.g. \`OK\`), \`version\` (UTF-8 text), \`body\` (raw bytes).
+- Dynamic output ports: \`header:{name}\` for each response header (lower-cased).
+- Parse the status line (\`HTTP/x.y SP status SP reason CRLF\`), then headers, then body.
+- Throw \`PipeError\` with byte selection if the status line is malformed.
+- Add \`getInputAppropriateness\`: score high for bytes starting with \`HTTP/\`.
+- Add to registry and worker allowlist.
+- Add tests: 200 OK with body, 301 redirect (no body), malformed status line, headers with folding.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: Base32 Encode/Decode pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add Base32 Encode/Decode pipes" \
+            --body "## Summary
+
+Add **Base32 Encode** and **Base32 Decode** pipes to the Encoding category. Base32 ([RFC 4648 §6](https://datatracker.ietf.org/doc/html/rfc4648#section-6)) uses the alphabet \`A–Z2–7\` and is used in TOTP/HOTP secret keys, some DNS security extensions, and IPFS CIDs.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/base32.js\`.
+- Two classes: \`Base32EncodePipe\` (\`typeName: 'Base32Encode'\`) and \`Base32DecodePipe\` (\`typeName: 'Base32Decode'\`), both extending \`Pipe\`.
+- Implement Base32 encoding/decoding from scratch (no external library needed — the algorithm is straightforward).
+- Config on encode: \`boolean\` named \`padding\` (default true) to control whether \`=\` padding is emitted.
+- Throw \`PipeError\` for invalid characters during decode (characters outside \`A–Z2–7=\`).
+- Add \`getInputAppropriateness\` on decode: score high for strings using only \`[A-Z2-7=]\` with length divisible by 8.
+- Add to registry and worker allowlist.
+- Add tests: encode/decode round-trip, known RFC vectors, padding on/off, invalid char error, empty input.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: HMAC pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add HMAC pipe" \
+            --body "## Summary
+
+Add an **HMAC** pipe to the Encoding category (or Hashing). It computes an HMAC digest using the Web Crypto API (\`crypto.subtle.importKey\` + \`crypto.subtle.sign\`). HMACs are used in JWT signature verification, OAuth 1.0 signatures, and webhook payload authentication.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/encoding/hmac.js\`.
+- Class \`HmacPipe\` (\`typeName: 'Hmac'\`) extending \`Pipe\`.
+- Input ports: \`input\` (the message bytes), \`key\` (the raw key bytes).
+- Output port: \`output\` (the HMAC digest bytes).
+- Config: \`select\` named \`algorithm\` with options \`SHA-1\`, \`SHA-256\` (default), \`SHA-384\`, \`SHA-512\`.
+- \`process()\` is async: import the key with \`crypto.subtle.importKey('raw', keyBytes, {name: 'HMAC', hash: algo}, false, ['sign'])\`, then \`crypto.subtle.sign('HMAC', key, messageBytes)\`.
+- Throw \`PipeError\` if the key port has no data.
+- Add to registry and worker allowlist.
+- Add tests: known HMAC-SHA-256 test vector, empty message, missing key error, all algorithm options.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: XML Parser pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add XML Parser pipe" \
+            --body "## Summary
+
+Add an **XML Parser** pipe to the Parsing category. It parses an XML document using the browser's \`DOMParser\` and exposes the root element's direct child elements as dynamic output ports, each containing the child's serialized inner XML as bytes. This is distinct from the existing XML encode/decode pipes which only handle entity escaping.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/parsing/xml-parser.js\`.
+- Class \`XmlParserPipe\` (\`typeName: 'XmlParser'\`) extending \`Pipe\`.
+- Input: \`input\` (UTF-8 bytes of the XML document).
+- Use \`new DOMParser().parseFromString(str, 'text/xml')\` to parse.
+- Check for \`<parsererror>\` in the result; throw \`PipeError\` with the error message if found.
+- Dynamic output ports: \`child:{tagName}\` for each direct child of the document element (or \`child:{tagName}_{index}\` for duplicates). Value is the serialized \`innerHTML\` of that child as UTF-8 bytes.
+- Also emit a fixed \`root\` output with the root element tag name as UTF-8 text.
+- Rebuild \`_dynamicOutputs\` in \`process()\`.
+- Add \`getInputAppropriateness\`: score high for input starting with \`<?xml\` or \`<\` followed by a tag name.
+- Add to registry and worker allowlist.
+- Add tests: simple XML, XML with namespace, parse error detection, empty document, duplicate child tags.
+- Run \`npm run check && npm test\` before submitting."
+
+      - name: CSV Parser pipe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --label "enhancement,copilot" \
+            --title "Add CSV Parser pipe" \
+            --body "## Summary
+
+Add a **CSV Parser** pipe to the Parsing category. It parses CSV text (\`text/csv\`, [RFC 4180](https://datatracker.ietf.org/doc/html/rfc4180)) and exposes each column (by header name or index) as a dynamic output port containing the newline-joined column values.
+
+## Implementation notes (see \`docs/pipe-system.md\`)
+
+- Create \`src/pipes/builtin/parsing/csv-parser.js\`.
+- Class \`CsvParserPipe\` (\`typeName: 'CsvParser'\`) extending \`Pipe\`.
+- Config:
+  - \`boolean\` named \`hasHeader\` (default true) — treat first row as column names.
+  - \`string\` named \`delimiter\` (default \`,\`) — support tab-separated values by setting to \`\\t\`.
+- Input: \`input\` (UTF-8 text bytes).
+- Parse per RFC 4180: quoted fields, escaped quotes (\`\"\"\`), CRLF or LF line endings.
+- Dynamic output ports: \`col:{name}\` (if \`hasHeader\` is true) or \`col:{index}\` (zero-based). Value is the newline-joined list of values for that column across all data rows, as UTF-8 bytes.
+- Rebuild \`_dynamicOutputs\` in \`process()\`.
+- Throw \`PipeError\` if rows have inconsistent column counts (configurable: a \`boolean\` named \`strict\` defaulting to false, where false silently pads/truncates).
+- Add \`getInputAppropriateness\`: score medium for multi-line input containing consistent comma-separated columns.
+- Add to registry and worker allowlist.
+- Add tests: basic CSV, quoted fields with commas, header/no-header mode, TSV via delimiter config, empty input, mismatched column count.
+- Run \`npm run check && npm test\` before submitting."
