@@ -118,7 +118,6 @@ async function init() {
   }
 
   // Wire toolbar controls
-  document.getElementById('btn-share').addEventListener('click', onShare);
   initAboutDialog();
   document.getElementById('btn-clear').addEventListener('click', onClear);
   document.getElementById('btn-session-save').addEventListener('click', onSaveSession);
@@ -415,9 +414,11 @@ function initSessionMenu() {
     if (!loadMenu.hidden) await refreshSessionLoadMenu();
   });
 
-  for (const id of ['btn-session-save', 'btn-guess', 'btn-clear']) {
+  for (const id of ['btn-session-save', 'btn-guess', 'btn-session-share', 'btn-clear']) {
     document.getElementById(id).addEventListener('click', close);
   }
+
+  document.getElementById('btn-session-share').addEventListener('click', onShare);
 
   loadMenu.addEventListener('click', async event => {
     const item = event.target.closest('[data-session-name]');
@@ -460,6 +461,14 @@ function initZoomControl() {
     range.value = String(event.detail.percent);
     value.value = `${event.detail.percent}%`;
     value.textContent = value.value;
+  });
+  document.getElementById('btn-zoom-out').addEventListener('click', () => {
+    const next = Math.max(Number(range.min), Number(range.value) - Number(range.step));
+    editor.setZoom(next);
+  });
+  document.getElementById('btn-zoom-in').addEventListener('click', () => {
+    const next = Math.min(Number(range.max), Number(range.value) + Number(range.step));
+    editor.setZoom(next);
   });
 }
 

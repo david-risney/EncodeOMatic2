@@ -541,7 +541,10 @@ class GraphEditor extends HTMLElement {
       y: e.clientY,
       pointerType: e.pointerType,
     });
-    if (typeof this._canvas.setPointerCapture === 'function') {
+    // Only capture touch pointers: mouse events do not need capture and capturing
+    // them causes the browser to fire click events on the canvas rather than the
+    // actual target element, breaking click handlers on pipe nodes and buttons.
+    if (e.pointerType === 'touch' && typeof this._canvas.setPointerCapture === 'function') {
       this._canvas.setPointerCapture(e.pointerId);
     }
 

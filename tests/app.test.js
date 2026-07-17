@@ -16,26 +16,28 @@ class SilentWorker {
 function appMarkup() {
   return `
     <header class="app-header">
-      <button id="btn-share">Share</button>
       <button id="btn-about">About</button>
       <div class="session-controls">
         <div class="session-menu">
           <button id="btn-session-menu">Session</button>
           <div id="session-menu" hidden>
-            <button id="btn-session-save">Save session</button>
+            <button id="btn-session-save">Save</button>
             <div class="session-load-item">
-              <button id="btn-session-load">Load session</button>
+              <button id="btn-session-load">Load</button>
               <div id="session-load-menu" hidden></div>
             </div>
-            <button id="btn-guess">Guess</button>
+            <button id="btn-guess">Auto Create Session</button>
+            <button id="btn-session-share">Share Session</button>
             <button id="btn-clear">Clear</button>
           </div>
         </div>
         <input id="session-name" class="session-name-input">
       </div>
       <button id="btn-zoom-fit">Fit</button>
+      <button id="btn-zoom-out">−</button>
       <input id="zoom-range" type="range" min="20" max="300" value="100">
       <output id="zoom-value">100%</output>
+      <button id="btn-zoom-in">+</button>
     </header>
     <graph-editor id="graph-editor"></graph-editor>
     <aside id="data-panel" style="width: 380px" hidden>
@@ -239,7 +241,7 @@ describe('application integration', () => {
     expect(node.isConnected).toBe(false);
     expect(reopenedDataView.isConnected).toBe(false);
 
-    document.getElementById('btn-share').click();
+    document.getElementById('btn-session-share').click();
     await vi.waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
         expect.stringContaining('?g=')
