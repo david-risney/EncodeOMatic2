@@ -6,6 +6,12 @@
 import { StringPipe } from '../../string-pipe.js';
 import { PipeConfig, PipeError } from '../../pipe.js';
 
+const textEncoder = new TextEncoder();
+const percentEncodeBytes = bytes => [...bytes]
+  .map(b => '%' + b.toString(16).toUpperCase().padStart(2, '0'))
+  .join('');
+const RFC3986_UNRESERVED = /^[A-Za-z0-9\-_.~]$/;
+
 export class PercentEncodePipe extends StringPipe {
   static typeName = 'PercentEncode';
   static typeDescription = 'Percent Encode';
@@ -28,22 +34,18 @@ export class PercentEncodePipe extends StringPipe {
   async processString(input) {
     const mode = this.getConfig('mode')?.value ?? 'component';
     switch (mode) {
-      case 'component': return encodeURIComponent(input);
+      case 'component':
+        return encodeURIComponent(input).replace(/[!'()*]/g, ch => percentEncodeBytes(textEncoder.encode(ch)));
       case 'full':      return encodeURI(input);
       case 'minimal': {
-        // Encode only characters that must be percent-encoded per RFC 3986
-        return input.replace(/[^A-Za-z0-9\-_.~]/g, ch => {
-          const code = ch.charCodeAt(0);
-          if (code > 0x7E) {
-            // Encode as UTF-8 bytes
-            return [...new TextEncoder().encode(ch)]
-              .map(b => '%' + b.toString(16).toUpperCase().padStart(2, '0'))
-              .join('');
-          }
-          return '%' + code.toString(16).toUpperCase().padStart(2, '0');
-        });
+        let output = '';
+        for (const ch of input) {
+          output += RFC3986_UNRESERVED.test(ch) ? ch : percentEncodeBytes(textEncoder.encode(ch));
+        }
+        return output;
       }
-      default: return encodeURIComponent(input);
+      default:
+        return encodeURIComponent(input).replace(/[!'()*]/g, ch => percentEncodeBytes(textEncoder.encode(ch)));
     }
   }
 }

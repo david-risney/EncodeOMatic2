@@ -44,6 +44,15 @@ export class HexEncodePipe extends Pipe {
   }
 
   translateSelections(fromPortType, fromPortName, toPortType, toPortName, selections) {
+    const resolvePortType = (portType, portName) => {
+      if (portType != null) return portType;
+      if (portName === this.defaultInputName) return 'input';
+      if (portName === this.defaultOutputName) return 'output';
+      return null;
+    };
+    fromPortType = resolvePortType(fromPortType, fromPortName);
+    toPortType = resolvePortType(toPortType, toPortName);
+
     const separatorLength = UTF8_ENCODER
       .encode(this.getConfig('separator')?.value ?? '').length;
     const stride = 2 + separatorLength;

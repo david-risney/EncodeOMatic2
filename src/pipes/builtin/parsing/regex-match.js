@@ -7,7 +7,6 @@
  *   - all-matches: all matches joined by newlines
  */
 
-import { StringPipe } from '../../string-pipe.js';
 import { Pipe, PipeConfig, PortDef, PipeError } from '../../pipe.js';
 
 export class RegexMatchPipe extends Pipe {
@@ -48,7 +47,7 @@ export class RegexMatchPipe extends Pipe {
 
   async process(inputs) {
     const data = inputs.get(this.defaultInputName) ?? new Uint8Array(0);
-    const text = new TextDecoder().decode(data);
+    const text = new TextDecoder('utf-8').decode(data);
     const pattern = this.getConfig('pattern')?.value ?? '.*';
     const rawFlags = this.getConfig('flags')?.value ?? 'g';
 

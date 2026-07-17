@@ -173,7 +173,7 @@ export class CharsetEncodePipe extends Pipe {
     if (input == null || input.length === 0) return 0;
     try {
       new TextDecoder('utf-8', { fatal: true }).decode(input);
-      return 0;
+      return 5;
     } catch {
       return -10;
     }
@@ -204,7 +204,7 @@ export class CharsetEncodePipe extends Pipe {
     }
 
     if (!iconv.encodingExists(toEnc)) {
-      throw new PipeError(`Encoding to '${toEnc}' is not supported`);
+      throw new PipeError(`Encoding to ${toEnc} is not supported`);
     }
 
     try {

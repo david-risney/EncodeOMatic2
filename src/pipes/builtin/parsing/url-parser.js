@@ -21,6 +21,8 @@ import { Pipe, PortDef, PipeError } from '../../pipe.js';
 const STATIC_OUTPUTS = [
   new PortDef('href',     'Full normalized URL',     true),
   new PortDef('protocol', 'URL protocol (scheme)'),
+  new PortDef('username', 'User name'),
+  new PortDef('password', 'Password'),
   new PortDef('hostname', 'Host name'),
   new PortDef('port',     'Port number'),
   new PortDef('pathname', 'URL path'),
@@ -80,6 +82,8 @@ export class UrlParserPipe extends Pipe {
 
     result.set('href',     enc.encode(url.href));
     result.set('protocol', enc.encode(url.protocol));
+    result.set('username', enc.encode(url.username));
+    result.set('password', enc.encode(url.password));
     result.set('hostname', enc.encode(url.hostname));
     result.set('port',     enc.encode(url.port));
     result.set('pathname', enc.encode(url.pathname));
@@ -88,8 +92,12 @@ export class UrlParserPipe extends Pipe {
     result.set('origin',   enc.encode(url.origin));
 
     // Rebuild dynamic outputs for query params
-    this._dynamicOutputs = [];
+    const queryValues = new Map();
     for (const [key, value] of url.searchParams) {
+      queryValues.set(key, value);
+    }
+    this._dynamicOutputs = [];
+    for (const [key, value] of queryValues) {
       const portName = `query:${key}`;
       this._dynamicOutputs.push(new PortDef(portName, `Query parameter: ${key}`));
       result.set(portName, enc.encode(value));

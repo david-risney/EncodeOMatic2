@@ -3,7 +3,7 @@
  */
 
 import { StringPipe } from '../../string-pipe.js';
-import { PipeConfig } from '../../pipe.js';
+import { PipeConfig, PipeError } from '../../pipe.js';
 
 const HTML_ENCODE_MAP = {
   '&': '&amp;',
@@ -45,8 +45,19 @@ function scoreHtmlEntities(input) {
     if (codePoint != null && codePoint > 0x10FFFF) return -10;
     found = true;
   }
+  const knownNamedEntityPattern = new RegExp(
+    `&(?:${Object.keys(NAMED_ENTITIES).join('|')})(?:\\s|$)`
+  );
+  if (knownNamedEntityPattern.test(text)) return -10;
   if (/&#(?:x)?[^&\s;]*(?:\s|$)/i.test(text)) return -10;
   return found ? 10 : 0;
+}
+
+function decodeHtmlCodePoint(entityText, value) {
+  if (value > 0x10FFFF) {
+    throw new PipeError(`Invalid HTML entity code point: ${entityText}`);
+  }
+  return String.fromCodePoint(value);
 }
 
 export class HtmlEncodePipe extends StringPipe {
@@ -60,7 +71,7 @@ export class HtmlEncodePipe extends StringPipe {
       ...super.defineConfigs(),
       new PipeConfig({
         name: 'mode',
-        description: 'Encoding mode',
+        description: 'Which characters to encode as HTML entities',
         defaultValue: 'minimal',
         type: 'select',
         options: ['minimal', 'all-non-ascii'],
@@ -95,8 +106,8 @@ export class HtmlDecodePipe extends StringPipe {
 
   async processString(input) {
     return input.replace(HTML_ENTITY_PATTERN, (_match, hex, dec, name) => {
-      if (hex) return String.fromCodePoint(parseInt(hex, 16));
-      if (dec) return String.fromCodePoint(parseInt(dec, 10));
+      if (hex) return decodeHtmlCodePoint(_match, parseInt(hex, 16));
+      if (dec) return decodeHtmlCodePoint(_match, parseInt(dec, 10));
       if (name) return NAMED_ENTITIES[name] ?? _match;
       return _match;
     });
