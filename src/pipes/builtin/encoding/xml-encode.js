@@ -17,6 +17,12 @@ const XML_DECODE_MAP = {
   amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
 };
 
+function decodeNumericXmlEntity(match, text, radix) {
+  const codePoint = parseInt(text, radix);
+  if (codePoint > 0x10FFFF) return match;
+  return String.fromCodePoint(codePoint);
+}
+
 function scoreXmlEntities(input) {
   if (input == null || input.length === 0) return 0;
   let text;
@@ -68,8 +74,8 @@ export class XmlDecodePipe extends StringPipe {
   async processString(input) {
     return input.replace(/&(?:#x([0-9a-fA-F]+)|#([0-9]+)|([a-zA-Z]+));/g,
       (_m, hex, dec, name) => {
-        if (hex) return String.fromCodePoint(parseInt(hex, 16));
-        if (dec) return String.fromCodePoint(parseInt(dec, 10));
+        if (hex) return decodeNumericXmlEntity(_m, hex, 16);
+        if (dec) return decodeNumericXmlEntity(_m, dec, 10);
         return XML_DECODE_MAP[name] ?? _m;
       });
   }

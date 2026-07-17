@@ -134,8 +134,13 @@ export class SlashUnescapePipe extends StringPipe {
             if (end !== -1) {
               const hex = input.slice(i + 3, end);
               if (/^[0-9a-fA-F]+$/.test(hex)) {
-                out += String.fromCodePoint(parseInt(hex, 16));
-                i = end + 1;
+                const codePoint = parseInt(hex, 16);
+                if (codePoint <= 0x10FFFF) {
+                  out += String.fromCodePoint(codePoint);
+                  i = end + 1;
+                } else {
+                  out += '\\'; i++;
+                }
               } else {
                 out += '\\'; i++;
               }
