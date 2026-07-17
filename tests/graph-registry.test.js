@@ -234,6 +234,7 @@ describe('registry', () => {
       'BinaryEncode', 'BinaryDecode',
       'SlashEscape', 'SlashUnescape',
       'UrlEncode', 'UrlDecode',
+      'Rot',
       'UrlParser', 'JsonParser', 'RegexMatch',
     ]);
     expect(createPipe('HexEncode')).toBeInstanceOf(HexEncodePipe);
