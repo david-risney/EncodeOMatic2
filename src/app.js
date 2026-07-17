@@ -98,6 +98,7 @@ let _suspendUrlUpdates = false;
 async function init() {
   editor.setGraph(graph);
   initZoomControl();
+  initHeaderInteractionGuards();
   document.getElementById('session-name').value = randomSessionName();
   initDataPanelResizer();
 
@@ -141,6 +142,27 @@ async function init() {
   initGuessDialog();
 
   scheduleUrlUpdate();
+}
+
+function initHeaderInteractionGuards() {
+  const header = document.querySelector('.app-header');
+  if (!header) return;
+
+  const preventHeaderZoom = (event) => {
+    if (event.type.startsWith('gesture')) {
+      event.preventDefault();
+      return;
+    }
+
+    if ((event.touches?.length ?? 0) > 1) {
+      event.preventDefault();
+    }
+  };
+
+  header.addEventListener('gesturestart', preventHeaderZoom);
+  header.addEventListener('gesturechange', preventHeaderZoom);
+  header.addEventListener('touchstart', preventHeaderZoom, { passive: false });
+  header.addEventListener('touchmove', preventHeaderZoom, { passive: false });
 }
 
 function initAboutDialog() {

@@ -15,26 +15,28 @@ class SilentWorker {
 
 function appMarkup() {
   return `
-    <button id="btn-share">Share</button>
-    <button id="btn-about">About</button>
-    <div class="session-controls">
-      <div class="session-menu">
-        <button id="btn-session-menu">Session</button>
-        <div id="session-menu" hidden>
-          <button id="btn-session-save">Save session</button>
-          <div class="session-load-item">
-            <button id="btn-session-load">Load session</button>
-            <div id="session-load-menu" hidden></div>
+    <header class="app-header">
+      <button id="btn-share">Share</button>
+      <button id="btn-about">About</button>
+      <div class="session-controls">
+        <div class="session-menu">
+          <button id="btn-session-menu">Session</button>
+          <div id="session-menu" hidden>
+            <button id="btn-session-save">Save session</button>
+            <div class="session-load-item">
+              <button id="btn-session-load">Load session</button>
+              <div id="session-load-menu" hidden></div>
+            </div>
+            <button id="btn-guess">Guess</button>
+            <button id="btn-clear">Clear</button>
           </div>
-          <button id="btn-guess">Guess</button>
-          <button id="btn-clear">Clear</button>
         </div>
+        <input id="session-name" class="session-name-input">
       </div>
-      <input id="session-name">
-    </div>
-    <button id="btn-zoom-fit">Fit</button>
-    <input id="zoom-range" type="range" min="20" max="300" value="100">
-    <output id="zoom-value">100%</output>
+      <button id="btn-zoom-fit">Fit</button>
+      <input id="zoom-range" type="range" min="20" max="300" value="100">
+      <output id="zoom-value">100%</output>
+    </header>
     <graph-editor id="graph-editor"></graph-editor>
     <aside id="data-panel" style="width: 380px" hidden>
       <div id="data-panel-resizer"></div>
@@ -97,6 +99,19 @@ describe('application integration', () => {
     expect(document.querySelector('.pipe-list-item').tagName).toBe('BUTTON');
     expect(document.getElementById('toast-container')).not.toBeNull();
     expect(document.getElementById('session-name').value).toMatch(/^[a-z]+-[a-z]+$/);
+
+    const header = document.querySelector('.app-header');
+    const gestureStart = new Event('gesturestart', { cancelable: true });
+    header.dispatchEvent(gestureStart);
+    expect(gestureStart.defaultPrevented).toBe(true);
+    const pinchTouch = new Event('touchstart', { cancelable: true });
+    Object.defineProperty(pinchTouch, 'touches', { value: [{}, {}] });
+    header.dispatchEvent(pinchTouch);
+    expect(pinchTouch.defaultPrevented).toBe(true);
+    const singleTouch = new Event('touchstart', { cancelable: true });
+    Object.defineProperty(singleTouch, 'touches', { value: [{}] });
+    header.dispatchEvent(singleTouch);
+    expect(singleTouch.defaultPrevented).toBe(false);
 
     document.getElementById('btn-about').click();
     expect(document.getElementById('about-dialog').open).toBe(true);

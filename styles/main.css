@@ -69,6 +69,9 @@ body {
   flex-shrink: 0;
   z-index: 10;
   flex-wrap: wrap;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
 
   & .app-brand {
     display: flex;
@@ -97,6 +100,11 @@ body {
   }
 
   & .project-link { text-decoration: none; }
+
+  & .session-name-input {
+    user-select: text;
+    -webkit-user-select: text;
+  }
 
   & .toolbar-sep {
     width: 1px;
