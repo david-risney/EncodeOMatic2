@@ -18,6 +18,8 @@ automatically loaded context small while making deeper context discoverable.
   spacing, typography, components, interaction patterns, and responsive rules.
 - [Maintainer gotchas](gotchas.md) — constraints and easy-to-miss coupling
   between modules.
+- [Version management](version.md) — how the version is stored, why every
+  change needs a bump, and how to run the bump script.
 
 ## How the hierarchy works
 
