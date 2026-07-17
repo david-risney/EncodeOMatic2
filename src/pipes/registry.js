@@ -14,6 +14,7 @@ import { CharsetDecodePipe, CharsetEncodePipe } from './builtin/encoding/charset
 import { BinaryEncodePipe, BinaryDecodePipe }   from './builtin/encoding/binary.js';
 import { SlashEscapePipe, SlashUnescapePipe }   from './builtin/encoding/slash-escape.js';
 import { UrlEncodePipe, UrlDecodePipe }     from './builtin/encoding/url-encode.js';
+import { RotPipe }                          from './builtin/encoding/rot.js';
 import { UrlParserPipe }     from './builtin/parsing/url-parser.js';
 import { JsonParserPipe }    from './builtin/parsing/json-parser.js';
 import { RegexMatchPipe }    from './builtin/parsing/regex-match.js';
@@ -41,6 +42,7 @@ const ALL_PIPES = [
   SlashUnescapePipe,
   UrlEncodePipe,
   UrlDecodePipe,
+  RotPipe,
   // Parsing
   UrlParserPipe,
   JsonParserPipe,
