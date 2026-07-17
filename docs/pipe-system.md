@@ -100,7 +100,8 @@ Built-ins are grouped under `src/pipes/builtin/`:
 - Encoding: Base64, percent, quoted-printable, hex, HTML entities, XML
   entities, charset, binary, slash escapes, and whole-URL encoding, generally
   in encode/decode pairs.
-- Parsing: URL, JSON, and regular expression pipes.
+- Parsing: URL, JSON, regex match, cookie, CSV, HTTP request/response, JWT,
+  and search-params pipes.
 
 URL, JSON, and regex parsing can create dynamic outputs from query parameters,
 top-level keys, or capture groups. These pipes rebuild `_dynamicOutputs` while

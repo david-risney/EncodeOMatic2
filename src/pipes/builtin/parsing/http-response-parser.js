@@ -1,19 +1,17 @@
 /**
- * HTTP Request Parser pipe.
+ * HTTP Response Parser pipe.
  *
- * Parses a raw HTTP/1.1 request into method, path, version, headers, and body.
+ * Parses a raw HTTP/1.1 response into version, status, reason, headers, and body.
  */
 
 import { Pipe, PipeError, PortDef } from '../../pipe.js';
 
 const STATIC_OUTPUTS = [
-  new PortDef('method', 'HTTP request method', true),
-  new PortDef('path', 'Request path'),
-  new PortDef('version', 'HTTP version'),
-  new PortDef('body', 'Request body bytes'),
+  new PortDef('version', 'HTTP version', true),
+  new PortDef('status', 'Status code'),
+  new PortDef('reason', 'Reason phrase'),
+  new PortDef('body', 'Response body bytes'),
 ];
-
-const REQUEST_PREFIXES = ['GET ', 'POST ', 'PUT ', 'DELETE ', 'PATCH ', 'HEAD ', 'OPTIONS '];
 
 function findHeaderBodySeparator(data) {
   for (let i = 0; i < data.length - 3; i++) {
@@ -29,16 +27,16 @@ function findHeaderBodySeparator(data) {
   return null;
 }
 
-export class HttpRequestParserPipe extends Pipe {
-  static typeName = 'HttpRequestParser';
-  static typeDescription = 'HTTP Request Parse';
+export class HttpResponseParserPipe extends Pipe {
+  static typeName = 'HttpResponseParser';
+  static typeDescription = 'HTTP Response Parse';
   static category = 'Parsing';
-  static categoryDescription = 'Parse a raw HTTP/1.1 request into its components.';
+  static categoryDescription = 'Parse a raw HTTP/1.1 response into its components.';
 
   static getInputAppropriateness(input) {
     if (input == null || input.length === 0) return 0;
     const prefix = String.fromCharCode(...input.slice(0, 8));
-    return REQUEST_PREFIXES.some(method => prefix.startsWith(method)) ? 10 : 0;
+    return prefix.startsWith('HTTP/') ? 10 : 0;
   }
 
   constructor() {
@@ -54,25 +52,24 @@ export class HttpRequestParserPipe extends Pipe {
     const data = inputs.get(this.defaultInputName) ?? new Uint8Array(0);
     const split = findHeaderBodySeparator(data);
     if (!split) {
-      throw new PipeError('Invalid HTTP request: no header/body separator');
+      throw new PipeError('Invalid HTTP response: no header/body separator');
     }
 
     const headersSection = new TextDecoder('utf-8', { fatal: false }).decode(data.slice(0, split.headerEnd));
     const body = data.slice(split.bodyStart);
     const lines = headersSection.split(/\r?\n/);
-    const requestLine = lines[0] ?? '';
-    const reqMatch = requestLine.match(/^([A-Z]+) (.+) (HTTP\/[\d.]+)$/);
-    if (!reqMatch) {
-      throw new PipeError(`Invalid HTTP request line: ${requestLine.slice(0, 100)}`);
+    const statusLine = lines[0] ?? '';
+    const statusMatch = statusLine.match(/^(HTTP\/[\d.]+)\s+(\d{3})(?:\s+(.*))?$/);
+    if (!statusMatch) {
+      throw new PipeError(`Invalid HTTP status line: ${statusLine.slice(0, 100)}`);
     }
 
-    const [, method, path, version] = reqMatch;
+    const [, version, status, reason = ''] = statusMatch;
     const enc = new TextEncoder();
     const result = new Map();
-
-    result.set('method', enc.encode(method));
-    result.set('path', enc.encode(path));
     result.set('version', enc.encode(version));
+    result.set('status', enc.encode(status));
+    result.set('reason', enc.encode(reason));
     result.set('body', body);
 
     this._dynamicOutputs = [];

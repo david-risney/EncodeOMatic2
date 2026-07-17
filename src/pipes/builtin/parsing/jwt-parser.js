@@ -51,7 +51,12 @@ export class JwtParserPipe extends Pipe {
 
   async process(inputs) {
     const data = inputs.get(this.defaultInputName) ?? new Uint8Array(0);
-    const text = new TextDecoder().decode(data).trim();
+    let text;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(data).trim();
+    } catch {
+      throw new PipeError('Invalid JWT: input is not valid UTF-8');
+    }
     const parts = text.split('.');
 
     if (parts.length !== 3) {

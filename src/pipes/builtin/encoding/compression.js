@@ -32,8 +32,11 @@ class CompressionPipe extends Pipe {
   static format = '';
 
   async process(inputs) {
+    if (typeof globalThis.CompressionStream !== 'function') {
+      throw new PipeError('Compression is not supported in this environment');
+    }
     const data = inputs.get(this.defaultInputName) ?? new Uint8Array(0);
-    const output = await transformBytes(CompressionStream, this.constructor.format, data);
+    const output = await transformBytes(globalThis.CompressionStream, this.constructor.format, data);
     return new Map([['output', output]]);
   }
 }
@@ -42,9 +45,12 @@ class DecompressionPipe extends Pipe {
   static format = '';
 
   async process(inputs) {
+    if (typeof globalThis.DecompressionStream !== 'function') {
+      throw new PipeError('Decompression is not supported in this environment');
+    }
     const data = inputs.get(this.defaultInputName) ?? new Uint8Array(0);
     try {
-      const output = await transformBytes(DecompressionStream, this.constructor.format, data);
+      const output = await transformBytes(globalThis.DecompressionStream, this.constructor.format, data);
       return new Map([['output', output]]);
     } catch {
       throw new PipeError('Decompression failed: corrupt or invalid data');

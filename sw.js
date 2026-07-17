@@ -51,7 +51,6 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/form-urlencoded.js',
   './src/pipes/builtin/encoding/hmac.js',
   './src/pipes/builtin/encoding/mime-header.js',
-  './src/pipes/builtin/encoding/quoted-printable.js',
   './src/pipes/builtin/encoding/sha-hash.js',
   './src/pipes/builtin/encoding/unicode-escape.js',
   './src/pipes/builtin/encoding/unicode-normalize.js',
