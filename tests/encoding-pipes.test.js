@@ -10,6 +10,7 @@ import { CharsetDecodePipe, CharsetEncodePipe } from '../src/pipes/builtin/encod
 import { ALL_ENCODINGS } from '../src/pipes/builtin/encoding/charset.js';
 import { SlashEscapePipe, SlashUnescapePipe } from '../src/pipes/builtin/encoding/slash-escape.js';
 import { UrlEncodePipe, UrlDecodePipe } from '../src/pipes/builtin/encoding/url-encode.js';
+import { RotPipe } from '../src/pipes/builtin/encoding/rot.js';
 import { decode, encode, processBytes, processText } from './helpers.js';
 
 describe('source and byte encodings', () => {
@@ -33,6 +34,7 @@ describe('source and byte encodings', () => {
     [CharsetEncodePipe, { toEncoding: 'utf-8' }],
     [SlashEscapePipe, { encoding: 'utf-8', escapeNonAscii: false }],
     [SlashUnescapePipe, { encoding: 'utf-8' }],
+    [RotPipe, { encoding: 'utf-8', rotation: 13 }],
   ])('%s exposes its expected default configuration', (PipeClass, expected) => {
     const pipe = new PipeClass();
     expect(Object.fromEntries([...pipe.configs].map(([name, config]) => [name, config.value])))
@@ -302,5 +304,50 @@ describe('slash escaping', () => {
     expect(await processText(new SlashUnescapePipe(), 'value\\')).toBe('value\\');
     expect(await processText(new SlashUnescapePipe(), '\\u0000\\u{10FFFF}'))
       .toBe('\0\u{10ffff}');
+  });
+});
+
+describe('ROT cipher', () => {
+  it('applies ROT13 by default to letters only', async () => {
+    expect(await processText(new RotPipe(), 'Hello, World!')).toBe('Uryyb, Jbeyq!');
+  });
+
+  it('is self-inverse for ROT13', async () => {
+    const pipe = new RotPipe();
+    const encoded = await processText(pipe, 'Hello, World!');
+    expect(await processText(new RotPipe(), encoded)).toBe('Hello, World!');
+  });
+
+  it('handles empty input', async () => {
+    expect(await processText(new RotPipe(), '')).toBe('');
+  });
+
+  it('applies a custom rotation amount', async () => {
+    const pipe = new RotPipe();
+    pipe.setConfig('rotation', 1);
+    expect(await processText(pipe, 'abc XYZ')).toBe('bcd YZA');
+  });
+
+  it('rotation 0 leaves text unchanged', async () => {
+    const pipe = new RotPipe();
+    pipe.setConfig('rotation', 0);
+    expect(await processText(pipe, 'abcXYZ')).toBe('abcXYZ');
+  });
+
+  it('wraps correctly at alphabet boundary', async () => {
+    const pipe = new RotPipe();
+    pipe.setConfig('rotation', 25);
+    expect(await processText(pipe, 'az AZ')).toBe('zy ZY');
+  });
+
+  it('passes non-letter characters through unchanged', async () => {
+    expect(await processText(new RotPipe(), '123 !@# àéü')).toBe('123 !@# àéü');
+  });
+
+  it('rejects out-of-range rotation', async () => {
+    const pipe = new RotPipe();
+    pipe.setConfig('rotation', 26);
+    await expect(processText(pipe, 'test')).rejects
+      .toMatchObject({ message: 'Rotation must be an integer between 0 and 25' });
   });
 });

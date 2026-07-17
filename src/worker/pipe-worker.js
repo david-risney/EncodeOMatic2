@@ -24,6 +24,7 @@ import { CharsetDecodePipe, CharsetEncodePipe } from '../pipes/builtin/encoding/
 import { BinaryEncodePipe, BinaryDecodePipe }   from '../pipes/builtin/encoding/binary.js';
 import { SlashEscapePipe, SlashUnescapePipe }   from '../pipes/builtin/encoding/slash-escape.js';
 import { UrlEncodePipe, UrlDecodePipe }    from '../pipes/builtin/encoding/url-encode.js';
+import { RotPipe }                         from '../pipes/builtin/encoding/rot.js';
 import { UrlParserPipe }    from '../pipes/builtin/parsing/url-parser.js';
 import { JsonParserPipe }   from '../pipes/builtin/parsing/json-parser.js';
 import { RegexMatchPipe }   from '../pipes/builtin/parsing/regex-match.js';
@@ -48,6 +49,7 @@ const REGISTRY = new Map([
   ['SlashUnescape',   SlashUnescapePipe],
   ['UrlEncode',       UrlEncodePipe],
   ['UrlDecode',       UrlDecodePipe],
+  ['Rot',             RotPipe],
   ['UrlParser',       UrlParserPipe],
   ['JsonParser',      JsonParserPipe],
   ['RegexMatch',      RegexMatchPipe],

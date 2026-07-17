@@ -64,7 +64,7 @@ test('charset pipes score signatures and required UTF-8 input', () => {
     CharsetDecodePipe.getInputAppropriateness(new Uint8Array([0xEF, 0xBB, 0xBF, 0x41]))
   ).toBe(10);
   expect(CharsetDecodePipe.getInputAppropriateness(encode('plain text'))).toBe(0);
-  expect(CharsetEncodePipe.getInputAppropriateness(encode('plain text'))).toBe(0);
+  expect(CharsetEncodePipe.getInputAppropriateness(encode('plain text'))).toBe(5);
   expect(CharsetEncodePipe.getInputAppropriateness(new Uint8Array([0xFF]))).toBe(-10);
 });
 

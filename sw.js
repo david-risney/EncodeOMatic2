@@ -43,6 +43,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/percent.js',
   './src/pipes/builtin/encoding/slash-escape.js',
   './src/pipes/builtin/encoding/url-encode.js',
+  './src/pipes/builtin/encoding/rot.js',
   './src/pipes/builtin/encoding/xml-encode.js',
   './src/pipes/builtin/parsing/json-parser.js',
   './src/pipes/builtin/parsing/regex-match.js',
