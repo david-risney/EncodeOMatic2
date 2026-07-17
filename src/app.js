@@ -145,6 +145,7 @@ async function init() {
 function initAboutDialog() {
   const dialog = document.getElementById('about-dialog');
   const updateButton = document.getElementById('btn-update');
+  const checkUpdatesButton = document.getElementById('btn-check-updates');
   let availableVersion = null;
   let checkId = 0;
 
@@ -161,6 +162,9 @@ function initAboutDialog() {
       checkForUpdates();
     }
   });
+  checkUpdatesButton.addEventListener('click', () => {
+    checkForUpdates();
+  });
 
   async function checkForUpdates() {
     const currentCheck = ++checkId;
@@ -169,6 +173,7 @@ function initAboutDialog() {
     status.className = 'update-status checking';
     status.textContent = 'Checking for updates…';
     updateButton.hidden = true;
+    checkUpdatesButton.disabled = true;
 
     try {
       const versionUrl = new URL('./version.js', import.meta.url);
@@ -181,6 +186,7 @@ function initAboutDialog() {
       if (!latestVersion) throw new Error('Update check returned an invalid version');
       if (currentCheck !== checkId) return;
 
+      checkUpdatesButton.disabled = false;
       if (latestVersion === APP_VERSION) {
         status.className = 'update-status success';
         status.textContent = 'Encode-O-Matic 2 is up to date.';
@@ -195,6 +201,7 @@ function initAboutDialog() {
     } catch (error) {
       if (currentCheck !== checkId) return;
       console.warn('Update check failed:', error);
+      checkUpdatesButton.disabled = false;
       status.className = 'update-status error';
       status.textContent = 'Could not check for updates.';
       updateButton.textContent = 'Try again';

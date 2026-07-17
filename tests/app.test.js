@@ -63,6 +63,7 @@ function appMarkup() {
       <span id="update-status"></span>
       <button id="btn-update" hidden></button>
       <div id="install-status" hidden></div>
+      <button id="btn-check-updates"></button>
     </dialog>
     <div id="conn-action-popover" hidden>
       <button data-action="delete">Delete</button>
