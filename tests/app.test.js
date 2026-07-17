@@ -104,10 +104,17 @@ describe('application integration', () => {
     const gestureStart = new Event('gesturestart', { cancelable: true });
     header.dispatchEvent(gestureStart);
     expect(gestureStart.defaultPrevented).toBe(true);
+    const gestureChange = new Event('gesturechange', { cancelable: true });
+    header.dispatchEvent(gestureChange);
+    expect(gestureChange.defaultPrevented).toBe(true);
     const pinchTouch = new Event('touchstart', { cancelable: true });
     Object.defineProperty(pinchTouch, 'touches', { value: [{}, {}] });
     header.dispatchEvent(pinchTouch);
     expect(pinchTouch.defaultPrevented).toBe(true);
+    const pinchMove = new Event('touchmove', { cancelable: true });
+    Object.defineProperty(pinchMove, 'touches', { value: [{}, {}] });
+    header.dispatchEvent(pinchMove);
+    expect(pinchMove.defaultPrevented).toBe(true);
     const singleTouch = new Event('touchstart', { cancelable: true });
     Object.defineProperty(singleTouch, 'touches', { value: [{}] });
     header.dispatchEvent(singleTouch);
