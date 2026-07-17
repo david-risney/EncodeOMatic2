@@ -227,6 +227,7 @@ describe('registry', () => {
       'FileInputPipe',
       'Base64Encode', 'Base64Decode',
       'PercentEncode', 'PercentDecode',
+      'QuotedPrintableEncode', 'QuotedPrintableDecode',
       'HexEncode', 'HexDecode',
       'HtmlEncode', 'HtmlDecode',
       'XmlEncode', 'XmlDecode',
@@ -245,6 +246,8 @@ describe('registry', () => {
     const groups = getPipesByCategory();
     expect([...groups.keys()]).toEqual(['Input', 'Encoding', 'Parsing']);
     expect(groups.get('Input')[0].typeName).toBe('InputPipe');
+    expect(groups.get('Encoding').map(({ typeName }) => typeName))
+      .toContain('QuotedPrintableEncode');
     expect(groups.get('Parsing').at(-1).typeName).toBe('RegexMatch');
   });
 });

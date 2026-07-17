@@ -7,6 +7,10 @@ import { InputPipe }         from './builtin/input-pipe.js';
 import { FileInputPipe }     from './builtin/file-input-pipe.js';
 import { Base64EncodePipe, Base64DecodePipe } from './builtin/encoding/base64.js';
 import { PercentEncodePipe, PercentDecodePipe } from './builtin/encoding/percent.js';
+import {
+  QuotedPrintableEncodePipe,
+  QuotedPrintableDecodePipe,
+} from './builtin/encoding/quoted-printable.js';
 import { HexEncodePipe, HexDecodePipe }     from './builtin/encoding/hex.js';
 import { HtmlEncodePipe, HtmlDecodePipe }   from './builtin/encoding/html-encode.js';
 import { XmlEncodePipe, XmlDecodePipe }     from './builtin/encoding/xml-encode.js';
@@ -15,6 +19,20 @@ import { BinaryEncodePipe, BinaryDecodePipe }   from './builtin/encoding/binary.
 import { SlashEscapePipe, SlashUnescapePipe }   from './builtin/encoding/slash-escape.js';
 import { UrlEncodePipe, UrlDecodePipe }     from './builtin/encoding/url-encode.js';
 import { RotPipe }                          from './builtin/encoding/rot.js';
+import { Base64urlEncodePipe, Base64urlDecodePipe } from './builtin/encoding/base64url.js';
+import { GzipCompressPipe, GzipDecompressPipe, DeflateCompressPipe, DeflateDecompressPipe } from './builtin/encoding/compression.js';
+import { FormUrlencodedEncodePipe, FormUrlencodedDecodePipe } from './builtin/encoding/form-urlencoded.js';
+import { HmacPipe }                         from './builtin/encoding/hmac.js';
+import { MimeHeaderDecodePipe }             from './builtin/encoding/mime-header.js';
+import { ShaHashPipe }                      from './builtin/encoding/sha-hash.js';
+import { UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe } from './builtin/encoding/unicode-escape.js';
+import { UnicodeNormalizePipe }             from './builtin/encoding/unicode-normalize.js';
+import { CookieParserPipe }  from './builtin/parsing/cookie-parser.js';
+import { CsvParserPipe }     from './builtin/parsing/csv-parser.js';
+import { HttpRequestParserPipe }  from './builtin/parsing/http-request-parser.js';
+import { HttpResponseParserPipe } from './builtin/parsing/http-response-parser.js';
+import { JwtParserPipe }     from './builtin/parsing/jwt-parser.js';
+import { SearchParamsParserPipe } from './builtin/parsing/search-params-parser.js';
 import { UrlParserPipe }     from './builtin/parsing/url-parser.js';
 import { JsonParserPipe }    from './builtin/parsing/json-parser.js';
 import { RegexMatchPipe }    from './builtin/parsing/regex-match.js';
@@ -28,6 +46,8 @@ const ALL_PIPES = [
   Base64DecodePipe,
   PercentEncodePipe,
   PercentDecodePipe,
+  QuotedPrintableEncodePipe,
+  QuotedPrintableDecodePipe,
   HexEncodePipe,
   HexDecodePipe,
   HtmlEncodePipe,
@@ -43,10 +63,30 @@ const ALL_PIPES = [
   UrlEncodePipe,
   UrlDecodePipe,
   RotPipe,
+  Base64urlEncodePipe,
+  Base64urlDecodePipe,
+  GzipCompressPipe,
+  GzipDecompressPipe,
+  DeflateCompressPipe,
+  DeflateDecompressPipe,
+  FormUrlencodedEncodePipe,
+  FormUrlencodedDecodePipe,
+  HmacPipe,
+  MimeHeaderDecodePipe,
+  ShaHashPipe,
+  UnicodeEscapeEncodePipe,
+  UnicodeEscapeDecodePipe,
+  UnicodeNormalizePipe,
   // Parsing
   UrlParserPipe,
   JsonParserPipe,
   RegexMatchPipe,
+  CookieParserPipe,
+  CsvParserPipe,
+  HttpRequestParserPipe,
+  HttpResponseParserPipe,
+  JwtParserPipe,
+  SearchParamsParserPipe,
 ];
 
 /** Map from typeName string → Pipe class */

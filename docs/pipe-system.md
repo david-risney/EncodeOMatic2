@@ -97,9 +97,9 @@ appropriate only when UTF-8 output matches the intended pipe behavior.
 Built-ins are grouped under `src/pipes/builtin/`:
 
 - Inputs: editable text bytes and file bytes.
-- Encoding: Base64, percent, hex, HTML entities, XML entities, charset,
-  binary, slash escapes, and whole-URL encoding, generally in encode/decode
-  pairs.
+- Encoding: Base64, percent, quoted-printable, hex, HTML entities, XML
+  entities, charset, binary, slash escapes, and whole-URL encoding, generally
+  in encode/decode pairs.
 - Parsing: URL, JSON, and regular expression pipes.
 
 URL, JSON, and regex parsing can create dynamic outputs from query parameters,

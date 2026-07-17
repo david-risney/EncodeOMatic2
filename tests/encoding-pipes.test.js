@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { InputPipe } from '../src/pipes/builtin/input-pipe.js';
 import { Base64EncodePipe, Base64DecodePipe } from '../src/pipes/builtin/encoding/base64.js';
 import { PercentEncodePipe, PercentDecodePipe } from '../src/pipes/builtin/encoding/percent.js';
+import {
+  QuotedPrintableEncodePipe,
+  QuotedPrintableDecodePipe,
+} from '../src/pipes/builtin/encoding/quoted-printable.js';
 import { HexEncodePipe, HexDecodePipe } from '../src/pipes/builtin/encoding/hex.js';
 import { BinaryEncodePipe, BinaryDecodePipe } from '../src/pipes/builtin/encoding/binary.js';
 import { HtmlEncodePipe, HtmlDecodePipe } from '../src/pipes/builtin/encoding/html-encode.js';
@@ -18,6 +22,8 @@ describe('source and byte encodings', () => {
     [InputPipe, { text: '', rawBytes: null }],
     [Base64EncodePipe, {}],
     [Base64DecodePipe, {}],
+    [QuotedPrintableEncodePipe, {}],
+    [QuotedPrintableDecodePipe, {}],
     [HexEncodePipe, { separator: '', uppercase: true }],
     [HexDecodePipe, {}],
     [BinaryEncodePipe, { separator: ' ' }],
@@ -62,6 +68,37 @@ describe('source and byte encodings', () => {
     expect([...await processBytes(new Base64DecodePipe(), encoded)]).toEqual(bytes);
     await expect(processText(new Base64DecodePipe(), '%%%')).rejects
       .toMatchObject({ message: 'Invalid Base64 input' });
+  });
+
+  it('encodes and decodes Quoted-Printable data', async () => {
+    expect(decode(await processBytes(new QuotedPrintableEncodePipe(), [0xC3, 0xA9]))).toBe('=C3=A9');
+    expect([...await processBytes(new QuotedPrintableDecodePipe(), encode('=C3=A9'))])
+      .toEqual([0xC3, 0xA9]);
+    expect(decode(await processBytes(new QuotedPrintableEncodePipe(), encode('Hello')))).toBe('Hello');
+    expect([...await processBytes(new QuotedPrintableDecodePipe(), encode('=3D'))]).toEqual([0x3D]);
+  });
+
+  it('handles Quoted-Printable soft line breaks, wrapping, invalid escapes, and empties', async () => {
+    expect(decode(await processBytes(
+      new QuotedPrintableEncodePipe(),
+      new Uint8Array(76).fill(0x41)
+    ))).toBe(`${'A'.repeat(75)}=\r\nA`);
+    expect([...await processBytes(
+      new QuotedPrintableDecodePipe(),
+      encode('Hello=\r\nWorld')
+    )]).toEqual([...encode('HelloWorld')]);
+    expect(QuotedPrintableDecodePipe.getInputAppropriateness(encode('name=3Dvalue'))).toBe(8);
+    expect(QuotedPrintableDecodePipe.getInputAppropriateness(encode('plain text'))).toBe(0);
+    await expect(processText(new QuotedPrintableDecodePipe(), '=ZZ')).rejects
+      .toMatchObject({ message: 'Invalid Quoted-Printable: invalid escape at position 0' });
+    expect(await processBytes(new QuotedPrintableEncodePipe(), [])).toHaveLength(0);
+    expect(await processBytes(new QuotedPrintableDecodePipe(), [])).toHaveLength(0);
+  });
+
+  it('round trips arbitrary bytes through Quoted-Printable', async () => {
+    const bytes = [0, 9, 10, 13, 32, 61, 127, 128, 195, 169, 255];
+    const encoded = await processBytes(new QuotedPrintableEncodePipe(), bytes);
+    expect([...await processBytes(new QuotedPrintableDecodePipe(), encoded)]).toEqual(bytes);
   });
 
   it('handles empty Base64, hex, and binary inputs', async () => {
