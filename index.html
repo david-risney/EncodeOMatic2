@@ -55,16 +55,33 @@
       </label>
       <button id="btn-zoom-in" class="btn btn-icon" title="Zoom in" aria-label="Zoom in">+</button>
       <div class="toolbar-sep"></div>
-      <div class="layout-toggle" role="group" aria-label="Layout">
-        <button id="btn-layout-graph" class="btn btn-sm" type="button"
-                title="Show graph only" aria-pressed="false">Graph</button>
-        <button id="btn-layout-both" class="btn btn-sm active" type="button"
-                title="Show graph and data panel" aria-pressed="true">Both</button>
-        <button id="btn-layout-data" class="btn btn-sm" type="button"
-                title="Show data panel only" aria-pressed="false">Data</button>
-      </div>
-      <button id="btn-layout-cycle" class="btn btn-sm layout-cycle" type="button"
-              title="Show graph and data panel" aria-label="Switch layout. Current: Both">Both</button>
+      <button id="btn-layout-cycle" class="btn btn-sm btn-icon layout-cycle" type="button"
+              title="Show graph and data panel" aria-label="Switch layout. Current: Both">
+        <span class="layout-cycle-icon" data-layout-icon="graph" aria-hidden="true" hidden>
+          <svg viewBox="0 0 16 16">
+            <circle cx="4" cy="4" r="1.5" fill="currentColor" stroke="none"></circle>
+            <circle cx="12" cy="4" r="1.5" fill="currentColor" stroke="none"></circle>
+            <circle cx="8" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
+            <path d="M5 5 7.2 10M11 5 8.8 10M5.6 4H10.4"></path>
+          </svg>
+        </span>
+        <span class="layout-cycle-icon" data-layout-icon="both" aria-hidden="true">
+          <svg viewBox="0 0 16 16">
+            <rect x="2.5" y="3" width="11" height="10" rx="1.5"></rect>
+            <path d="M8 3v10M4.5 6.5h1.5M4.5 8.5h1.5M4.5 10.5h1.5"></path>
+            <circle cx="10.5" cy="5.5" r="1" fill="currentColor" stroke="none"></circle>
+            <circle cx="9.5" cy="10.5" r="1" fill="currentColor" stroke="none"></circle>
+            <circle cx="11.5" cy="10.5" r="1" fill="currentColor" stroke="none"></circle>
+            <path d="M10.1 6.2 9.7 9.2M10.9 6.2 11.3 9.2M10 10.5h1"></path>
+          </svg>
+        </span>
+        <span class="layout-cycle-icon" data-layout-icon="data" aria-hidden="true" hidden>
+          <svg viewBox="0 0 16 16">
+            <rect x="2.5" y="3" width="11" height="10" rx="1.5"></rect>
+            <path d="M5 6h6M5 8h6M5 10h6"></path>
+          </svg>
+        </span>
+      </button>
       <div class="toolbar-sep"></div>
       <button id="btn-about" class="btn" type="button" data-about-trigger>About</button>
     </div>
