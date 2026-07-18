@@ -163,6 +163,21 @@ body {
   }
 }
 
+.layout-toggle {
+  display: flex;
+
+  & .btn {
+    border-radius: 0;
+    border-right-width: 0;
+
+    &:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+    &:last-child  { border-radius: 0 var(--radius) var(--radius) 0; border-right-width: 1px; }
+  }
+}
+
+.app-body[data-layout="graph"] .data-panel { display: none; }
+.app-body[data-layout="data"]  .graph-panel { display: none; }
+
 @media (max-width: 640px) {
   :root { --data-panel-width: min(320px, 75vw); }
 
