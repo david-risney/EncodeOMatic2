@@ -263,6 +263,10 @@ describe('GraphEditor', () => {
     editor._onCanvasPointerMove({ clientX: 236, clientY: 112 });
     const inputCenterX = INPUT_PORT_RECT.left + INPUT_PORT_RECT.width / 2;
     const inputCenterY = INPUT_PORT_RECT.top + INPUT_PORT_RECT.height / 2;
+    expect(236).toBeGreaterThan(INPUT_PORT_RECT.left);
+    expect(236).toBeLessThanOrEqual(INPUT_PORT_RECT.left + INPUT_PORT_RECT.width + INPUT_DROP_TARGET_PADDING_X);
+    expect(112).toBeGreaterThanOrEqual(INPUT_PORT_RECT.top - INPUT_DROP_TARGET_PADDING_Y);
+    expect(112).toBeLessThan(INPUT_PORT_RECT.top);
 
     expect(editor._draftTargetPort).toBe(to);
     expect(to.classList.contains('highlighted')).toBe(true);

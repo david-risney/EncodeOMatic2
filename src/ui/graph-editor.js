@@ -771,7 +771,7 @@ class GraphEditor extends HTMLElement {
     if (!this._draftFrom) return null;
 
     let bestTarget = null;
-    let bestDistance = Infinity;
+    let bestDistanceSquared = Infinity;
     for (const { portEl, rect } of this._draftInputTargets) {
       const withinX = clientX >= rect.left - INPUT_DROP_TARGET_PADDING_X
         && clientX <= rect.right + INPUT_DROP_TARGET_PADDING_X;
@@ -779,17 +779,26 @@ class GraphEditor extends HTMLElement {
         && clientY <= rect.bottom + INPUT_DROP_TARGET_PADDING_Y;
       if (!withinX || !withinY) continue;
 
-      const distance = Math.hypot(
-        clientX - (rect.left + rect.width / 2),
-        clientY - (rect.top + rect.height / 2)
-      );
-      if (distance < bestDistance) {
+      const dx = clientX - (rect.left + rect.width / 2);
+      const dy = clientY - (rect.top + rect.height / 2);
+      const distanceSquared = dx * dx + dy * dy;
+      if (distanceSquared < bestDistanceSquared) {
         bestTarget = portEl;
-        bestDistance = distance;
+        bestDistanceSquared = distanceSquared;
       }
     }
 
     return bestTarget;
+  }
+
+  _buildReverseConnectionMap() {
+    const reverseConnections = new Map();
+    for (const connection of this._graph?.connections ?? []) {
+      const upstreamPipeIds = reverseConnections.get(connection.toPipeId) ?? [];
+      upstreamPipeIds.push(connection.fromPipeId);
+      reverseConnections.set(connection.toPipeId, upstreamPipeIds);
+    }
+    return reverseConnections;
   }
 
   _collectDraftInputTargets() {
@@ -813,15 +822,15 @@ class GraphEditor extends HTMLElement {
   _collectDraftValidTargetPipeIds(fromPipeId) {
     if (!this._graph) return new Set();
 
+    const reverseConnections = this._buildReverseConnectionMap();
     const upstreamPipes = new Set([fromPipeId]);
     const stack = [fromPipeId];
     while (stack.length > 0) {
       const currentPipeId = stack.pop();
-      for (const connection of this._graph.connections) {
-        if (connection.toPipeId !== currentPipeId) continue;
-        if (upstreamPipes.has(connection.fromPipeId)) continue;
-        upstreamPipes.add(connection.fromPipeId);
-        stack.push(connection.fromPipeId);
+      for (const upstreamPipeId of reverseConnections.get(currentPipeId) ?? []) {
+        if (upstreamPipes.has(upstreamPipeId)) continue;
+        upstreamPipes.add(upstreamPipeId);
+        stack.push(upstreamPipeId);
       }
     }
 
