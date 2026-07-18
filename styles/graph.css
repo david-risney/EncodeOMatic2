@@ -224,7 +224,7 @@ graph-editor {
     box-shadow: 0 -2px 0 0 var(--color-pipe-bg);
 
     /* Mini plug seated inside the socket when a connection is present.
-       Scaled to ≈2/3 of the full output-port (18×16px) to fit inside the 18×10px socket. */
+       12×7px — 2/3 the width, ~44% the height of the full 18×16px output plug. */
     &.connected::after {
       content: '';
       position: absolute;

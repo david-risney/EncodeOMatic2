@@ -233,12 +233,16 @@ class GraphEditor extends HTMLElement {
     }
 
     // Sync 'connected' class on input port elements so the socket shows a plug.
-    const connectedInputs = new Set(
-      this._graph.connections.map(c => `${c.toPipeId}:input:${c.toInput}`)
-    );
-    for (const [key, portEl] of this._portElements) {
-      if (key.includes(':input:')) {
-        portEl.classList.toggle('connected', connectedInputs.has(key));
+    // Skip during node drags: connections don't change while dragging a node and
+    // updateConnections() runs on every pointermove during a drag.
+    if (!this._dragging) {
+      const connectedInputs = new Set(
+        this._graph.connections.map(c => `${c.toPipeId}:input:${c.toInput}`)
+      );
+      for (const [key, portEl] of this._portElements) {
+        if (key.includes(':input:')) {
+          portEl.classList.toggle('connected', connectedInputs.has(key));
+        }
       }
     }
   }
