@@ -142,7 +142,7 @@
 
 @media (max-width: 640px) {
   .btn { padding: 5px 10px; }
-  .zoom-control,
+  #zoom-control,
   #btn-zoom-out,
   #btn-zoom-in { display: none; }
 }

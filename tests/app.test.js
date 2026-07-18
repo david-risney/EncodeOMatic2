@@ -18,7 +18,7 @@ function appMarkup() {
     <header class="app-header">
       <div class="app-brand">
         <span class="app-title">Encode-O-Matic 2</span>
-        <button class="brand-about-btn" data-about-trigger aria-label="About">i</button>
+        <button class="brand-about-btn" data-about-trigger aria-label="About">ℹ</button>
       </div>
       <div class="session-controls">
         <div class="session-menu">
@@ -302,9 +302,11 @@ describe('application integration', () => {
     expect(document.querySelector('.app-body').dataset.layout).toBe('data');
     expect(cycleLayout.textContent).toBe('Data');
     expect(cycleLayout.title).toBe('Show data panel only');
+    expect(cycleLayout.getAttribute('aria-label')).toBe('Switch layout. Current: Data');
     cycleLayout.click();
     expect(document.querySelector('.app-body').dataset.layout).toBe('graph');
     expect(cycleLayout.textContent).toBe('Graph');
+    expect(cycleLayout.getAttribute('aria-label')).toBe('Switch layout. Current: Graph');
     document.getElementById('btn-layout-both').click();
     expect(cycleLayout.textContent).toBe('Both');
     expect(cycleLayout.getAttribute('aria-label')).toBe('Switch layout. Current: Both');
