@@ -40,6 +40,8 @@ function bezierPath(x1, y1, x2, y2) {
 
 const ADD_PIPE_CONTROL_WIDTH = 140;
 const ADD_PIPE_CONTROL_HEIGHT = 60;
+const DEFAULT_ADD_PIPE_CONTROL_X = 60;
+const DEFAULT_ADD_PIPE_CONTROL_Y = 80;
 
 class GraphEditor extends HTMLElement {
   constructor() {
@@ -674,7 +676,7 @@ class GraphEditor extends HTMLElement {
     const width = this._canvas.clientWidth;
     const height = this._canvas.clientHeight;
     if (width <= 0 || height <= 0) {
-      this._positionElement(this._addPipeControl, 60, 80);
+      this._positionElement(this._addPipeControl, DEFAULT_ADD_PIPE_CONTROL_X, DEFAULT_ADD_PIPE_CONTROL_Y);
       return;
     }
 
@@ -699,8 +701,8 @@ class GraphEditor extends HTMLElement {
       detail: {
         input,
         position: {
-          x: parseFloat(this._addPipeControl.style.getPropertyValue('--graph-item-x')) || 60,
-          y: parseFloat(this._addPipeControl.style.getPropertyValue('--graph-item-y')) || 80,
+          x: parseFloat(this._addPipeControl.style.getPropertyValue('--graph-item-x')) || DEFAULT_ADD_PIPE_CONTROL_X,
+          y: parseFloat(this._addPipeControl.style.getPropertyValue('--graph-item-y')) || DEFAULT_ADD_PIPE_CONTROL_Y,
         },
       },
       bubbles: true,

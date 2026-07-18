@@ -291,10 +291,7 @@ describe('GraphEditor', () => {
   });
 
   it('pans, zooms, drags nodes, and fits the graph', () => {
-    Object.defineProperties(editor._canvas, {
-      clientWidth: { value: 800 },
-      clientHeight: { value: 600 },
-    });
+    setCanvasSize(editor);
     vi.spyOn(editor._canvas, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
     editor._onCanvasPointerDown({ button: 0, clientX: 5, clientY: 6, target: editor._canvas });
     expect(editor._canvas.classList.contains('grabbing')).toBe(true);
