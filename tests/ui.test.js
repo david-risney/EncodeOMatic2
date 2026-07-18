@@ -6,6 +6,9 @@ import { InputPipe } from '../src/pipes/builtin/input-pipe.js';
 import { HexEncodePipe } from '../src/pipes/builtin/encoding/hex.js';
 import { encode } from './helpers.js';
 
+const OUTPUT_PORT_RECT = { left: 30, top: 80, width: 18, height: 16 };
+const INPUT_PORT_RECT = { left: 220, top: 120, width: 18, height: 10 };
+
 describe('DataViewer', () => {
   let viewer;
 
@@ -251,16 +254,18 @@ describe('GraphEditor', () => {
     const from = editor._portElements.get(`${source.id}:output:output`);
     const to = editor._portElements.get(`${target.id}:input:input`);
     vi.spyOn(editor._inner, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
-    mockPortRect(from, { left: 30, top: 80, width: 18, height: 16 });
-    mockPortRect(to, { left: 220, top: 120, width: 18, height: 10 });
+    mockPortRect(from, OUTPUT_PORT_RECT);
+    mockPortRect(to, INPUT_PORT_RECT);
 
     editor._onPortMouseDown({}, source.id, 'output', 'output');
     editor._onCanvasPointerMove({ clientX: 236, clientY: 112 });
+    const inputCenterX = INPUT_PORT_RECT.left + INPUT_PORT_RECT.width / 2;
+    const inputCenterY = INPUT_PORT_RECT.top + INPUT_PORT_RECT.height / 2;
 
     expect(editor._draftTargetPort).toBe(to);
     expect(to.classList.contains('highlighted')).toBe(true);
     expect(editor._addPipeControl.hidden).toBe(true);
-    expect(editor._draftPath.getAttribute('d')).toContain('229 125');
+    expect(editor._draftPath.getAttribute('d')).toContain(`${inputCenterX} ${inputCenterY}`);
 
     editor._onCanvasPointerUp({ clientX: 236, clientY: 112 });
 
