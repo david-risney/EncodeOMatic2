@@ -16,7 +16,10 @@ class SilentWorker {
 function appMarkup() {
   return `
     <header class="app-header">
-      <button id="btn-about">About</button>
+      <div class="app-brand">
+        <span class="app-title">Encode-O-Matic 2</span>
+        <button class="brand-about-btn" data-about-trigger aria-label="About">ℹ</button>
+      </div>
       <div class="session-controls">
         <div class="session-menu">
           <button id="btn-session-menu">Session</button>
@@ -41,6 +44,8 @@ function appMarkup() {
       <button id="btn-layout-graph">Graph</button>
       <button id="btn-layout-both" class="active">Both</button>
       <button id="btn-layout-data">Data</button>
+      <button id="btn-layout-cycle">Both</button>
+      <button id="btn-about" data-about-trigger>About</button>
     </header>
     <graph-editor id="graph-editor"></graph-editor>
     <div class="app-body">
@@ -168,6 +173,10 @@ describe('application integration', () => {
     warn.mockRestore();
     document.getElementById('about-dialog').close();
 
+    document.querySelector('.brand-about-btn').click();
+    expect(document.getElementById('about-dialog').open).toBe(true);
+    document.getElementById('about-dialog').close();
+
     const input = document.getElementById('pipe-search-input');
     input.value = 'regex';
     input.dispatchEvent(new Event('input'));
@@ -287,6 +296,20 @@ describe('application integration', () => {
     expect(document.getElementById('guess-dialog').open).toBe(true);
     document.getElementById('guess-cancel').click();
     expect(document.getElementById('guess-dialog').open).toBe(false);
+
+    const cycleLayout = document.getElementById('btn-layout-cycle');
+    cycleLayout.click();
+    expect(document.querySelector('.app-body').dataset.layout).toBe('data');
+    expect(cycleLayout.textContent).toBe('Data');
+    expect(cycleLayout.title).toBe('Show data panel only');
+    expect(cycleLayout.getAttribute('aria-label')).toBe('Switch layout. Current: Data');
+    cycleLayout.click();
+    expect(document.querySelector('.app-body').dataset.layout).toBe('graph');
+    expect(cycleLayout.textContent).toBe('Graph');
+    expect(cycleLayout.getAttribute('aria-label')).toBe('Switch layout. Current: Graph');
+    document.getElementById('btn-layout-both').click();
+    expect(cycleLayout.textContent).toBe('Both');
+    expect(cycleLayout.getAttribute('aria-label')).toBe('Switch layout. Current: Both');
 
     const zoom = document.getElementById('zoom-range');
     zoom.value = '150';
