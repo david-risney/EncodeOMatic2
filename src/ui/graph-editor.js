@@ -69,6 +69,8 @@ class GraphEditor extends HTMLElement {
     this._draftPath = null; // SVGPathElement
     this._draftPlug = null; // HTMLElement — floating plug ghost during drag
     this._draftTargetPort = null;
+    this._draftInputTargets = [];
+    this._draftValidTargetPipeIds = null;
     this._addPipeControl = null;
 
     // Drag state
@@ -439,6 +441,8 @@ class GraphEditor extends HTMLElement {
       if (!portEl) return;
       const pos = this._portCenter(portEl);
       this._draftFrom = { pipeId, portName, portType: 'output', x: pos.x, y: pos.y };
+      this._draftValidTargetPipeIds = this._collectDraftValidTargetPipeIds(pipeId);
+      this._draftInputTargets = this._collectDraftInputTargets();
       this._canvas.classList.add('connecting');
 
       this._draftPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -704,6 +708,8 @@ class GraphEditor extends HTMLElement {
       this._draftPlug = null;
     }
     this._draftFrom = null;
+    this._draftInputTargets = [];
+    this._draftValidTargetPipeIds = null;
     this._canvas.classList.remove('connecting');
     this._syncAddPipeControl();
   }
@@ -766,11 +772,7 @@ class GraphEditor extends HTMLElement {
 
     let bestTarget = null;
     let bestDistance = Infinity;
-    for (const [key, portEl] of this._portElements) {
-      if (!key.includes(':input:')) continue;
-      if (!this._canConnectDraftTo(portEl.dataset.pipeId)) continue;
-
-      const rect = portEl.getBoundingClientRect();
+    for (const { portEl, rect } of this._draftInputTargets) {
       const withinX = clientX >= rect.left - INPUT_DROP_TARGET_PADDING_X
         && clientX <= rect.right + INPUT_DROP_TARGET_PADDING_X;
       const withinY = clientY >= rect.top - INPUT_DROP_TARGET_PADDING_Y
@@ -790,25 +792,47 @@ class GraphEditor extends HTMLElement {
     return bestTarget;
   }
 
+  _collectDraftInputTargets() {
+    const targets = [];
+    for (const [key, portEl] of this._portElements) {
+      if (!key.includes(':input:')) continue;
+      if (!this._canConnectDraftTo(portEl.dataset.pipeId)) continue;
+      targets.push({
+        portEl,
+        rect: portEl.getBoundingClientRect(),
+      });
+    }
+    return targets;
+  }
+
   _canConnectDraftTo(toPipeId) {
     if (!this._draftFrom || !this._graph) return false;
-    const fromPipeId = this._draftFrom.pipeId;
-    if (fromPipeId === toPipeId) return false;
+    return this._draftValidTargetPipeIds?.has(toPipeId) ?? false;
+  }
 
-    const visited = new Set([toPipeId]);
-    const stack = [toPipeId];
+  _collectDraftValidTargetPipeIds(fromPipeId) {
+    if (!this._graph) return new Set();
+
+    const reachableFromTarget = new Set([fromPipeId]);
+    const stack = [fromPipeId];
     while (stack.length > 0) {
       const currentPipeId = stack.pop();
-      if (currentPipeId === fromPipeId) return false;
       for (const connection of this._graph.connections) {
-        if (connection.fromPipeId !== currentPipeId) continue;
-        if (visited.has(connection.toPipeId)) continue;
-        visited.add(connection.toPipeId);
-        stack.push(connection.toPipeId);
+        if (connection.toPipeId !== currentPipeId) continue;
+        if (reachableFromTarget.has(connection.fromPipeId)) continue;
+        reachableFromTarget.add(connection.fromPipeId);
+        stack.push(connection.fromPipeId);
       }
     }
 
-    return true;
+    const validTargetPipeIds = new Set();
+    for (const pipeId of this._graph.pipes.keys()) {
+      if (!reachableFromTarget.has(pipeId)) {
+        validTargetPipeIds.add(pipeId);
+      }
+    }
+
+    return validTargetPipeIds;
   }
 
   _setDraftTargetPort(portEl) {
