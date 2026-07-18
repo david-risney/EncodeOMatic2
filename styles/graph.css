@@ -28,6 +28,8 @@ graph-editor {
 }
 
 .pipe-node {
+  --pipe-top-port-offset: -4px;
+  --pipe-bottom-port-overhang: 8px;
   position: absolute;
   left: var(--graph-item-x, 0);
   top: var(--graph-item-y, 0);
@@ -64,7 +66,7 @@ graph-editor {
   & .pipe-node-ports-top {
     min-height: 0;
     padding: 0 8px 8px;
-    margin-top: -4px;
+    margin-top: var(--pipe-top-port-offset);
   }
 
   & .pipe-node-ports-bottom {
@@ -169,7 +171,7 @@ graph-editor {
     & .port-name { order: 2; }
   }
 
-  &.output-port-wrapper { margin-bottom: -8px; }
+  &.output-port-wrapper { margin-bottom: calc(-1 * var(--pipe-bottom-port-overhang)); }
 
   & .port-name {
     color: var(--color-text-dim);
