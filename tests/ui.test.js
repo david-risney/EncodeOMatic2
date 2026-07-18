@@ -133,6 +133,11 @@ describe('GraphEditor', () => {
       clientHeight: { configurable: true, value: height },
     });
   };
+  const mockPortRect = (port, rect) => vi.spyOn(port, 'getBoundingClientRect').mockReturnValue({
+    ...rect,
+    right: rect.left + rect.width,
+    bottom: rect.top + rect.height,
+  });
 
   beforeEach(() => {
     editor = document.createElement('graph-editor');
@@ -239,6 +244,31 @@ describe('GraphEditor', () => {
     editor._cancelDraft();
     expect(editor._draftFrom).toBeNull();
     expect(editor._canvas.classList.contains('connecting')).toBe(false);
+  });
+
+  it('snaps draft connections to nearby inputs with a larger drop target', () => {
+    const process = vi.spyOn(graph, 'processFrom').mockResolvedValue();
+    const from = editor._portElements.get(`${source.id}:output:output`);
+    const to = editor._portElements.get(`${target.id}:input:input`);
+    vi.spyOn(editor._inner, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
+    mockPortRect(from, { left: 30, top: 80, width: 18, height: 16 });
+    mockPortRect(to, { left: 220, top: 120, width: 18, height: 10 });
+
+    editor._onPortMouseDown({}, source.id, 'output', 'output');
+    editor._onCanvasPointerMove({ clientX: 236, clientY: 112 });
+
+    expect(editor._draftTargetPort).toBe(to);
+    expect(to.classList.contains('highlighted')).toBe(true);
+    expect(editor._addPipeControl.hidden).toBe(true);
+    expect(editor._draftPath.getAttribute('d')).toContain('229 125');
+
+    editor._onCanvasPointerUp({ clientX: 236, clientY: 112 });
+
+    expect(graph.connections).toHaveLength(1);
+    expect(graph.connections[0].toPipeId).toBe(target.id);
+    expect(process).toHaveBeenCalledWith(source.id);
+    expect(editor._draftTargetPort).toBeNull();
+    expect(to.classList.contains('highlighted')).toBe(false);
   });
 
   it('requests a connected pipe when a connection is dropped on empty space', () => {
