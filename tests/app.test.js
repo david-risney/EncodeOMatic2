@@ -41,10 +41,32 @@ function appMarkup() {
       <input id="zoom-range" type="range" min="20" max="300" value="100">
       <output id="zoom-value">100%</output>
       <button id="btn-zoom-in">+</button>
-      <button id="btn-layout-graph">Graph</button>
-      <button id="btn-layout-both" class="active">Both</button>
-      <button id="btn-layout-data">Data</button>
-      <button id="btn-layout-cycle">Both</button>
+      <button id="btn-layout-cycle">
+        <span class="layout-cycle-icon" data-layout-icon="graph" hidden>
+          <svg viewBox="0 0 16 16">
+            <circle cx="4" cy="4" r="1.5" fill="currentColor" stroke="none"></circle>
+            <circle cx="12" cy="4" r="1.5" fill="currentColor" stroke="none"></circle>
+            <circle cx="8" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
+            <path d="M5 5 7.2 10M11 5 8.8 10M5.6 4H10.4"></path>
+          </svg>
+        </span>
+        <span class="layout-cycle-icon" data-layout-icon="both">
+          <svg viewBox="0 0 16 16">
+            <rect x="2.5" y="3" width="11" height="10" rx="1.5"></rect>
+            <path d="M8 3v10M4.5 6.5h1.5M4.5 8.5h1.5M4.5 10.5h1.5"></path>
+            <circle cx="10.5" cy="5.5" r="1" fill="currentColor" stroke="none"></circle>
+            <circle cx="9.5" cy="10.5" r="1" fill="currentColor" stroke="none"></circle>
+            <circle cx="11.5" cy="10.5" r="1" fill="currentColor" stroke="none"></circle>
+            <path d="M10.1 6.2 9.7 9.2M10.9 6.2 11.3 9.2M10 10.5h1"></path>
+          </svg>
+        </span>
+        <span class="layout-cycle-icon" data-layout-icon="data" hidden>
+          <svg viewBox="0 0 16 16">
+            <rect x="2.5" y="3" width="11" height="10" rx="1.5"></rect>
+            <path d="M5 6h6M5 8h6M5 10h6"></path>
+          </svg>
+        </span>
+      </button>
       <button id="btn-about" data-about-trigger>About</button>
     </header>
     <graph-editor id="graph-editor"></graph-editor>
@@ -300,16 +322,18 @@ describe('application integration', () => {
     const cycleLayout = document.getElementById('btn-layout-cycle');
     cycleLayout.click();
     expect(document.querySelector('.app-body').dataset.layout).toBe('data');
-    expect(cycleLayout.textContent).toBe('Data');
     expect(cycleLayout.title).toBe('Show data panel only');
     expect(cycleLayout.getAttribute('aria-label')).toBe('Switch layout. Current: Data');
+    expect(cycleLayout.querySelector('[data-layout-icon="data"]').hidden).toBe(false);
+    expect(cycleLayout.querySelector('[data-layout-icon="both"]').hidden).toBe(true);
     cycleLayout.click();
     expect(document.querySelector('.app-body').dataset.layout).toBe('graph');
-    expect(cycleLayout.textContent).toBe('Graph');
     expect(cycleLayout.getAttribute('aria-label')).toBe('Switch layout. Current: Graph');
-    document.getElementById('btn-layout-both').click();
-    expect(cycleLayout.textContent).toBe('Both');
+    expect(cycleLayout.querySelector('[data-layout-icon="graph"]').hidden).toBe(false);
+    cycleLayout.click();
+    expect(document.querySelector('.app-body').dataset.layout).toBe('both');
     expect(cycleLayout.getAttribute('aria-label')).toBe('Switch layout. Current: Both');
+    expect(cycleLayout.querySelector('[data-layout-icon="both"]').hidden).toBe(false);
 
     const zoom = document.getElementById('zoom-range');
     zoom.value = '150';

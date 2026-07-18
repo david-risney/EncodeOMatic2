@@ -170,9 +170,6 @@ function initHeaderInteractionGuards() {
 
 function initLayoutToggle() {
   const appBody = document.querySelector('.app-body');
-  const btnGraph = document.getElementById('btn-layout-graph');
-  const btnBoth  = document.getElementById('btn-layout-both');
-  const btnData  = document.getElementById('btn-layout-data');
   const btnCycle = document.getElementById('btn-layout-cycle');
   const layoutLabels = {
     graph: 'Graph',
@@ -185,26 +182,22 @@ function initLayoutToggle() {
     data: 'Show data panel only',
   };
   const layoutModes = ['graph', 'both', 'data'];
+  const layoutIcons = Object.fromEntries(layoutModes.map(mode => [
+    mode,
+    btnCycle?.querySelector(`[data-layout-icon="${mode}"]`),
+  ]));
 
   function setLayout(mode) {
     layoutMode = mode;
     appBody.dataset.layout = mode;
-    btnGraph.classList.toggle('active', mode === 'graph');
-    btnBoth.classList.toggle('active',  mode === 'both');
-    btnData.classList.toggle('active',  mode === 'data');
-    btnGraph.setAttribute('aria-pressed', String(mode === 'graph'));
-    btnBoth.setAttribute('aria-pressed',  String(mode === 'both'));
-    btnData.setAttribute('aria-pressed',  String(mode === 'data'));
-    btnCycle.textContent = layoutLabels[mode];
     btnCycle.title = layoutTitles[mode];
     btnCycle.setAttribute('aria-label', `Switch layout. Current: ${layoutLabels[mode]}`);
+    Object.entries(layoutIcons).forEach(([iconMode, iconEl]) => {
+      if (iconEl) iconEl.hidden = iconMode !== mode;
+    });
     updateDataPanelVisibility();
     if (mode !== 'data' && editor) editor.fitView();
   }
-
-  btnGraph.addEventListener('click', () => setLayout('graph'));
-  btnBoth.addEventListener('click',  () => setLayout('both'));
-  btnData.addEventListener('click',  () => setLayout('data'));
   btnCycle.addEventListener('click', () => {
     const currentIndex = layoutModes.indexOf(layoutMode);
     setLayout(layoutModes[(currentIndex + 1) % layoutModes.length]);
