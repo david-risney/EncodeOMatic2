@@ -8,6 +8,8 @@ import { encode } from './helpers.js';
 
 const OUTPUT_PORT_RECT = { left: 30, top: 80, width: 18, height: 16 };
 const INPUT_PORT_RECT = { left: 220, top: 120, width: 18, height: 10 };
+const INPUT_DROP_TARGET_PADDING_X = 18;
+const INPUT_DROP_TARGET_PADDING_Y = 16;
 
 describe('DataViewer', () => {
   let viewer;
@@ -274,6 +276,37 @@ describe('GraphEditor', () => {
     expect(process).toHaveBeenCalledWith(source.id);
     expect(editor._draftTargetPort).toBeNull();
     expect(to.classList.contains('highlighted')).toBe(false);
+  });
+
+  it('expands the input drop target to the configured drag padding', () => {
+    const to = editor._portElements.get(`${target.id}:input:input`);
+    mockPortRect(to, INPUT_PORT_RECT);
+    editor._draftFrom = { pipeId: source.id, portName: 'output', portType: 'output' };
+    editor._draftValidTargetPipeIds = new Set([target.id]);
+    editor._draftInputTargets = editor._collectDraftInputTargets();
+    const right = INPUT_PORT_RECT.left + INPUT_PORT_RECT.width;
+    const bottom = INPUT_PORT_RECT.top + INPUT_PORT_RECT.height;
+
+    expect(
+      editor._findInputDropTarget(
+        INPUT_PORT_RECT.left - INPUT_DROP_TARGET_PADDING_X,
+        INPUT_PORT_RECT.top - INPUT_DROP_TARGET_PADDING_Y
+      )
+    ).toBe(to);
+    expect(
+      editor._findInputDropTarget(
+        right + INPUT_DROP_TARGET_PADDING_X,
+        bottom + INPUT_DROP_TARGET_PADDING_Y
+      )
+    ).toBe(to);
+    expect(
+      editor._findInputDropTarget(
+        INPUT_PORT_RECT.left - INPUT_DROP_TARGET_PADDING_X - 1,
+        INPUT_PORT_RECT.top - INPUT_DROP_TARGET_PADDING_Y
+      )
+    ).toBeNull();
+
+    editor._cancelDraft();
   });
 
   it('requests a connected pipe when a connection is dropped on empty space', () => {

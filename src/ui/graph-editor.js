@@ -813,21 +813,21 @@ class GraphEditor extends HTMLElement {
   _collectDraftValidTargetPipeIds(fromPipeId) {
     if (!this._graph) return new Set();
 
-    const reachableFromTarget = new Set([fromPipeId]);
+    const upstreamPipes = new Set([fromPipeId]);
     const stack = [fromPipeId];
     while (stack.length > 0) {
       const currentPipeId = stack.pop();
       for (const connection of this._graph.connections) {
         if (connection.toPipeId !== currentPipeId) continue;
-        if (reachableFromTarget.has(connection.fromPipeId)) continue;
-        reachableFromTarget.add(connection.fromPipeId);
+        if (upstreamPipes.has(connection.fromPipeId)) continue;
+        upstreamPipes.add(connection.fromPipeId);
         stack.push(connection.fromPipeId);
       }
     }
 
     const validTargetPipeIds = new Set();
     for (const pipeId of this._graph.pipes.keys()) {
-      if (!reachableFromTarget.has(pipeId)) {
+      if (!upstreamPipes.has(pipeId)) {
         validTargetPipeIds.add(pipeId);
       }
     }
