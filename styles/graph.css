@@ -62,8 +62,9 @@ graph-editor {
   }
 
   & .pipe-node-ports-top {
-    padding: 0 8px 6px;
-    margin-top: -2px;
+    min-height: 0;
+    padding: 0 8px 8px;
+    margin-top: -4px;
   }
 
   & .pipe-node-ports-bottom {
@@ -162,7 +163,8 @@ graph-editor {
   padding: 0 2px;
 
   &.input-port-wrapper {
-    margin-top: -2px;
+    gap: 2px;
+    margin-top: 0;
 
     & .port-name { order: 2; }
   }
@@ -195,6 +197,7 @@ graph-editor {
     height: 10px;
     color: var(--color-port-input);
     transform-origin: center top;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
     border-right: 2px solid color-mix(in srgb, var(--color-port-input) 70%, var(--color-pipe-border));
     border-bottom: 2px solid color-mix(in srgb, var(--color-port-input) 70%, var(--color-pipe-border));
     border-left: 2px solid color-mix(in srgb, var(--color-port-input) 70%, var(--color-pipe-border));
@@ -205,6 +208,7 @@ graph-editor {
         color-mix(in srgb, black 22%, var(--color-bg)),
         var(--color-bg)
       );
+    box-shadow: 0 -2px 0 0 var(--color-pipe-bg);
   }
 
   /* Output port: domed plug that hangs below the pipe body. */
