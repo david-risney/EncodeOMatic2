@@ -227,11 +227,6 @@ class GraphEditor extends HTMLElement {
       this._updateConnectionPath(paths, conn);
     }
 
-    // Update draft path if active
-    if (this._draftPath && this._draftFrom) {
-      // kept up by mousemove
-    }
-
     // Sync 'connected' class on input port elements so the socket shows a plug.
     // Skip during node drags: connections don't change while dragging a node and
     // updateConnections() runs on every pointermove during a drag.
