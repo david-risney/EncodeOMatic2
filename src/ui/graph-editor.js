@@ -43,6 +43,10 @@ const ADD_PIPE_CONTROL_HEIGHT = 60;
 const DEFAULT_ADD_PIPE_CONTROL_X = 60;
 const DEFAULT_ADD_PIPE_CONTROL_Y = 80;
 
+// Drag plug ghost dimensions — must match the .drag-plug-ghost CSS rule.
+const DRAG_PLUG_WIDTH = 18;
+const DRAG_PLUG_HEIGHT = 16;
+
 class GraphEditor extends HTMLElement {
   constructor() {
     super();
@@ -443,7 +447,7 @@ class GraphEditor extends HTMLElement {
       this._draftPlug = document.createElement('div');
       this._draftPlug.className = 'drag-plug-ghost';
       this._draftPlug.setAttribute('aria-hidden', 'true');
-      this._positionElement(this._draftPlug, pos.x - 9, pos.y - 8);
+      this._positionElement(this._draftPlug, pos.x - DRAG_PLUG_WIDTH / 2, pos.y - DRAG_PLUG_HEIGHT / 2);
       this._inner.appendChild(this._draftPlug);
     } else if (portType === 'input' && this._draftFrom) {
       // Complete connection
@@ -514,7 +518,7 @@ class GraphEditor extends HTMLElement {
       );
       // Keep the plug ghost centered on the cursor tip.
       if (this._draftPlug) {
-        this._positionElement(this._draftPlug, mx - 9, my - 8);
+        this._positionElement(this._draftPlug, mx - DRAG_PLUG_WIDTH / 2, my - DRAG_PLUG_HEIGHT / 2);
       }
     }
   }
