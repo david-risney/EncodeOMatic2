@@ -184,7 +184,7 @@ function initLayoutToggle() {
     btnBoth.setAttribute('aria-pressed',  String(mode === 'both'));
     btnData.setAttribute('aria-pressed',  String(mode === 'data'));
     updateDataPanelVisibility();
-    if (mode !== 'data') editor.fitView();
+    if (mode !== 'data' && editor) editor.fitView();
   }
 
   btnGraph.addEventListener('click', () => setLayout('graph'));

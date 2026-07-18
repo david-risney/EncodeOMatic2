@@ -178,7 +178,7 @@ body {
 .app-body[data-layout="graph"] .data-panel { display: none; }
 .app-body[data-layout="data"]  .graph-panel { display: none; }
 
-
+@media (max-width: 640px) {
   :root { --data-panel-width: min(320px, 75vw); }
 
   .app-header {
