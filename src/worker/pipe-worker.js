@@ -17,6 +17,10 @@
 import { InputPipe }        from '../pipes/builtin/input-pipe.js';
 import { Base64EncodePipe, Base64DecodePipe } from '../pipes/builtin/encoding/base64.js';
 import { PercentEncodePipe, PercentDecodePipe } from '../pipes/builtin/encoding/percent.js';
+import {
+  QuotedPrintableEncodePipe,
+  QuotedPrintableDecodePipe,
+} from '../pipes/builtin/encoding/quoted-printable.js';
 import { HexEncodePipe, HexDecodePipe }    from '../pipes/builtin/encoding/hex.js';
 import { HtmlEncodePipe, HtmlDecodePipe }  from '../pipes/builtin/encoding/html-encode.js';
 import { XmlEncodePipe, XmlDecodePipe }    from '../pipes/builtin/encoding/xml-encode.js';
@@ -25,6 +29,20 @@ import { BinaryEncodePipe, BinaryDecodePipe }   from '../pipes/builtin/encoding/
 import { SlashEscapePipe, SlashUnescapePipe }   from '../pipes/builtin/encoding/slash-escape.js';
 import { UrlEncodePipe, UrlDecodePipe }    from '../pipes/builtin/encoding/url-encode.js';
 import { RotPipe }                         from '../pipes/builtin/encoding/rot.js';
+import { Base64urlEncodePipe, Base64urlDecodePipe } from '../pipes/builtin/encoding/base64url.js';
+import { GzipCompressPipe, GzipDecompressPipe, DeflateCompressPipe, DeflateDecompressPipe } from '../pipes/builtin/encoding/compression.js';
+import { FormUrlencodedEncodePipe, FormUrlencodedDecodePipe } from '../pipes/builtin/encoding/form-urlencoded.js';
+import { HmacPipe }                        from '../pipes/builtin/encoding/hmac.js';
+import { MimeHeaderDecodePipe }            from '../pipes/builtin/encoding/mime-header.js';
+import { ShaHashPipe }                     from '../pipes/builtin/encoding/sha-hash.js';
+import { UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe } from '../pipes/builtin/encoding/unicode-escape.js';
+import { UnicodeNormalizePipe }            from '../pipes/builtin/encoding/unicode-normalize.js';
+import { CookieParserPipe }  from '../pipes/builtin/parsing/cookie-parser.js';
+import { CsvParserPipe }     from '../pipes/builtin/parsing/csv-parser.js';
+import { HttpRequestParserPipe }  from '../pipes/builtin/parsing/http-request-parser.js';
+import { HttpResponseParserPipe } from '../pipes/builtin/parsing/http-response-parser.js';
+import { JwtParserPipe }     from '../pipes/builtin/parsing/jwt-parser.js';
+import { SearchParamsParserPipe } from '../pipes/builtin/parsing/search-params-parser.js';
 import { UrlParserPipe }    from '../pipes/builtin/parsing/url-parser.js';
 import { JsonParserPipe }   from '../pipes/builtin/parsing/json-parser.js';
 import { RegexMatchPipe }   from '../pipes/builtin/parsing/regex-match.js';
@@ -35,6 +53,8 @@ const REGISTRY = new Map([
   ['Base64Decode',    Base64DecodePipe],
   ['PercentEncode',   PercentEncodePipe],
   ['PercentDecode',   PercentDecodePipe],
+  ['QuotedPrintableEncode', QuotedPrintableEncodePipe],
+  ['QuotedPrintableDecode', QuotedPrintableDecodePipe],
   ['HexEncode',       HexEncodePipe],
   ['HexDecode',       HexDecodePipe],
   ['HtmlEncode',      HtmlEncodePipe],
@@ -50,9 +70,29 @@ const REGISTRY = new Map([
   ['UrlEncode',       UrlEncodePipe],
   ['UrlDecode',       UrlDecodePipe],
   ['Rot',             RotPipe],
+  ['Base64urlEncode', Base64urlEncodePipe],
+  ['Base64urlDecode', Base64urlDecodePipe],
+  ['GzipCompress',    GzipCompressPipe],
+  ['GzipDecompress',  GzipDecompressPipe],
+  ['DeflateCompress', DeflateCompressPipe],
+  ['DeflateDecompress', DeflateDecompressPipe],
+  ['FormUrlencodedEncode', FormUrlencodedEncodePipe],
+  ['FormUrlencodedDecode', FormUrlencodedDecodePipe],
+  ['Hmac',            HmacPipe],
+  ['MimeHeaderDecode', MimeHeaderDecodePipe],
+  ['ShaHash',         ShaHashPipe],
+  ['UnicodeEscapeEncode', UnicodeEscapeEncodePipe],
+  ['UnicodeEscapeDecode', UnicodeEscapeDecodePipe],
+  ['UnicodeNormalize', UnicodeNormalizePipe],
   ['UrlParser',       UrlParserPipe],
   ['JsonParser',      JsonParserPipe],
   ['RegexMatch',      RegexMatchPipe],
+  ['CookieParser',    CookieParserPipe],
+  ['CsvParser',       CsvParserPipe],
+  ['HttpRequestParser', HttpRequestParserPipe],
+  ['HttpResponseParser', HttpResponseParserPipe],
+  ['JwtParser',       JwtParserPipe],
+  ['SearchParamsParser', SearchParamsParserPipe],
 ]);
 
 self.onmessage = async ({ data }) => {

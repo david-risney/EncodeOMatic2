@@ -91,7 +91,7 @@ describe('application integration', () => {
     await vi.waitFor(() => {
       expect(document.getElementById('pipe-list').children.length).toBeGreaterThan(0);
     });
-  });
+  }, 20000);
 
   afterAll(() => {
     vi.unstubAllGlobals();

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { UrlParserPipe } from '../src/pipes/builtin/parsing/url-parser.js';
 import { JsonParserPipe } from '../src/pipes/builtin/parsing/json-parser.js';
 import { RegexMatchPipe } from '../src/pipes/builtin/parsing/regex-match.js';
+import { JwtParserPipe } from '../src/pipes/builtin/parsing/jwt-parser.js';
+import { HttpRequestParserPipe } from '../src/pipes/builtin/parsing/http-request-parser.js';
 import { decode, encode } from './helpers.js';
 
 describe('UrlParserPipe', () => {
@@ -141,5 +143,27 @@ describe('RegexMatchPipe', () => {
     pipe.setConfig('pattern', '^|$');
     const result = await pipe.process(new Map([['input', encode('ab')]]));
     expect(decode(result.get('all-matches'))).toBe('\n');
+  });
+});
+
+describe('JwtParserPipe', () => {
+  it('rejects non-UTF-8 input bytes', async () => {
+    const pipe = new JwtParserPipe();
+    await expect(pipe.process(new Map([['input', new Uint8Array([0xff])]]))).rejects
+      .toMatchObject({ message: 'Invalid JWT: input is not valid UTF-8' });
+  });
+});
+
+describe('HttpRequestParserPipe', () => {
+  it('preserves raw body bytes without UTF-8 round tripping', async () => {
+    const pipe = new HttpRequestParserPipe();
+    const head = encode('POST /upload HTTP/1.1\r\nHost: example.test\r\n\r\n');
+    const body = new Uint8Array([0xff, 0xfe, 0x41]);
+    const input = new Uint8Array(head.length + body.length);
+    input.set(head, 0);
+    input.set(body, head.length);
+
+    const result = await pipe.process(new Map([['input', input]]));
+    expect([...result.get('body')]).toEqual([...body]);
   });
 });

@@ -6,6 +6,7 @@ import { CharsetDecodePipe, CharsetEncodePipe } from '../src/pipes/builtin/encod
 import { HexDecodePipe } from '../src/pipes/builtin/encoding/hex.js';
 import { HtmlDecodePipe } from '../src/pipes/builtin/encoding/html-encode.js';
 import { PercentDecodePipe } from '../src/pipes/builtin/encoding/percent.js';
+import { QuotedPrintableDecodePipe } from '../src/pipes/builtin/encoding/quoted-printable.js';
 import { SlashUnescapePipe } from '../src/pipes/builtin/encoding/slash-escape.js';
 import { UrlDecodePipe } from '../src/pipes/builtin/encoding/url-encode.js';
 import { XmlDecodePipe } from '../src/pipes/builtin/encoding/xml-encode.js';
@@ -41,6 +42,8 @@ test('structured byte decoders score their accepted syntax', () => {
   expect(BinaryDecodePipe.getInputAppropriateness(encode('01000001 01000010'))).toBe(10);
   expect(BinaryDecodePipe.getInputAppropriateness(encode('1 10'))).toBe(5);
   expect(BinaryDecodePipe.getInputAppropriateness(encode('01000002'))).toBe(-10);
+  expect(QuotedPrintableDecodePipe.getInputAppropriateness(encode('caf=C3=A9'))).toBe(8);
+  expect(QuotedPrintableDecodePipe.getInputAppropriateness(encode('plain text'))).toBe(0);
 });
 
 test('entity decoders require recognized, complete entities', () => {
