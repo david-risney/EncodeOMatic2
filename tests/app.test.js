@@ -38,12 +38,17 @@ function appMarkup() {
       <input id="zoom-range" type="range" min="20" max="300" value="100">
       <output id="zoom-value">100%</output>
       <button id="btn-zoom-in">+</button>
+      <button id="btn-layout-graph">Graph</button>
+      <button id="btn-layout-both" class="active">Both</button>
+      <button id="btn-layout-data">Data</button>
     </header>
     <graph-editor id="graph-editor"></graph-editor>
+    <div class="app-body">
     <aside id="data-panel" style="width: 380px" hidden>
       <div id="data-panel-resizer"></div>
       <div id="data-view-stack"></div>
     </aside>
+    </div>
     <dialog id="add-pipe-dialog">
       <input id="pipe-search-input">
       <div id="pipe-list"></div>

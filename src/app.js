@@ -76,6 +76,9 @@ let activeSelections = new Map();
 let selectionRefreshFrame = null;
 let selectedPipeId = null;
 
+/** Current layout mode: 'both' | 'graph' | 'data' */
+let layoutMode = 'both';
+
 /** The connection action popover element. @type {HTMLElement|null} */
 let _connActionPopover = null;
 /** The connection whose popover is currently shown. @type {import('./pipes/graph.js').Connection|null} */
@@ -119,6 +122,7 @@ async function init() {
 
   // Wire toolbar controls
   initAboutDialog();
+  initLayoutToggle();
   document.getElementById('btn-clear').addEventListener('click', onClear);
   document.getElementById('btn-session-save').addEventListener('click', onSaveSession);
   document.getElementById('btn-guess').addEventListener('click', openGuessDialog);
@@ -162,6 +166,33 @@ function initHeaderInteractionGuards() {
   header.addEventListener('gesturechange', preventHeaderZoom);
   header.addEventListener('touchstart', preventHeaderZoom, { passive: false });
   header.addEventListener('touchmove', preventHeaderZoom, { passive: false });
+}
+
+function initLayoutToggle() {
+  const appBody = document.querySelector('.app-body');
+  const btnGraph = document.getElementById('btn-layout-graph');
+  const btnBoth  = document.getElementById('btn-layout-both');
+  const btnData  = document.getElementById('btn-layout-data');
+
+  function setLayout(mode) {
+    layoutMode = mode;
+    appBody.dataset.layout = mode;
+    btnGraph.classList.toggle('active', mode === 'graph');
+    btnBoth.classList.toggle('active',  mode === 'both');
+    btnData.classList.toggle('active',  mode === 'data');
+    btnGraph.setAttribute('aria-pressed', String(mode === 'graph'));
+    btnBoth.setAttribute('aria-pressed',  String(mode === 'both'));
+    btnData.setAttribute('aria-pressed',  String(mode === 'data'));
+    updateDataPanelVisibility();
+    if (mode !== 'data') editor.fitView();
+  }
+
+  btnGraph.addEventListener('click', () => setLayout('graph'));
+  btnBoth.addEventListener('click',  () => setLayout('both'));
+  btnData.addEventListener('click',  () => setLayout('data'));
+
+  // Initialize app-body data attribute
+  appBody.dataset.layout = 'both';
 }
 
 function initAboutDialog() {
@@ -615,7 +646,7 @@ function removeDataView(pipeId) {
 }
 
 function updateDataPanelVisibility() {
-  dataPanel.hidden = dataViews.size === 0;
+  dataPanel.hidden = dataViews.size === 0 || layoutMode === 'graph';
 }
 
 function togglePinned(view) {
