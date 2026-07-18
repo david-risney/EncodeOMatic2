@@ -214,6 +214,26 @@ graph-editor {
         var(--color-bg)
       );
     box-shadow: 0 -2px 0 0 var(--color-pipe-bg);
+
+    /* Mini plug seated inside the socket when a connection is present. */
+    &.connected::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 1px;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 7px;
+      pointer-events: none;
+      border-radius: 6px 6px 1px 1px / 4px 4px 1px 1px;
+      background:
+        linear-gradient(
+          180deg,
+          color-mix(in srgb, white 16%, var(--color-port-output)),
+          var(--color-port-output) 55%,
+          color-mix(in srgb, black 12%, var(--color-port-output))
+        );
+    }
   }
 
   /* Output port: domed plug that hangs below the pipe body. */
@@ -238,6 +258,27 @@ graph-editor {
     filter: drop-shadow(0 0 6px currentColor);
     transform: scale(1.5);
   }
+}
+
+/* Floating plug ghost dragged from an output port during a connection draft. */
+.drag-plug-ghost {
+  position: absolute;
+  left: var(--graph-item-x, 0);
+  top: var(--graph-item-y, 0);
+  z-index: 4;
+  width: 18px;
+  height: 16px;
+  pointer-events: none;
+  border-radius: 8px 8px 2px 2px / 5px 5px 2px 2px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, white 16%, var(--color-port-output)),
+      var(--color-port-output) 55%,
+      color-mix(in srgb, black 12%, var(--color-port-output))
+    );
+  filter: drop-shadow(0 0 6px var(--color-port-output));
+  opacity: 0.9;
 }
 
 .connections-layer {

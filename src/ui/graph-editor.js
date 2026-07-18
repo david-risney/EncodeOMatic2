@@ -61,6 +61,7 @@ class GraphEditor extends HTMLElement {
     // Connection draft state
     this._draftFrom = null; // {pipeId, portName, portType, x, y}
     this._draftPath = null; // SVGPathElement
+    this._draftPlug = null; // HTMLElement — floating plug ghost during drag
     this._addPipeControl = null;
 
     // Drag state
@@ -225,6 +226,16 @@ class GraphEditor extends HTMLElement {
     // Update draft path if active
     if (this._draftPath && this._draftFrom) {
       // kept up by mousemove
+    }
+
+    // Sync 'connected' class on input port elements so the socket shows a plug.
+    const connectedInputs = new Set(
+      this._graph.connections.map(c => `${c.toPipeId}:input:${c.toInput}`)
+    );
+    for (const [key, portEl] of this._portElements) {
+      if (key.includes(':input:')) {
+        portEl.classList.toggle('connected', connectedInputs.has(key));
+      }
     }
   }
 
@@ -427,6 +438,13 @@ class GraphEditor extends HTMLElement {
       this._draftPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       this._draftPath.classList.add('connection-path', 'draft');
       this._svg.appendChild(this._draftPath);
+
+      // Floating plug ghost that follows the pointer tip during the drag.
+      this._draftPlug = document.createElement('div');
+      this._draftPlug.className = 'drag-plug-ghost';
+      this._draftPlug.setAttribute('aria-hidden', 'true');
+      this._positionElement(this._draftPlug, pos.x - 9, pos.y - 8);
+      this._inner.appendChild(this._draftPlug);
     } else if (portType === 'input' && this._draftFrom) {
       // Complete connection
       this._completeConnection(pipeId, portName);
@@ -494,6 +512,10 @@ class GraphEditor extends HTMLElement {
       this._draftPath.setAttribute('d',
         bezierPath(this._draftFrom.x, this._draftFrom.y, mx, my)
       );
+      // Keep the plug ghost centered on the cursor tip.
+      if (this._draftPlug) {
+        this._positionElement(this._draftPlug, mx - 9, my - 8);
+      }
     }
   }
 
@@ -658,6 +680,10 @@ class GraphEditor extends HTMLElement {
     if (this._draftPath) {
       this._draftPath.remove();
       this._draftPath = null;
+    }
+    if (this._draftPlug) {
+      this._draftPlug.remove();
+      this._draftPlug = null;
     }
     this._draftFrom = null;
     this._canvas.classList.remove('connecting');
