@@ -38,6 +38,9 @@ function bezierPath(x1, y1, x2, y2) {
   return `M ${x1} ${y1} C ${x1} ${y1 + cp}, ${x2} ${y2 - cp}, ${x2} ${y2}`;
 }
 
+const ADD_PIPE_CONTROL_WIDTH = 140;
+const ADD_PIPE_CONTROL_HEIGHT = 60;
+
 class GraphEditor extends HTMLElement {
   constructor() {
     super();
@@ -663,15 +666,28 @@ class GraphEditor extends HTMLElement {
     if (!this._addPipeControl) return;
     this._addPipeControl.hidden = false;
     this._addPipeControl.classList.add('draft');
-    this._positionElement(this._addPipeControl, x - 70, y - 30);
+    this._positionElement(this._addPipeControl, x - ADD_PIPE_CONTROL_WIDTH / 2, y - ADD_PIPE_CONTROL_HEIGHT / 2);
+  }
+
+  _positionAddPipeControlAtViewportCenter() {
+    if (!this._addPipeControl || !this._canvas) return;
+    const width = this._canvas.clientWidth;
+    const height = this._canvas.clientHeight;
+    if (width <= 0 || height <= 0) {
+      this._positionElement(this._addPipeControl, 60, 80);
+      return;
+    }
+
+    const x = (width / 2 - this._panX) / this._scale - ADD_PIPE_CONTROL_WIDTH / 2;
+    const y = (height / 2 - this._panY) / this._scale - ADD_PIPE_CONTROL_HEIGHT / 2;
+    this._positionElement(this._addPipeControl, x, y);
   }
 
   _syncAddPipeControl() {
     if (!this._addPipeControl || this._draftFrom) return;
-    const isEmpty = !this._graph || this._graph.pipes.size === 0;
-    this._addPipeControl.hidden = !isEmpty;
+    this._addPipeControl.hidden = false;
     this._addPipeControl.classList.remove('draft');
-    if (isEmpty) this._positionElement(this._addPipeControl, 60, 80);
+    this._positionAddPipeControlAtViewportCenter();
   }
 
   _requestAddPipe() {
@@ -714,6 +730,7 @@ class GraphEditor extends HTMLElement {
       this._inner.style.setProperty('--graph-pan-y', `${this._panY}px`);
       this._inner.style.setProperty('--graph-scale', this._scale);
     }
+    this._syncAddPipeControl();
   }
 
   _positionElement(el, x, y) {

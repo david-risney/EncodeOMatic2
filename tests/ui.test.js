@@ -127,6 +127,12 @@ describe('GraphEditor', () => {
   let graph;
   let source;
   let target;
+  const setCanvasSize = (element, width = 800, height = 600) => {
+    Object.defineProperties(element._canvas, {
+      clientWidth: { configurable: true, value: width },
+      clientHeight: { configurable: true, value: height },
+    });
+  };
 
   beforeEach(() => {
     editor = document.createElement('graph-editor');
@@ -238,6 +244,7 @@ describe('GraphEditor', () => {
   it('requests a connected pipe when a connection is dropped on empty space', () => {
     const request = vi.fn();
     editor.addEventListener('add-pipe-request', request);
+    setCanvasSize(editor);
     vi.spyOn(editor._inner, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
     vi.spyOn(document, 'elementFromPoint').mockReturnValue(editor._canvas);
 
@@ -252,21 +259,34 @@ describe('GraphEditor', () => {
       position: { x: 240, y: 190 },
     });
     expect(editor._draftFrom).toBeNull();
-    expect(editor._addPipeControl.hidden).toBe(true);
+    expect(editor._addPipeControl.hidden).toBe(false);
+    expect(editor._addPipeControl.style.getPropertyValue('--graph-item-x')).toBe('330px');
+    expect(editor._addPipeControl.style.getPropertyValue('--graph-item-y')).toBe('270px');
   });
 
-  it('shows an add-pipe control for an empty graph', () => {
+  it('shows a centered add-pipe control even when the graph has pipes', () => {
+    setCanvasSize(editor);
+    editor._syncAddPipeControl();
+
+    expect(editor._addPipeControl.hidden).toBe(false);
+    expect(editor._addPipeControl.style.getPropertyValue('--graph-item-x')).toBe('330px');
+    expect(editor._addPipeControl.style.getPropertyValue('--graph-item-y')).toBe('270px');
+  });
+
+  it('shows a centered add-pipe control for an empty graph', () => {
     const emptyEditor = document.createElement('graph-editor');
     document.body.appendChild(emptyEditor);
+    setCanvasSize(emptyEditor);
     emptyEditor.setGraph(new PipeGraph());
     const request = vi.fn();
     emptyEditor.addEventListener('add-pipe-request', request);
+    emptyEditor._syncAddPipeControl();
 
     expect(emptyEditor._addPipeControl.hidden).toBe(false);
     emptyEditor._addPipeControl.click();
     expect(request.mock.calls[0][0].detail).toEqual({
       input: null,
-      position: { x: 60, y: 80 },
+      position: { x: 330, y: 270 },
     });
   });
 
