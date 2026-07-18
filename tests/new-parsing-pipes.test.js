@@ -217,6 +217,16 @@ describe('HttpResponseParserPipe', () => {
     expect(result.has('header:Content-Type')).toBe(false);
   });
 
+  it('aggregates repeated header names into a single port joined with newline', async () => {
+    const pipe = new HttpResponseParserPipe();
+    const raw = 'HTTP/1.1 200 OK\r\nSet-Cookie: a=1\r\nSet-Cookie: b=2\r\nSet-Cookie: c=3\r\n\r\n';
+    const result = await pipe.process(new Map([['input', encode(raw)]]));
+    expect(decode(result.get('header:set-cookie'))).toBe('a=1\nb=2\nc=3');
+    // Only one port for the repeated header
+    const names = pipe.defineOutputs().map(o => o.name);
+    expect(names.filter(n => n === 'header:set-cookie')).toHaveLength(1);
+  });
+
   it('rebuilds dynamic header outputs between runs', async () => {
     const pipe = new HttpResponseParserPipe();
     await pipe.process(new Map([['input', encode('HTTP/1.1 200 OK\r\nX-Old: a\r\n\r\n')]]));
@@ -257,6 +267,16 @@ describe('HttpRequestParserPipe — additional coverage', () => {
     expect(decode(result.get('header:host'))).toBe('example.com');
     expect(decode(result.get('header:accept'))).toBe('text/html');
     expect(result.get('body').length).toBe(0);
+  });
+
+  it('aggregates repeated header names into a single port joined with newline', async () => {
+    const pipe = new HttpRequestParserPipe();
+    const raw = 'GET / HTTP/1.1\r\nAccept: text/html\r\nAccept: application/json\r\n\r\n';
+    const result = await pipe.process(new Map([['input', encode(raw)]]));
+    expect(decode(result.get('header:accept'))).toBe('text/html\napplication/json');
+    // Only one port for the repeated header
+    const names = pipe.defineOutputs().map(o => o.name);
+    expect(names.filter(n => n === 'header:accept')).toHaveLength(1);
   });
 
   it('throws PipeError for an invalid request line', async () => {

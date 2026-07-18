@@ -30,6 +30,10 @@ export class HmacPipe extends Pipe {
   }
 
   async process(inputs) {
+    if (!globalThis.crypto?.subtle) {
+      throw new PipeError('Web Crypto is not supported in this environment');
+    }
+
     const message = inputs.get('input') ?? new Uint8Array(0);
     const keyData = inputs.get('key');
     if (!keyData || keyData.length === 0) {
@@ -37,14 +41,14 @@ export class HmacPipe extends Pipe {
     }
 
     const algorithm = this.getConfig('algorithm')?.value ?? 'SHA-256';
-    const cryptoKey = await crypto.subtle.importKey(
+    const cryptoKey = await globalThis.crypto.subtle.importKey(
       'raw',
       keyData,
       { name: 'HMAC', hash: { name: algorithm } },
       false,
       ['sign']
     );
-    const signature = await crypto.subtle.sign('HMAC', cryptoKey, message);
+    const signature = await globalThis.crypto.subtle.sign('HMAC', cryptoKey, message);
     return new Map([['output', new Uint8Array(signature)]]);
   }
 }

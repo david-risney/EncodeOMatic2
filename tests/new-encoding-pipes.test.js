@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Base64urlEncodePipe, Base64urlDecodePipe } from '../src/pipes/builtin/encoding/base64url.js';
 import {
   GzipCompressPipe,
@@ -224,6 +224,20 @@ describe('HMAC', () => {
       ['key', new Uint8Array(0)],
     ]))).rejects
       .toMatchObject({ message: 'HMAC key is required' });
+  });
+
+  it('throws PipeError when Web Crypto is unavailable', async () => {
+    const pipe = new HmacPipe();
+    const originalCrypto = globalThis.crypto;
+    try {
+      Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true });
+      await expect(pipe.process(new Map([
+        ['input', encode('msg')],
+        ['key', encode('key')],
+      ]))).rejects.toMatchObject({ message: 'Web Crypto is not supported in this environment' });
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true });
+    }
   });
 
   it('different keys produce different digests', async () => {

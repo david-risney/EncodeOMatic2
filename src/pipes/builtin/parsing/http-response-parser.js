@@ -72,7 +72,7 @@ export class HttpResponseParserPipe extends Pipe {
     result.set('reason', enc.encode(reason));
     result.set('body', body);
 
-    this._dynamicOutputs = [];
+    const headerValues = new Map();
     for (let index = 1; index < lines.length; index++) {
       const line = lines[index];
       if (!line.trim()) continue;
@@ -81,12 +81,21 @@ export class HttpResponseParserPipe extends Pipe {
 
       const name = line.slice(0, colonIdx).trim().toLowerCase();
       const value = line.slice(colonIdx + 1).trim();
+      if (headerValues.has(name)) {
+        headerValues.get(name).push(value);
+      } else {
+        headerValues.set(name, [value]);
+      }
+    }
+
+    this._dynamicOutputs = [];
+    for (const [name, values] of headerValues) {
       const portName = `header:${name}`;
       this._dynamicOutputs.push(new PortDef(portName, `Header: ${name}`));
       if (!this._outputData.has(portName)) {
         this._outputData.set(portName, null);
       }
-      result.set(portName, enc.encode(value));
+      result.set(portName, enc.encode(values.join('\n')));
     }
 
     return result;
