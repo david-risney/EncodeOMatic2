@@ -173,6 +173,18 @@ function initLayoutToggle() {
   const btnGraph = document.getElementById('btn-layout-graph');
   const btnBoth  = document.getElementById('btn-layout-both');
   const btnData  = document.getElementById('btn-layout-data');
+  const btnCycle = document.getElementById('btn-layout-cycle');
+  const layoutLabels = {
+    graph: 'Graph',
+    both: 'Both',
+    data: 'Data',
+  };
+  const layoutTitles = {
+    graph: 'Show graph only',
+    both: 'Show graph and data panel',
+    data: 'Show data panel only',
+  };
+  const layoutModes = ['graph', 'both', 'data'];
 
   function setLayout(mode) {
     layoutMode = mode;
@@ -183,6 +195,9 @@ function initLayoutToggle() {
     btnGraph.setAttribute('aria-pressed', String(mode === 'graph'));
     btnBoth.setAttribute('aria-pressed',  String(mode === 'both'));
     btnData.setAttribute('aria-pressed',  String(mode === 'data'));
+    btnCycle.textContent = layoutLabels[mode];
+    btnCycle.title = layoutTitles[mode];
+    btnCycle.setAttribute('aria-label', `Switch layout. Current: ${layoutLabels[mode]}`);
     updateDataPanelVisibility();
     if (mode !== 'data' && editor) editor.fitView();
   }
@@ -190,9 +205,13 @@ function initLayoutToggle() {
   btnGraph.addEventListener('click', () => setLayout('graph'));
   btnBoth.addEventListener('click',  () => setLayout('both'));
   btnData.addEventListener('click',  () => setLayout('data'));
+  btnCycle.addEventListener('click', () => {
+    const currentIndex = layoutModes.indexOf(layoutMode);
+    setLayout(layoutModes[(currentIndex + 1) % layoutModes.length]);
+  });
 
   // Initialize app-body data attribute
-  appBody.dataset.layout = 'both';
+  setLayout('both');
 }
 
 function initAboutDialog() {
@@ -201,12 +220,15 @@ function initAboutDialog() {
   const checkUpdatesButton = document.getElementById('btn-check-updates');
   let availableVersion = null;
   let checkId = 0;
-
-  document.getElementById('about-version').textContent = APP_VERSION;
-  document.getElementById('btn-about').addEventListener('click', () => {
+  const showAboutDialog = () => {
     dialog.showModal();
     checkForUpdates();
     updateInstallStatus();
+  };
+
+  document.getElementById('about-version').textContent = APP_VERSION;
+  document.querySelectorAll('[data-about-trigger]').forEach(button => {
+    button.addEventListener('click', showAboutDialog);
   });
   updateButton.addEventListener('click', () => {
     if (availableVersion) {
