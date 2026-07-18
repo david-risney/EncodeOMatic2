@@ -28,6 +28,7 @@ graph-editor {
 }
 
 .pipe-node {
+  --input-port-border-color: color-mix(in srgb, var(--color-port-input) 70%, var(--color-pipe-border));
   --pipe-top-port-offset: -4px;
   --pipe-bottom-port-overhang: 8px;
   position: absolute;
@@ -35,6 +36,7 @@ graph-editor {
   top: var(--graph-item-y, 0);
   z-index: 2;
   min-width: 140px;
+  /* Allow domed output plugs to hang past the pipe body. */
   overflow: visible;
   border: 2px solid var(--color-pipe-border);
   border-radius: var(--radius-lg);
@@ -201,9 +203,9 @@ graph-editor {
     color: var(--color-port-input);
     transform-origin: center top;
     clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    border-right: 2px solid color-mix(in srgb, var(--color-port-input) 70%, var(--color-pipe-border));
-    border-bottom: 2px solid color-mix(in srgb, var(--color-port-input) 70%, var(--color-pipe-border));
-    border-left: 2px solid color-mix(in srgb, var(--color-port-input) 70%, var(--color-pipe-border));
+    border-right: 2px solid var(--input-port-border-color);
+    border-bottom: 2px solid var(--input-port-border-color);
+    border-left: 2px solid var(--input-port-border-color);
     border-radius: 0 0 4px 4px;
     background:
       linear-gradient(
