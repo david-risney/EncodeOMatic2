@@ -2,6 +2,14 @@ graph-editor {
   display: block;
   width: 100%;
   height: 100%;
+  /* Shared gradient for all output plug shapes (port, drag ghost, socket indicator). */
+  --output-plug-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 16%, var(--color-port-output)),
+    var(--color-port-output) 55%,
+    color-mix(in srgb, black 12%, var(--color-port-output))
+  );
+  --output-plug-border-radius: 8px 8px 2px 2px / 5px 5px 2px 2px;
 }
 
 .graph-canvas {
@@ -28,11 +36,16 @@ graph-editor {
 }
 
 .pipe-node {
+  --input-port-border-color: color-mix(in srgb, var(--color-port-input) 70%, var(--color-pipe-border));
+  --pipe-top-port-offset: -4px;
+  --pipe-bottom-port-overhang: 8px;
   position: absolute;
   left: var(--graph-item-x, 0);
   top: var(--graph-item-y, 0);
   z-index: 2;
   min-width: 140px;
+  /* Allow domed output plugs to hang past the pipe body. */
+  overflow: visible;
   border: 2px solid var(--color-pipe-border);
   border-radius: var(--radius-lg);
   background: var(--color-pipe-bg);
@@ -57,11 +70,19 @@ graph-editor {
   & .pipe-node-ports-bottom {
     display: flex;
     justify-content: space-around;
-    min-height: 16px;
+    gap: 8px;
   }
 
-  & .pipe-node-ports-top { padding: 4px 8px 0; }
-  & .pipe-node-ports-bottom { padding: 0 8px 4px; }
+  & .pipe-node-ports-top {
+    padding: 0 8px 8px;
+    margin-top: var(--pipe-top-port-offset);
+  }
+
+  & .pipe-node-ports-bottom {
+    align-items: flex-end;
+    min-height: 16px;
+    padding: 6px 8px 0;
+  }
 
   & .pipe-node-header {
     display: flex;
@@ -149,10 +170,19 @@ graph-editor {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 2px;
+  gap: 3px;
+  min-width: 18px;
+  padding: 0 2px;
 
-  &.output-port-wrapper .port-name { order: 2; }
+  /* Top cutouts keep labels below the socket; hanging output plugs keep labels above. */
+  &.input-port-wrapper {
+    gap: 2px;
+    margin-top: 0;
+
+    & .port-name { order: 2; }
+  }
+
+  &.output-port-wrapper { margin-bottom: calc(-1 * var(--pipe-bottom-port-overhang)); }
 
   & .port-name {
     color: var(--color-text-dim);
@@ -164,48 +194,59 @@ graph-editor {
 
 .port {
   position: relative;
+  display: block;
+  padding: 0;
   border: none;
+  appearance: none;
   cursor: crosshair;
   transition: transform 0.1s;
   overflow: visible;
 
-  &:hover { transform: scale(1.3); }
+  &:hover { transform: scale(1.15); }
 
-  /* Input port: receptacle face-plate with two slot indicators */
+  /* Input port: recessed socket cut into the pipe top. */
   &.input-port {
-    width: 14px;
-    height: 12px;
+    width: 18px;
+    height: 10px;
     color: var(--color-port-input);
-    border-radius: 2px;
-    background-color: var(--color-port-input);
-    background-image:
-      linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
-      linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4));
-    background-size: 3px 6px, 3px 6px;
-    background-position: 2px 3px, 9px 3px;
-    background-repeat: no-repeat;
+    transform-origin: center top;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    border-right: 2px solid var(--input-port-border-color);
+    border-bottom: 2px solid var(--input-port-border-color);
+    border-left: 2px solid var(--input-port-border-color);
+    border-radius: 0 0 4px 4px;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, black 22%, var(--color-bg)),
+        var(--color-bg)
+      );
+    box-shadow: 0 -2px 0 0 var(--color-pipe-bg);
+
+    /* Mini plug seated inside the socket when a connection is present.
+       12×7px — 2/3 the width, ~44% the height of the full 18×16px output plug. */
+    &.connected::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 1px;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 7px;
+      pointer-events: none;
+      border-radius: 6px 6px 1px 1px / 4px 4px 1px 1px;
+      background: var(--output-plug-gradient);
+    }
   }
 
-  /* Output port: two-prong plug, prongs point downward */
+  /* Output port: domed plug that hangs below the pipe body. */
   &.output-port {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 16px;
     color: var(--color-port-output);
-    background: var(--color-port-output);
-    clip-path: polygon(
-      0%   0%,
-      100% 0%,
-      100% 50%,
-      93%  50%,
-      93%  100%,
-      64%  100%,
-      64%  50%,
-      36%  50%,
-      36%  100%,
-      7%   100%,
-      7%   50%,
-      0%   50%
-    );
+    transform-origin: center top;
+    border-radius: var(--output-plug-border-radius);
+    background: var(--output-plug-gradient);
   }
 
   &.connected { filter: drop-shadow(0 0 4px currentColor); }
@@ -214,6 +255,21 @@ graph-editor {
     filter: drop-shadow(0 0 6px currentColor);
     transform: scale(1.5);
   }
+}
+
+/* Floating plug ghost dragged from an output port during a connection draft. */
+.drag-plug-ghost {
+  position: absolute;
+  left: var(--graph-item-x, 0);
+  top: var(--graph-item-y, 0);
+  z-index: 4;
+  width: 18px;
+  height: 16px;
+  pointer-events: none;
+  border-radius: var(--output-plug-border-radius);
+  background: var(--output-plug-gradient);
+  filter: drop-shadow(0 0 6px var(--color-port-output));
+  opacity: 0.9;
 }
 
 .connections-layer {
