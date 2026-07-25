@@ -49,6 +49,9 @@ const INPUT_DROP_TARGET_PADDING_Y = 16;
 const DRAG_PLUG_WIDTH = 18;
 const DRAG_PLUG_HEIGHT = 16;
 
+// Proximity radius (client pixels) at which a dragged node's output snaps to an input.
+const DRAG_NODE_SNAP_PROXIMITY_PX = 50;
+
 class GraphEditor extends HTMLElement {
   constructor() {
     super();
@@ -75,6 +78,8 @@ class GraphEditor extends HTMLElement {
 
     // Drag state
     this._dragging = null; // {pipeId, startX, startY, elemStartX, elemStartY}
+    this._dragSnapTarget = null; // {inputPortEl, toPipeId, toPortName, fromPortName}
+    this._dragSnapInputTargets = []; // [{portEl, pipeId, portName}] — populated at drag start
 
     // Port elements: portKey → HTMLElement
     this._portElements = new Map();
@@ -354,6 +359,16 @@ class GraphEditor extends HTMLElement {
       };
       this._interactionPointerId = e.pointerId;
       el.classList.add('grabbing');
+      // Collect valid input port targets for snap-to-input during this drag.
+      const validTargetIds = this._collectDraftValidTargetPipeIds(pipe.id);
+      this._dragSnapInputTargets = [];
+      for (const [key, portEl] of this._portElements) {
+        if (!key.includes(':input:')) continue;
+        const tPipeId = portEl.dataset.pipeId;
+        if (validTargetIds.has(tPipeId)) {
+          this._dragSnapInputTargets.push({ portEl, pipeId: tPipeId, portName: portEl.dataset.portName });
+        }
+      }
     });
 
     // Select on click
@@ -432,6 +447,85 @@ class GraphEditor extends HTMLElement {
     return wrapper;
   }
 
+  // ── Node drag snap-to-input ──────────────────────────────────
+
+  /**
+   * Find the nearest input port that one of the dragged pipe's output ports
+   * could snap to. Returns snap data if within DRAG_NODE_SNAP_PROXIMITY_PX,
+   * otherwise null.
+   * @param {number} nx  New pipe x in canvas-inner coords
+   * @param {number} ny  New pipe y in canvas-inner coords
+   * @param {import('../pipes/pipe.js').Pipe} pipe  The pipe being dragged
+   */
+  _findNodeDragSnap(nx, ny, pipe) {
+    if (!this._dragSnapInputTargets.length) return null;
+
+    // Delta from the pipe's current canvas position to the proposed (nx, ny).
+    // We use this to project each output port's client position without touching the DOM.
+    const dxCanvas = nx - pipe.position.x;
+    const dyCanvas = ny - pipe.position.y;
+    const dxClient = dxCanvas * this._scale;
+    const dyClient = dyCanvas * this._scale;
+
+    let best = null;
+    let bestDist = DRAG_NODE_SNAP_PROXIMITY_PX;
+
+    for (const [key, portEl] of this._portElements) {
+      if (!key.startsWith(this._dragging.pipeId + ':output:')) continue;
+      const fromPortName = portEl.dataset.portName;
+      const outputRect = portEl.getBoundingClientRect();
+      // Project output port center to the proposed (nx, ny) position.
+      const projOx = outputRect.left + outputRect.width / 2 + dxClient;
+      const projOy = outputRect.top + outputRect.height / 2 + dyClient;
+
+      for (const { portEl: inputPortEl, pipeId: toPipeId, portName: toPortName } of this._dragSnapInputTargets) {
+        const inputRect = inputPortEl.getBoundingClientRect();
+        const ix = inputRect.left + inputRect.width / 2;
+        const iy = inputRect.top + inputRect.height / 2;
+        const dist = Math.hypot(ix - projOx, iy - projOy);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = {
+            inputPortEl,
+            toPipeId,
+            toPortName,
+            fromPortName,
+            // Offset in canvas-inner coords to align output with input.
+            snapDx: (ix - projOx) / this._scale,
+            snapDy: (iy - projOy) / this._scale,
+          };
+        }
+      }
+    }
+
+    return best;
+  }
+
+  /**
+   * Update the node-drag snap highlight. Highlights the new target input port,
+   * removes highlighting from the previous one, and hides/shows the add-pipe
+   * button accordingly.
+   * @param {object|null} target  Snap result from _findNodeDragSnap, or null.
+   */
+  _updateNodeDragSnapTarget(target) {
+    const prevEl = this._dragSnapTarget?.inputPortEl;
+    const nextEl = target?.inputPortEl;
+    if (prevEl === nextEl) return;
+    prevEl?.classList.remove('highlighted');
+    this._dragSnapTarget = target ?? null;
+    nextEl?.classList.add('highlighted');
+    if (target) {
+      this._addPipeControl.hidden = true;
+    } else {
+      this._syncAddPipeControl();
+    }
+  }
+
+  /** Remove the node-drag snap highlight and restore the add-pipe control. */
+  _clearNodeDragSnapTarget() {
+    this._updateNodeDragSnapTarget(null);
+  }
+
   // ── Connection dragging ─────────────────────────────────────
 
   _onPortMouseDown(e, pipeId, portName, portType) {
@@ -506,9 +600,13 @@ class GraphEditor extends HTMLElement {
       const ny = this._dragging.startElemY + dy;
       const pipe = this._graph?.pipes.get(this._dragging.pipeId);
       if (pipe) {
-        pipe.position.x = nx;
-        pipe.position.y = ny;
-        this._positionElement(this._dragging.el, nx, ny);
+        const snap = this._findNodeDragSnap(nx, ny, pipe);
+        const finalX = snap ? nx + snap.snapDx : nx;
+        const finalY = snap ? ny + snap.snapDy : ny;
+        pipe.position.x = finalX;
+        pipe.position.y = finalY;
+        this._positionElement(this._dragging.el, finalX, finalY);
+        this._updateNodeDragSnapTarget(snap ?? null);
         this.updateConnections();
       }
       return;
@@ -565,7 +663,16 @@ class GraphEditor extends HTMLElement {
     this._canvas.classList.remove('grabbing');
     if (this._dragging) {
       this._dragging.el.classList.remove('grabbing');
+      const fromPipeId = this._dragging.pipeId;
+      const snapTarget = this._dragSnapTarget;
+      this._clearNodeDragSnapTarget();
+      this._dragSnapInputTargets = [];
       this._dragging = null;
+      if (snapTarget && this._graph) {
+        this._graph.connect(fromPipeId, snapTarget.fromPortName, snapTarget.toPipeId, snapTarget.toPortName);
+        this._graph.processFrom(fromPipeId).catch(console.error);
+        this.updateConnections();
+      }
       this.dispatchEvent(new CustomEvent('graph-change', { bubbles: true }));
     }
     if (this._isPanning) {
@@ -665,7 +772,11 @@ class GraphEditor extends HTMLElement {
 
   _cancelDirectInteraction() {
     this._canvas.classList.remove('grabbing');
-    if (this._dragging) this._dragging.el.classList.remove('grabbing');
+    if (this._dragging) {
+      this._dragging.el.classList.remove('grabbing');
+      this._clearNodeDragSnapTarget();
+      this._dragSnapInputTargets = [];
+    }
     this._dragging = null;
     this._isPanning = false;
     if (this._draftFrom) this._cancelDraft();
