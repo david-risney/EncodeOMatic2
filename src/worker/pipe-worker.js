@@ -30,13 +30,20 @@ import { SlashEscapePipe, SlashUnescapePipe }   from '../pipes/builtin/encoding/
 import { UrlEncodePipe, UrlDecodePipe }    from '../pipes/builtin/encoding/url-encode.js';
 import { RotPipe }                         from '../pipes/builtin/encoding/rot.js';
 import { Base64urlEncodePipe, Base64urlDecodePipe } from '../pipes/builtin/encoding/base64url.js';
+import { Base32EncodePipe, Base32DecodePipe }   from '../pipes/builtin/encoding/base32.js';
+import { Base58EncodePipe, Base58DecodePipe }   from '../pipes/builtin/encoding/base58.js';
+import { Ascii85EncodePipe, Ascii85DecodePipe } from '../pipes/builtin/encoding/ascii85.js';
 import { GzipCompressPipe, GzipDecompressPipe, DeflateCompressPipe, DeflateDecompressPipe } from '../pipes/builtin/encoding/compression.js';
 import { FormUrlencodedEncodePipe, FormUrlencodedDecodePipe } from '../pipes/builtin/encoding/form-urlencoded.js';
 import { HmacPipe }                        from '../pipes/builtin/encoding/hmac.js';
-import { MimeHeaderDecodePipe }            from '../pipes/builtin/encoding/mime-header.js';
+import { MimeHeaderDecodePipe, MimeHeaderEncodePipe } from '../pipes/builtin/encoding/mime-header.js';
 import { ShaHashPipe }                     from '../pipes/builtin/encoding/sha-hash.js';
 import { UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe } from '../pipes/builtin/encoding/unicode-escape.js';
 import { UnicodeNormalizePipe }            from '../pipes/builtin/encoding/unicode-normalize.js';
+import { PunycodeEncodePipe, PunycodeDecodePipe } from '../pipes/builtin/encoding/punycode.js';
+import { CssEscapePipe, CssUnescapePipe }  from '../pipes/builtin/encoding/css-escape.js';
+import { CharWidthToHalfwidthPipe, CharWidthToFullwidthPipe } from '../pipes/builtin/encoding/char-width.js';
+import { StringReversePipe }               from '../pipes/builtin/encoding/reverse.js';
 import { CookieParserPipe }  from '../pipes/builtin/parsing/cookie-parser.js';
 import { CsvParserPipe }     from '../pipes/builtin/parsing/csv-parser.js';
 import { HttpRequestParserPipe }  from '../pipes/builtin/parsing/http-request-parser.js';
@@ -51,6 +58,14 @@ const REGISTRY = new Map([
   ['InputPipe',       InputPipe],
   ['Base64Encode',    Base64EncodePipe],
   ['Base64Decode',    Base64DecodePipe],
+  ['Base64urlEncode', Base64urlEncodePipe],
+  ['Base64urlDecode', Base64urlDecodePipe],
+  ['Base32Encode',    Base32EncodePipe],
+  ['Base32Decode',    Base32DecodePipe],
+  ['Base58Encode',    Base58EncodePipe],
+  ['Base58Decode',    Base58DecodePipe],
+  ['Ascii85Encode',   Ascii85EncodePipe],
+  ['Ascii85Decode',   Ascii85DecodePipe],
   ['PercentEncode',   PercentEncodePipe],
   ['PercentDecode',   PercentDecodePipe],
   ['QuotedPrintableEncode', QuotedPrintableEncodePipe],
@@ -67,11 +82,11 @@ const REGISTRY = new Map([
   ['BinaryDecode',    BinaryDecodePipe],
   ['SlashEscape',     SlashEscapePipe],
   ['SlashUnescape',   SlashUnescapePipe],
+  ['CssEscape',       CssEscapePipe],
+  ['CssUnescape',     CssUnescapePipe],
   ['UrlEncode',       UrlEncodePipe],
   ['UrlDecode',       UrlDecodePipe],
   ['Rot',             RotPipe],
-  ['Base64urlEncode', Base64urlEncodePipe],
-  ['Base64urlDecode', Base64urlDecodePipe],
   ['GzipCompress',    GzipCompressPipe],
   ['GzipDecompress',  GzipDecompressPipe],
   ['DeflateCompress', DeflateCompressPipe],
@@ -80,10 +95,16 @@ const REGISTRY = new Map([
   ['FormUrlencodedDecode', FormUrlencodedDecodePipe],
   ['Hmac',            HmacPipe],
   ['MimeHeaderDecode', MimeHeaderDecodePipe],
+  ['MimeHeaderEncode', MimeHeaderEncodePipe],
   ['ShaHash',         ShaHashPipe],
   ['UnicodeEscapeEncode', UnicodeEscapeEncodePipe],
   ['UnicodeEscapeDecode', UnicodeEscapeDecodePipe],
   ['UnicodeNormalize', UnicodeNormalizePipe],
+  ['PunycodeEncode',  PunycodeEncodePipe],
+  ['PunycodeDecode',  PunycodeDecodePipe],
+  ['CharWidthToHalfwidth', CharWidthToHalfwidthPipe],
+  ['CharWidthToFullwidth', CharWidthToFullwidthPipe],
+  ['StringReverse',   StringReversePipe],
   ['UrlParser',       UrlParserPipe],
   ['JsonParser',      JsonParserPipe],
   ['RegexMatch',      RegexMatchPipe],

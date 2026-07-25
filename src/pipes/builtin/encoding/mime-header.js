@@ -1,42 +1,15 @@
 /**
- * MIME header decoding pipe (RFC 2047 encoded words).
+ * MIME header encoding/decoding pipes (RFC 2047 encoded words).
+ *
+ * Uses emailjs-mime-codec which handles the full range of charset and
+ * encoding variants found in real-world email headers.
  */
 
 import { StringPipe } from '../../string-pipe.js';
-import { PipeError } from '../../pipe.js';
+import { PipeConfig, PipeError } from '../../pipe.js';
+import { mimeWordsDecode, mimeWordsEncode } from '../../../../vendor/mime-codec.js';
 
-const MIME_HEADER_PATTERN = /=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g;
 const MIME_HEADER_INPUT_PATTERN = /=\?[^?]+\?[BbQq]\?[^?]*\?=/;
-
-function decodeBase64Bytes(text) {
-  const binary = atob(text);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
-function decodeQHeader(text) {
-  const result = [];
-  let i = 0;
-  while (i < text.length) {
-    if (text[i] === '_') {
-      result.push(0x20);
-      i++;
-    } else if (text[i] === '=') {
-      if (i + 2 >= text.length) throw new Error('Incomplete Q-encoded byte');
-      const hex = text.slice(i + 1, i + 3);
-      if (!/^[0-9a-fA-F]{2}$/.test(hex)) throw new Error('Invalid Q-encoded byte');
-      result.push(parseInt(hex, 16));
-      i += 3;
-    } else {
-      result.push(text.charCodeAt(i));
-      i++;
-    }
-  }
-  return new Uint8Array(result);
-}
 
 export class MimeHeaderDecodePipe extends StringPipe {
   static typeName = 'MimeHeaderDecode';
@@ -56,15 +29,46 @@ export class MimeHeaderDecodePipe extends StringPipe {
   }
 
   async processString(input) {
-    return input.replace(MIME_HEADER_PATTERN, (match, charset, encoding, text) => {
-      try {
-        const bytes = encoding.toUpperCase() === 'B'
-          ? decodeBase64Bytes(text)
-          : decodeQHeader(text);
-        return new TextDecoder(charset, { fatal: true }).decode(bytes);
-      } catch {
-        throw new PipeError(`Cannot decode MIME encoded word: ${match}`);
-      }
-    });
+    try {
+      return mimeWordsDecode(input);
+    } catch (e) {
+      throw new PipeError(`Cannot decode MIME encoded words: ${e.message}`);
+    }
+  }
+}
+
+export class MimeHeaderEncodePipe extends StringPipe {
+  static typeName = 'MimeHeaderEncode';
+  static typeDescription = 'MIME Header Encode';
+  static category = 'Encoding';
+  static categoryDescription = 'Encode text as RFC 2047 encoded words for use in email headers.';
+
+  defineConfigs() {
+    return [
+      ...super.defineConfigs(),
+      new PipeConfig({
+        name: 'transferEncoding',
+        description: 'Transfer encoding: B (Base64) or Q (Quoted-Printable)',
+        defaultValue: 'B',
+        type: 'select',
+        options: ['B', 'Q'],
+      }),
+      new PipeConfig({
+        name: 'charset',
+        description: 'Character set to use in the encoded word',
+        defaultValue: 'UTF-8',
+        type: 'string',
+      }),
+    ];
+  }
+
+  async processString(input) {
+    const transferEncoding = this.getConfig('transferEncoding')?.value ?? 'B';
+    const charset = this.getConfig('charset')?.value ?? 'UTF-8';
+    try {
+      return mimeWordsEncode(input, transferEncoding, charset);
+    } catch (e) {
+      throw new PipeError(`Cannot encode as MIME encoded words: ${e.message}`);
+    }
   }
 }
