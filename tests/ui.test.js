@@ -10,6 +10,7 @@ const OUTPUT_PORT_RECT = { left: 30, top: 80, width: 18, height: 16 };
 const INPUT_PORT_RECT = { left: 220, top: 120, width: 18, height: 10 };
 const INPUT_DROP_TARGET_PADDING_X = 18;
 const INPUT_DROP_TARGET_PADDING_Y = 16;
+const DRAG_NODE_SNAP_PROXIMITY_PX = 50;
 
 describe('DataViewer', () => {
   let viewer;
@@ -313,8 +314,95 @@ describe('GraphEditor', () => {
     editor._cancelDraft();
   });
 
-  it('requests a connected pipe when a connection is dropped on empty space', () => {
-    const request = vi.fn();
+  it('snaps a dragged node to a nearby input and connects on drop', () => {
+    const process = vi.spyOn(graph, 'processFrom').mockResolvedValue();
+    const from = editor._portElements.get(`${source.id}:output:output`);
+    const to = editor._portElements.get(`${target.id}:input:input`);
+    vi.spyOn(editor._inner, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
+    mockPortRect(from, OUTPUT_PORT_RECT);
+    mockPortRect(to, INPUT_PORT_RECT);
+
+    // Start dragging the source node.
+    const el = editor._pipeElements.get(source.id);
+    editor._dragging = {
+      pipeId: source.id, el,
+      startMouseX: 0, startMouseY: 0,
+      startElemX: source.position.x, startElemY: source.position.y,
+    };
+    // Populate snap targets the same way the pointerdown handler does.
+    const validIds = editor._collectDraftValidTargetPipeIds(source.id);
+    editor._dragSnapInputTargets = [];
+    for (const [key, portEl] of editor._portElements) {
+      if (!key.includes(':input:')) continue;
+      if (validIds.has(portEl.dataset.pipeId)) {
+        editor._dragSnapInputTargets.push({
+          portEl, pipeId: portEl.dataset.pipeId, portName: portEl.dataset.portName,
+        });
+      }
+    }
+
+    // Drive the cursor so the projected output port center exactly reaches the
+    // target input center. Output centre at initial pipe pos (10,20) is at
+    // client (39, 88). Target input centre is at client (229, 125).
+    // Δclient = (190, 37), which is also Δcanvas at scale 1.
+    // cursor clientX = startMouseX + Δcanvas.x * scale = 0 + 190*1 = 190.
+    editor._onCanvasPointerMove({ clientX: 190, clientY: 37 });
+
+    // Input port should be highlighted and add-pipe control hidden.
+    expect(to.classList.contains('highlighted')).toBe(true);
+    expect(editor._addPipeControl.hidden).toBe(true);
+    expect(editor._dragSnapTarget?.toPipeId).toBe(target.id);
+
+    // Node should be snapped so its output aligns with the target input.
+    // Expected finalX = startElemX + Δcanvas.x + snapDx = 10 + 190 + 0 = 200.
+    expect(source.position.x).toBe(200);
+    expect(source.position.y).toBe(57);
+
+    // Drop the node: connection should be created.
+    editor._onCanvasPointerUp({ clientX: 190, clientY: 37 });
+    expect(graph.connections).toHaveLength(1);
+    expect(graph.connections[0].fromPipeId).toBe(source.id);
+    expect(graph.connections[0].toPipeId).toBe(target.id);
+    expect(process).toHaveBeenCalledWith(source.id);
+
+    // Snap state should be cleared after drop.
+    expect(editor._dragSnapTarget).toBeNull();
+    expect(to.classList.contains('highlighted')).toBe(false);
+  });
+
+  it('clears snap highlight when node drag is cancelled', () => {
+    const from = editor._portElements.get(`${source.id}:output:output`);
+    const to = editor._portElements.get(`${target.id}:input:input`);
+    mockPortRect(from, OUTPUT_PORT_RECT);
+    mockPortRect(to, INPUT_PORT_RECT);
+
+    const el = editor._pipeElements.get(source.id);
+    editor._dragging = {
+      pipeId: source.id, el,
+      startMouseX: 0, startMouseY: 0,
+      startElemX: source.position.x, startElemY: source.position.y,
+    };
+    const validIds = editor._collectDraftValidTargetPipeIds(source.id);
+    editor._dragSnapInputTargets = [];
+    for (const [key, portEl] of editor._portElements) {
+      if (!key.includes(':input:')) continue;
+      if (validIds.has(portEl.dataset.pipeId)) {
+        editor._dragSnapInputTargets.push({
+          portEl, pipeId: portEl.dataset.pipeId, portName: portEl.dataset.portName,
+        });
+      }
+    }
+
+    editor._onCanvasPointerMove({ clientX: 190, clientY: 37 });
+    expect(to.classList.contains('highlighted')).toBe(true);
+
+    editor._cancelDirectInteraction();
+    expect(editor._dragSnapTarget).toBeNull();
+    expect(to.classList.contains('highlighted')).toBe(false);
+    expect(graph.connections).toHaveLength(0);
+  });
+
+  it('requests a connected pipe when a connection is dropped on empty space', () => {    const request = vi.fn();
     editor.addEventListener('add-pipe-request', request);
     setCanvasSize(editor);
     vi.spyOn(editor._inner, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
