@@ -1,3 +1,3 @@
-// Single source of truth for the app version.
-// Bump with: pwsh scripts/bump-version.ps1 <major.minor.patch>
-export const APP_VERSION = '1.2.0';
+// Current deployed commit SHA, injected by the deploy workflow.
+// The placeholder 'dev' is replaced with the real short SHA at deploy time.
+export const APP_COMMIT = 'dev';
