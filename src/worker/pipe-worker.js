@@ -37,9 +37,17 @@ import { GzipCompressPipe, GzipDecompressPipe, DeflateCompressPipe, DeflateDecom
 import { FormUrlencodedEncodePipe, FormUrlencodedDecodePipe } from '../pipes/builtin/encoding/form-urlencoded.js';
 import { HmacPipe }                        from '../pipes/builtin/encoding/hmac.js';
 import { MimeHeaderDecodePipe, MimeHeaderEncodePipe } from '../pipes/builtin/encoding/mime-header.js';
-import { ShaHashPipe }                     from '../pipes/builtin/encoding/sha-hash.js';
-import { Md5HashPipe }                     from '../pipes/builtin/encoding/md5.js';
-import { Crc32Pipe, Adler32Pipe }          from '../pipes/builtin/encoding/crc32.js';
+import { ShaHashPipe, Sha3HashPipe, KeccakHashPipe } from '../pipes/builtin/encoding/sha-hash.js';
+import {
+  Md4HashPipe,
+  Md5HashPipe,
+  Ripemd160HashPipe,
+  Sm3HashPipe,
+  WhirlpoolHashPipe,
+} from '../pipes/builtin/encoding/md5.js';
+import { Blake2bHashPipe, Blake2sHashPipe, Blake3HashPipe } from '../pipes/builtin/encoding/blake.js';
+import { Crc32Pipe, Crc32cPipe, Crc64Pipe, Adler32Pipe } from '../pipes/builtin/encoding/crc32.js';
+import { XxHash32Pipe, XxHash64Pipe, XxHash3Pipe, XxHash128Pipe } from '../pipes/builtin/encoding/xxhash.js';
 import { UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe } from '../pipes/builtin/encoding/unicode-escape.js';
 import { UnicodeNormalizePipe }            from '../pipes/builtin/encoding/unicode-normalize.js';
 import { PunycodeEncodePipe, PunycodeDecodePipe } from '../pipes/builtin/encoding/punycode.js';
@@ -99,9 +107,24 @@ const REGISTRY = new Map([
   ['MimeHeaderDecode', MimeHeaderDecodePipe],
   ['MimeHeaderEncode', MimeHeaderEncodePipe],
   ['ShaHash',         ShaHashPipe],
+  ['Sha3Hash',        Sha3HashPipe],
+  ['KeccakHash',      KeccakHashPipe],
+  ['Blake2bHash',     Blake2bHashPipe],
+  ['Blake2sHash',     Blake2sHashPipe],
+  ['Blake3Hash',      Blake3HashPipe],
+  ['Md4Hash',         Md4HashPipe],
   ['Md5Hash',         Md5HashPipe],
+  ['Ripemd160Hash',   Ripemd160HashPipe],
+  ['Sm3Hash',         Sm3HashPipe],
+  ['WhirlpoolHash',   WhirlpoolHashPipe],
   ['Crc32',           Crc32Pipe],
+  ['Crc32c',          Crc32cPipe],
+  ['Crc64',           Crc64Pipe],
   ['Adler32',         Adler32Pipe],
+  ['XxHash32',        XxHash32Pipe],
+  ['XxHash64',        XxHash64Pipe],
+  ['XxHash3',         XxHash3Pipe],
+  ['XxHash128',       XxHash128Pipe],
   ['UnicodeEscapeEncode', UnicodeEscapeEncodePipe],
   ['UnicodeEscapeDecode', UnicodeEscapeDecodePipe],
   ['UnicodeNormalize', UnicodeNormalizePipe],

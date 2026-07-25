@@ -27,9 +27,17 @@ import { GzipCompressPipe, GzipDecompressPipe, DeflateCompressPipe, DeflateDecom
 import { FormUrlencodedEncodePipe, FormUrlencodedDecodePipe } from './builtin/encoding/form-urlencoded.js';
 import { HmacPipe }                         from './builtin/encoding/hmac.js';
 import { MimeHeaderDecodePipe, MimeHeaderEncodePipe } from './builtin/encoding/mime-header.js';
-import { ShaHashPipe }                      from './builtin/encoding/sha-hash.js';
-import { Md5HashPipe }                      from './builtin/encoding/md5.js';
-import { Crc32Pipe, Adler32Pipe }           from './builtin/encoding/crc32.js';
+import { ShaHashPipe, Sha3HashPipe, KeccakHashPipe } from './builtin/encoding/sha-hash.js';
+import {
+  Md4HashPipe,
+  Md5HashPipe,
+  Ripemd160HashPipe,
+  Sm3HashPipe,
+  WhirlpoolHashPipe,
+} from './builtin/encoding/md5.js';
+import { Blake2bHashPipe, Blake2sHashPipe, Blake3HashPipe } from './builtin/encoding/blake.js';
+import { Crc32Pipe, Crc32cPipe, Crc64Pipe, Adler32Pipe } from './builtin/encoding/crc32.js';
+import { XxHash32Pipe, XxHash64Pipe, XxHash3Pipe, XxHash128Pipe } from './builtin/encoding/xxhash.js';
 import { UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe } from './builtin/encoding/unicode-escape.js';
 import { UnicodeNormalizePipe }             from './builtin/encoding/unicode-normalize.js';
 import { PunycodeEncodePipe, PunycodeDecodePipe } from './builtin/encoding/punycode.js';
@@ -92,9 +100,24 @@ const ALL_PIPES = [
   MimeHeaderDecodePipe,
   MimeHeaderEncodePipe,
   ShaHashPipe,
+  Sha3HashPipe,
+  KeccakHashPipe,
+  Blake2bHashPipe,
+  Blake2sHashPipe,
+  Blake3HashPipe,
+  Md4HashPipe,
   Md5HashPipe,
+  Ripemd160HashPipe,
+  Sm3HashPipe,
+  WhirlpoolHashPipe,
   Crc32Pipe,
+  Crc32cPipe,
+  Crc64Pipe,
   Adler32Pipe,
+  XxHash32Pipe,
+  XxHash64Pipe,
+  XxHash3Pipe,
+  XxHash128Pipe,
   UnicodeEscapeEncodePipe,
   UnicodeEscapeDecodePipe,
   UnicodeNormalizePipe,

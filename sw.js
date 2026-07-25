@@ -56,10 +56,13 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/xml-encode.js',
   './src/pipes/builtin/encoding/compression.js',
   './src/pipes/builtin/encoding/form-urlencoded.js',
+  './src/pipes/builtin/encoding/hash-wasm.js',
   './src/pipes/builtin/encoding/hmac.js',
   './src/pipes/builtin/encoding/sha-hash.js',
+  './src/pipes/builtin/encoding/blake.js',
   './src/pipes/builtin/encoding/md5.js',
   './src/pipes/builtin/encoding/crc32.js',
+  './src/pipes/builtin/encoding/xxhash.js',
   './src/pipes/builtin/encoding/unicode-escape.js',
   './src/pipes/builtin/encoding/unicode-normalize.js',
   './src/pipes/builtin/parsing/cookie-parser.js',
@@ -76,6 +79,7 @@ const PRECACHE_URLS = [
   './vendor/mime-codec.js',
   './vendor/rfc4648.js',
   './vendor/bs58.js',
+  './vendor/hash-wasm.js',
   './vendor/punycode.js',
 ];
 

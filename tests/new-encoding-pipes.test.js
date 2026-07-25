@@ -202,6 +202,7 @@ describe('HMAC', () => {
 
   it.each([
     ['SHA-1', 20],
+    ['SHA-224', 28],
     ['SHA-256', 32],
     ['SHA-384', 48],
     ['SHA-512', 64],
@@ -236,15 +237,16 @@ describe('HMAC', () => {
       .toMatchObject({ message: 'HMAC key is required' });
   });
 
-  it('throws PipeError when Web Crypto is unavailable', async () => {
+  it('does not require Web Crypto support', async () => {
     const pipe = new HmacPipe();
     const originalCrypto = globalThis.crypto;
     try {
       Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true });
-      await expect(pipe.process(new Map([
+      const result = await pipe.process(new Map([
         ['input', encode('msg')],
         ['key', encode('key')],
-      ]))).rejects.toMatchObject({ message: 'Web Crypto is not supported in this environment' });
+      ]));
+      expect(result.get('output').length).toBe(32);
     } finally {
       Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true });
     }
@@ -255,6 +257,17 @@ describe('HMAC', () => {
     const r1 = await pipe.process(new Map([['input', encode('msg')], ['key', encode('key1')]]));
     const r2 = await pipe.process(new Map([['input', encode('msg')], ['key', encode('key2')]]));
     expect([...r1.get('output')]).not.toEqual([...r2.get('output')]);
+  });
+
+  it('supports additional hash-wasm algorithms', async () => {
+    const pipe = new HmacPipe();
+    pipe.setConfig('algorithm', 'SHA3-256');
+    const result = await pipe.process(new Map([
+      ['input', encode('hello')],
+      ['key', encode('secret')],
+    ]));
+    const hex = [...result.get('output')].map(b => b.toString(16).padStart(2, '0')).join('');
+    expect(hex).toBe('850ae61707b3e60d4e45548c4facfda415d301712641fd11535cf395d9e2d7fe');
   });
 });
 
