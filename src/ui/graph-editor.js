@@ -42,6 +42,8 @@ const ADD_PIPE_CONTROL_WIDTH = 140;
 const ADD_PIPE_CONTROL_HEIGHT = 60;
 const DEFAULT_ADD_PIPE_CONTROL_X = 60;
 const DEFAULT_ADD_PIPE_CONTROL_Y = 80;
+const INPUT_DROP_TARGET_PADDING_X = 18;
+const INPUT_DROP_TARGET_PADDING_Y = 16;
 
 // Drag plug ghost dimensions — must match the .drag-plug-ghost CSS rule.
 const DRAG_PLUG_WIDTH = 18;
@@ -66,6 +68,9 @@ class GraphEditor extends HTMLElement {
     this._draftFrom = null; // {pipeId, portName, portType, x, y}
     this._draftPath = null; // SVGPathElement
     this._draftPlug = null; // HTMLElement — floating plug ghost during drag
+    this._draftTargetPort = null;
+    this._draftInputTargets = [];
+    this._draftValidTargetPipeIds = null;
     this._addPipeControl = null;
 
     // Drag state
@@ -436,6 +441,8 @@ class GraphEditor extends HTMLElement {
       if (!portEl) return;
       const pos = this._portCenter(portEl);
       this._draftFrom = { pipeId, portName, portType: 'output', x: pos.x, y: pos.y };
+      this._draftValidTargetPipeIds = this._collectDraftValidTargetPipeIds(pipeId);
+      this._draftInputTargets = this._collectDraftInputTargets();
       this._canvas.classList.add('connecting');
 
       this._draftPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -508,16 +515,28 @@ class GraphEditor extends HTMLElement {
     }
 
     if (this._draftFrom && this._draftPath) {
-      const svgRect = this._inner.getBoundingClientRect();
-      const mx = (e.clientX - svgRect.left) / this._scale;
-      const my = (e.clientY - svgRect.top)  / this._scale;
-      this._positionAddPipeControl(mx, my);
+      const targetPort = this._findInputDropTarget(e.clientX, e.clientY);
+      this._setDraftTargetPort(targetPort);
+      const endPos = targetPort
+        ? this._portCenter(targetPort)
+        : this._clientPointToInner(e.clientX, e.clientY);
+
+      if (targetPort) {
+        this._addPipeControl.hidden = true;
+        this._addPipeControl.classList.remove('draft');
+      } else {
+        this._positionAddPipeControl(endPos.x, endPos.y);
+      }
       this._draftPath.setAttribute('d',
-        bezierPath(this._draftFrom.x, this._draftFrom.y, mx, my)
+        bezierPath(this._draftFrom.x, this._draftFrom.y, endPos.x, endPos.y)
       );
-      // Keep the plug ghost centered on the cursor tip.
+      // Keep the plug ghost centered on the current draft endpoint.
       if (this._draftPlug) {
-        this._positionElement(this._draftPlug, mx - DRAG_PLUG_WIDTH / 2, my - DRAG_PLUG_HEIGHT / 2);
+        this._positionElement(
+          this._draftPlug,
+          endPos.x - DRAG_PLUG_WIDTH / 2,
+          endPos.y - DRAG_PLUG_HEIGHT / 2
+        );
       }
     }
   }
@@ -553,10 +572,9 @@ class GraphEditor extends HTMLElement {
       this._isPanning = false;
     }
     if (this._draftFrom) {
-      // Check if we released on an input port
-      const target = document.elementFromPoint(e.clientX, e.clientY);
-      if (target?.classList.contains('port') && target.dataset.portType === 'input') {
-        this._completeConnection(target.dataset.pipeId, target.dataset.portName);
+      const targetPort = this._draftTargetPort ?? this._findInputDropTarget(e.clientX, e.clientY);
+      if (targetPort) {
+        this._completeConnection(targetPort.dataset.pipeId, targetPort.dataset.portName);
       } else {
         this._requestAddPipe();
         this._cancelDraft();
@@ -680,6 +698,7 @@ class GraphEditor extends HTMLElement {
   }
 
   _cancelDraft() {
+    this._setDraftTargetPort(null);
     if (this._draftPath) {
       this._draftPath.remove();
       this._draftPath = null;
@@ -689,6 +708,8 @@ class GraphEditor extends HTMLElement {
       this._draftPlug = null;
     }
     this._draftFrom = null;
+    this._draftInputTargets = [];
+    this._draftValidTargetPipeIds = null;
     this._canvas.classList.remove('connecting');
     this._syncAddPipeControl();
   }
@@ -736,6 +757,98 @@ class GraphEditor extends HTMLElement {
       },
       bubbles: true,
     }));
+  }
+
+  _clientPointToInner(clientX, clientY) {
+    const innerRect = this._inner.getBoundingClientRect();
+    return {
+      x: (clientX - innerRect.left) / this._scale,
+      y: (clientY - innerRect.top) / this._scale,
+    };
+  }
+
+  _findInputDropTarget(clientX, clientY) {
+    if (!this._draftFrom) return null;
+
+    let bestTarget = null;
+    let bestDistanceSquared = Infinity;
+    for (const { portEl, rect } of this._draftInputTargets) {
+      const withinX = clientX >= rect.left - INPUT_DROP_TARGET_PADDING_X
+        && clientX <= rect.right + INPUT_DROP_TARGET_PADDING_X;
+      const withinY = clientY >= rect.top - INPUT_DROP_TARGET_PADDING_Y
+        && clientY <= rect.bottom + INPUT_DROP_TARGET_PADDING_Y;
+      if (!withinX || !withinY) continue;
+
+      const dx = clientX - (rect.left + rect.width / 2);
+      const dy = clientY - (rect.top + rect.height / 2);
+      const distanceSquared = dx * dx + dy * dy;
+      if (distanceSquared < bestDistanceSquared) {
+        bestTarget = portEl;
+        bestDistanceSquared = distanceSquared;
+      }
+    }
+
+    return bestTarget;
+  }
+
+  _buildReverseConnectionMap() {
+    const reverseConnections = new Map();
+    for (const connection of this._graph?.connections ?? []) {
+      const upstreamPipeIds = reverseConnections.get(connection.toPipeId) ?? [];
+      upstreamPipeIds.push(connection.fromPipeId);
+      reverseConnections.set(connection.toPipeId, upstreamPipeIds);
+    }
+    return reverseConnections;
+  }
+
+  _collectDraftInputTargets() {
+    const targets = [];
+    for (const [key, portEl] of this._portElements) {
+      if (!key.includes(':input:')) continue;
+      if (!this._canConnectDraftTo(portEl.dataset.pipeId)) continue;
+      targets.push({
+        portEl,
+        rect: portEl.getBoundingClientRect(),
+      });
+    }
+    return targets;
+  }
+
+  _canConnectDraftTo(toPipeId) {
+    if (!this._draftFrom || !this._graph) return false;
+    return this._draftValidTargetPipeIds?.has(toPipeId) ?? false;
+  }
+
+  _collectDraftValidTargetPipeIds(fromPipeId) {
+    if (!this._graph) return new Set();
+
+    const reverseConnections = this._buildReverseConnectionMap();
+    const upstreamPipes = new Set([fromPipeId]);
+    const stack = [fromPipeId];
+    while (stack.length > 0) {
+      const currentPipeId = stack.pop();
+      for (const upstreamPipeId of reverseConnections.get(currentPipeId) ?? []) {
+        if (upstreamPipes.has(upstreamPipeId)) continue;
+        upstreamPipes.add(upstreamPipeId);
+        stack.push(upstreamPipeId);
+      }
+    }
+
+    const validTargetPipeIds = new Set();
+    for (const pipeId of this._graph.pipes.keys()) {
+      if (!upstreamPipes.has(pipeId)) {
+        validTargetPipeIds.add(pipeId);
+      }
+    }
+
+    return validTargetPipeIds;
+  }
+
+  _setDraftTargetPort(portEl) {
+    if (this._draftTargetPort === portEl) return;
+    this._draftTargetPort?.classList.remove('highlighted');
+    this._draftTargetPort = portEl;
+    this._draftTargetPort?.classList.add('highlighted');
   }
 
   // ── Pan/zoom ─────────────────────────────────────────────────

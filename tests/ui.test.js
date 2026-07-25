@@ -6,6 +6,11 @@ import { InputPipe } from '../src/pipes/builtin/input-pipe.js';
 import { HexEncodePipe } from '../src/pipes/builtin/encoding/hex.js';
 import { encode } from './helpers.js';
 
+const OUTPUT_PORT_RECT = { left: 30, top: 80, width: 18, height: 16 };
+const INPUT_PORT_RECT = { left: 220, top: 120, width: 18, height: 10 };
+const INPUT_DROP_TARGET_PADDING_X = 18;
+const INPUT_DROP_TARGET_PADDING_Y = 16;
+
 describe('DataViewer', () => {
   let viewer;
 
@@ -133,6 +138,11 @@ describe('GraphEditor', () => {
       clientHeight: { configurable: true, value: height },
     });
   };
+  const mockPortRect = (port, rect) => vi.spyOn(port, 'getBoundingClientRect').mockReturnValue({
+    ...rect,
+    right: rect.left + rect.width,
+    bottom: rect.top + rect.height,
+  });
 
   beforeEach(() => {
     editor = document.createElement('graph-editor');
@@ -239,6 +249,68 @@ describe('GraphEditor', () => {
     editor._cancelDraft();
     expect(editor._draftFrom).toBeNull();
     expect(editor._canvas.classList.contains('connecting')).toBe(false);
+  });
+
+  it('snaps draft connections to nearby inputs with a larger drop target', () => {
+    const process = vi.spyOn(graph, 'processFrom').mockResolvedValue();
+    const from = editor._portElements.get(`${source.id}:output:output`);
+    const to = editor._portElements.get(`${target.id}:input:input`);
+    vi.spyOn(editor._inner, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
+    mockPortRect(from, OUTPUT_PORT_RECT);
+    mockPortRect(to, INPUT_PORT_RECT);
+
+    editor._onPortMouseDown({}, source.id, 'output', 'output');
+    editor._onCanvasPointerMove({ clientX: 236, clientY: 112 });
+    const inputCenterX = INPUT_PORT_RECT.left + INPUT_PORT_RECT.width / 2;
+    const inputCenterY = INPUT_PORT_RECT.top + INPUT_PORT_RECT.height / 2;
+    expect(236).toBeGreaterThan(INPUT_PORT_RECT.left);
+    expect(236).toBeLessThanOrEqual(INPUT_PORT_RECT.left + INPUT_PORT_RECT.width + INPUT_DROP_TARGET_PADDING_X);
+    expect(112).toBeGreaterThanOrEqual(INPUT_PORT_RECT.top - INPUT_DROP_TARGET_PADDING_Y);
+    expect(112).toBeLessThan(INPUT_PORT_RECT.top);
+
+    expect(editor._draftTargetPort).toBe(to);
+    expect(to.classList.contains('highlighted')).toBe(true);
+    expect(editor._addPipeControl.hidden).toBe(true);
+    expect(editor._draftPath.getAttribute('d')).toContain(`${inputCenterX} ${inputCenterY}`);
+
+    editor._onCanvasPointerUp({ clientX: 236, clientY: 112 });
+
+    expect(graph.connections).toHaveLength(1);
+    expect(graph.connections[0].toPipeId).toBe(target.id);
+    expect(process).toHaveBeenCalledWith(source.id);
+    expect(editor._draftTargetPort).toBeNull();
+    expect(to.classList.contains('highlighted')).toBe(false);
+  });
+
+  it('expands the input drop target to the configured drag padding', () => {
+    const to = editor._portElements.get(`${target.id}:input:input`);
+    mockPortRect(to, INPUT_PORT_RECT);
+    editor._draftFrom = { pipeId: source.id, portName: 'output', portType: 'output' };
+    editor._draftValidTargetPipeIds = new Set([target.id]);
+    editor._draftInputTargets = editor._collectDraftInputTargets();
+    const right = INPUT_PORT_RECT.left + INPUT_PORT_RECT.width;
+    const bottom = INPUT_PORT_RECT.top + INPUT_PORT_RECT.height;
+
+    expect(
+      editor._findInputDropTarget(
+        INPUT_PORT_RECT.left - INPUT_DROP_TARGET_PADDING_X,
+        INPUT_PORT_RECT.top - INPUT_DROP_TARGET_PADDING_Y
+      )
+    ).toBe(to);
+    expect(
+      editor._findInputDropTarget(
+        right + INPUT_DROP_TARGET_PADDING_X,
+        bottom + INPUT_DROP_TARGET_PADDING_Y
+      )
+    ).toBe(to);
+    expect(
+      editor._findInputDropTarget(
+        INPUT_PORT_RECT.left - INPUT_DROP_TARGET_PADDING_X - 1,
+        INPUT_PORT_RECT.top - INPUT_DROP_TARGET_PADDING_Y
+      )
+    ).toBeNull();
+
+    editor._cancelDraft();
   });
 
   it('requests a connected pipe when a connection is dropped on empty space', () => {
