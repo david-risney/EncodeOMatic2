@@ -15,6 +15,9 @@ const vendors = [
   ['scripts/rfc4648-entry.js',           'vendor/rfc4648.js'],
   ['scripts/bs58-entry.js',              'vendor/bs58.js'],
   ['scripts/punycode-entry.js',          'vendor/punycode.js'],
+  ['scripts/apg-js-entry.js',            'vendor/apg-js.js'],
+  ['scripts/nearley-entry.js',           'vendor/nearley.js'],
+  ['scripts/peggy-entry.js',             'vendor/peggy.js'],
 ];
 
 export default vendors.map(([input, file]) => ({
