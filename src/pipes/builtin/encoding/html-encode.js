@@ -1,25 +1,13 @@
 /**
  * HTML encoding/decoding pipes.
+ *
+ * Uses the `he` library (https://github.com/mathiasbynens/he) which covers all
+ * 2099 HTML5 named character references.
  */
 
 import { StringPipe } from '../../string-pipe.js';
-import { PipeConfig, PipeError } from '../../pipe.js';
-
-const HTML_ENCODE_MAP = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#x27;',
-};
-
-const HTML_ENTITY_PATTERN = /&(?:#x([0-9a-fA-F]+)|#([0-9]+)|([a-zA-Z]+));/g;
-
-const NAMED_ENTITIES = {
-  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
-  nbsp: '\u00A0', copy: '\u00A9', reg: '\u00AE', trade: '\u2122',
-  mdash: '\u2014', ndash: '\u2013', hellip: '\u2026',
-};
+import { PipeConfig } from '../../pipe.js';
+import he from '../../../../vendor/he.js';
 
 function scoreHtmlEntities(input) {
   if (input == null || input.length === 0) return 0;
@@ -30,34 +18,30 @@ function scoreHtmlEntities(input) {
     return -10;
   }
 
+  if (!text.includes('&')) return 0;
+  // Malformed: & followed by non-space/non-semicolon content ending with whitespace or end-of-string
+  if (/&[a-zA-Z#][^;&\s]*(?:\s|$)/u.test(text)) return -10;
+
   let found = false;
-  const candidates = text.matchAll(/&([^&\s;]*);/g);
-  for (const match of candidates) {
+  for (const match of text.matchAll(/&([^&\s;]*);/g)) {
     const entity = match[1];
-    let codePoint = null;
     if (/^#x[0-9a-fA-F]+$/.test(entity)) {
-      codePoint = parseInt(entity.slice(2), 16);
+      const cp = parseInt(entity.slice(2), 16);
+      if (cp > 0x10FFFF) return -10;
     } else if (/^#[0-9]+$/.test(entity)) {
-      codePoint = parseInt(entity.slice(1), 10);
-    } else if (!Object.hasOwn(NAMED_ENTITIES, entity)) {
+      const cp = parseInt(entity.slice(1), 10);
+      if (cp > 0x10FFFF) return -10;
+    } else if (/^#/.test(entity)) {
+      // Looks like a numeric ref but malformed (e.g. &#xZZZ;)
       return -10;
+    } else if (/^[a-zA-Z][a-zA-Z0-9]*$/.test(entity)) {
+      // Check if he recognizes this named entity — unknown ones pass through unchanged
+      const testStr = `&${entity};`;
+      if (he.decode(testStr) === testStr) return -10;
     }
-    if (codePoint != null && codePoint > 0x10FFFF) return -10;
     found = true;
   }
-  const knownNamedEntityPattern = new RegExp(
-    `&(?:${Object.keys(NAMED_ENTITIES).join('|')})(?:\\s|$)`
-  );
-  if (knownNamedEntityPattern.test(text)) return -10;
-  if (/&#(?:x)?[^&\s;]*(?:\s|$)/i.test(text)) return -10;
   return found ? 10 : 0;
-}
-
-function decodeHtmlCodePoint(entityText, value) {
-  if (value > 0x10FFFF) {
-    throw new PipeError(`Invalid HTML entity code point: ${entityText}`);
-  }
-  return String.fromCodePoint(value);
 }
 
 export class HtmlEncodePipe extends StringPipe {
@@ -82,15 +66,11 @@ export class HtmlEncodePipe extends StringPipe {
   async processString(input) {
     const mode = this.getConfig('mode')?.value ?? 'minimal';
     if (mode === 'all-non-ascii') {
-      return [...input].map(ch => {
-        if (HTML_ENCODE_MAP[ch]) return HTML_ENCODE_MAP[ch];
-        const code = ch.codePointAt(0);
-        if (code > 127) return `&#x${code.toString(16).toUpperCase()};`;
-        return ch;
-      }).join('');
+      // Encode unsafe HTML chars and all non-ASCII using named references where available
+      return he.encode(input, { useNamedReferences: true });
     }
-    // minimal: encode only the required HTML characters
-    return input.replace(/[&<>"']/g, ch => HTML_ENCODE_MAP[ch]);
+    // minimal: encode only the required HTML characters (&, <, >, ", ')
+    return he.escape(input);
   }
 }
 
@@ -105,11 +85,6 @@ export class HtmlDecodePipe extends StringPipe {
   }
 
   async processString(input) {
-    return input.replace(HTML_ENTITY_PATTERN, (_match, hex, dec, name) => {
-      if (hex) return decodeHtmlCodePoint(_match, parseInt(hex, 16));
-      if (dec) return decodeHtmlCodePoint(_match, parseInt(dec, 10));
-      if (name) return NAMED_ENTITIES[name] ?? _match;
-      return _match;
-    });
+    return he.decode(input);
   }
 }

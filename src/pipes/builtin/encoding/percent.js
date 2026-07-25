@@ -26,7 +26,13 @@ export class PercentEncodePipe extends StringPipe {
         description: 'Which characters to encode',
         defaultValue: 'component',
         type: 'select',
-        options: ['component', 'full', 'minimal'],
+        options: ['component', 'full', 'minimal', 'custom'],
+      }),
+      new PipeConfig({
+        name: 'customPattern',
+        description: 'Regex character class of characters to encode when mode is "custom" (e.g. [^A-Za-z0-9])',
+        defaultValue: '[^A-Za-z0-9\\-_.~]',
+        type: 'string',
       }),
     ];
   }
@@ -41,6 +47,20 @@ export class PercentEncodePipe extends StringPipe {
         let output = '';
         for (const ch of input) {
           output += RFC3986_UNRESERVED.test(ch) ? ch : percentEncodeBytes(textEncoder.encode(ch));
+        }
+        return output;
+      }
+      case 'custom': {
+        const patternStr = this.getConfig('customPattern')?.value ?? '[^A-Za-z0-9\\-_.~]';
+        let regex;
+        try {
+          regex = new RegExp(patternStr, 'u');
+        } catch {
+          throw new PipeError(`Invalid custom pattern: ${patternStr}`);
+        }
+        let output = '';
+        for (const ch of input) {
+          output += regex.test(ch) ? percentEncodeBytes(textEncoder.encode(ch)) : ch;
         }
         return output;
       }

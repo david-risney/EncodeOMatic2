@@ -2,15 +2,23 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 
-export default {
-  input: 'scripts/iconv-lite-entry.js',
-  output: {
-    file: 'vendor/iconv-lite.js',
-    format: 'es',
-  },
-  plugins: [
-    json(),
-    nodeResolve({ browser: true, preferBuiltins: false }),
-    commonjs(),
-  ],
-};
+const plugins = [
+  json(),
+  nodeResolve({ browser: true, preferBuiltins: false }),
+  commonjs(),
+];
+
+const vendors = [
+  ['scripts/iconv-lite-entry.js',        'vendor/iconv-lite.js'],
+  ['scripts/he-entry.js',                'vendor/he.js'],
+  ['scripts/mime-codec-entry.js',        'vendor/mime-codec.js'],
+  ['scripts/rfc4648-entry.js',           'vendor/rfc4648.js'],
+  ['scripts/bs58-entry.js',              'vendor/bs58.js'],
+  ['scripts/punycode-entry.js',          'vendor/punycode.js'],
+];
+
+export default vendors.map(([input, file]) => ({
+  input,
+  output: { file, format: 'es' },
+  plugins,
+}));

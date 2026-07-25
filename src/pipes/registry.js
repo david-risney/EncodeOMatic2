@@ -20,13 +20,20 @@ import { SlashEscapePipe, SlashUnescapePipe }   from './builtin/encoding/slash-e
 import { UrlEncodePipe, UrlDecodePipe }     from './builtin/encoding/url-encode.js';
 import { RotPipe }                          from './builtin/encoding/rot.js';
 import { Base64urlEncodePipe, Base64urlDecodePipe } from './builtin/encoding/base64url.js';
+import { Base32EncodePipe, Base32DecodePipe }   from './builtin/encoding/base32.js';
+import { Base58EncodePipe, Base58DecodePipe }   from './builtin/encoding/base58.js';
+import { Ascii85EncodePipe, Ascii85DecodePipe } from './builtin/encoding/ascii85.js';
 import { GzipCompressPipe, GzipDecompressPipe, DeflateCompressPipe, DeflateDecompressPipe } from './builtin/encoding/compression.js';
 import { FormUrlencodedEncodePipe, FormUrlencodedDecodePipe } from './builtin/encoding/form-urlencoded.js';
 import { HmacPipe }                         from './builtin/encoding/hmac.js';
-import { MimeHeaderDecodePipe }             from './builtin/encoding/mime-header.js';
+import { MimeHeaderDecodePipe, MimeHeaderEncodePipe } from './builtin/encoding/mime-header.js';
 import { ShaHashPipe }                      from './builtin/encoding/sha-hash.js';
 import { UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe } from './builtin/encoding/unicode-escape.js';
 import { UnicodeNormalizePipe }             from './builtin/encoding/unicode-normalize.js';
+import { PunycodeEncodePipe, PunycodeDecodePipe } from './builtin/encoding/punycode.js';
+import { CssEscapePipe, CssUnescapePipe }   from './builtin/encoding/css-escape.js';
+import { CharWidthToHalfwidthPipe, CharWidthToFullwidthPipe } from './builtin/encoding/char-width.js';
+import { StringReversePipe }                from './builtin/encoding/reverse.js';
 import { CookieParserPipe }  from './builtin/parsing/cookie-parser.js';
 import { CsvParserPipe }     from './builtin/parsing/csv-parser.js';
 import { HttpRequestParserPipe }  from './builtin/parsing/http-request-parser.js';
@@ -44,6 +51,14 @@ const ALL_PIPES = [
   // Encoding
   Base64EncodePipe,
   Base64DecodePipe,
+  Base64urlEncodePipe,
+  Base64urlDecodePipe,
+  Base32EncodePipe,
+  Base32DecodePipe,
+  Base58EncodePipe,
+  Base58DecodePipe,
+  Ascii85EncodePipe,
+  Ascii85DecodePipe,
   PercentEncodePipe,
   PercentDecodePipe,
   QuotedPrintableEncodePipe,
@@ -60,11 +75,11 @@ const ALL_PIPES = [
   BinaryDecodePipe,
   SlashEscapePipe,
   SlashUnescapePipe,
+  CssEscapePipe,
+  CssUnescapePipe,
   UrlEncodePipe,
   UrlDecodePipe,
   RotPipe,
-  Base64urlEncodePipe,
-  Base64urlDecodePipe,
   GzipCompressPipe,
   GzipDecompressPipe,
   DeflateCompressPipe,
@@ -73,10 +88,16 @@ const ALL_PIPES = [
   FormUrlencodedDecodePipe,
   HmacPipe,
   MimeHeaderDecodePipe,
+  MimeHeaderEncodePipe,
   ShaHashPipe,
   UnicodeEscapeEncodePipe,
   UnicodeEscapeDecodePipe,
   UnicodeNormalizePipe,
+  PunycodeEncodePipe,
+  PunycodeDecodePipe,
+  CharWidthToHalfwidthPipe,
+  CharWidthToFullwidthPipe,
+  StringReversePipe,
   // Parsing
   UrlParserPipe,
   JsonParserPipe,

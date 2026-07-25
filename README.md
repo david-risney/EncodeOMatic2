@@ -20,19 +20,42 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 
 ### Encoding
 - **Base64 Encode / Decode**
-- **Percent Encode / Decode** (URL encoding, RFC 3986)
+- **Base64url Encode / Decode** (URL-safe, unpadded)
+- **Base32 Encode / Decode** (RFC 4648 standard and hex alphabets)
+- **Base58 Encode / Decode** (Bitcoin/IPFS alphabet)
+- **Ascii85 Encode / Decode** (Adobe/PostScript Base85)
+- **Percent Encode / Decode** (URL encoding, RFC 3986; supports custom character-set via regex)
+- **Quoted-Printable Encode / Decode**
 - **Hex Encode / Decode**
-- **HTML Encode / Decode**
+- **HTML Encode / Decode** (all 2099 HTML5 named character references via the `he` library)
 - **XML Encode / Decode**
-- **Charset Decode / Encode** (UTF-8, UTF-16, ISO-8859-1, GBK, Shift-JIS, and more)
+- **Charset Decode / Encode** (UTF-8, UTF-16, ISO-8859-1, GBK, Shift-JIS, and more via iconv-lite)
 - **Binary Encode / Decode** (base-2 bit strings)
 - **Slash Escape / Unescape** (C-style backslash sequences)
+- **CSS Escape / Unescape**
 - **URL Encode / Decode** (`encodeURI` / `decodeURI`)
+- **ROT** (Caesar cipher, configurable rotation)
+- **Gzip Compress / Decompress**
+- **Deflate Compress / Decompress**
+- **Form URL-encoded Encode / Decode** (application/x-www-form-urlencoded)
+- **HMAC** (SHA-1/SHA-256/SHA-512)
+- **MIME Header Decode / Encode** (RFC 2047 encoded words via emailjs-mime-codec)
+- **SHA Hash** (SHA-1/SHA-256/SHA-384/SHA-512)
+- **Unicode Escape Encode / Decode** (\\uXXXX / \\u{XXXXX})
+- **Unicode Normalize** (NFC/NFD/NFKC/NFKD)
+- **Punycode Encode / Decode** (internationalized domain names, xn--)
+- **Fullwidth to Halfwidth / Halfwidth to Fullwidth** (Unicode character width conversion)
+- **String Reverse** (grapheme-cluster-aware)
 
 ### Parsing
 - **URL Parser** — splits a URL into protocol, hostname, path, query params (one output per param), hash
 - **JSON Parser** — parses JSON and exposes top-level keys as separate outputs
 - **Regex Match** — applies a regex and exposes capture groups as outputs
+- **Cookie Parser**
+- **CSV Parser**
+- **HTTP Request / Response Parser**
+- **JWT Parser**
+- **Search Params Parser**
 
 ## Usage
 
@@ -76,11 +99,20 @@ npx serve .
 
 Then open `http://localhost:8080` in your browser.
 
-### Vendor bundle
+### Vendor bundles
 
-`vendor/iconv-lite.js` is a pre-built ESM bundle of [iconv-lite](https://github.com/ashtuchkin/iconv-lite)
-and is committed to the repository so GitHub Pages can serve it without a CI build step.
-Regenerate it after updating the `iconv-lite` dependency:
+Several encoding libraries are bundled as pre-built ESM files in `vendor/` and committed to the repository so GitHub Pages can serve them without a CI build step.
+Regenerate all vendor bundles after updating any of these dependencies:
+
+| File | Library | Purpose |
+|------|---------|---------|
+| `vendor/iconv-lite.js` | iconv-lite | Charset encode/decode |
+| `vendor/he.js` | he | HTML entity encoding/decoding (all 2099 HTML5 named refs) |
+| `vendor/mime-codec.js` | emailjs-mime-codec | MIME RFC 2047 encoded-word encode/decode |
+| `vendor/rfc4648.js` | rfc4648 | Base32 encoding/decoding |
+| `vendor/bs58.js` | bs58 | Base58 encoding/decoding |
+| `vendor/ascii85.js` | ascii85 | Ascii85/Base85 encoding/decoding |
+| `vendor/punycode.js` | punycode | Internationalized domain name (IDN) encode/decode |
 
 ```sh
 npm install
