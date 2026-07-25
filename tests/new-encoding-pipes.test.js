@@ -13,6 +13,8 @@ import {
 import { HmacPipe } from '../src/pipes/builtin/encoding/hmac.js';
 import { MimeHeaderDecodePipe, MimeHeaderEncodePipe } from '../src/pipes/builtin/encoding/mime-header.js';
 import { ShaHashPipe } from '../src/pipes/builtin/encoding/sha-hash.js';
+import { Md5HashPipe } from '../src/pipes/builtin/encoding/md5.js';
+import { Crc32Pipe, Adler32Pipe } from '../src/pipes/builtin/encoding/crc32.js';
 import {
   UnicodeEscapeEncodePipe,
   UnicodeEscapeDecodePipe,
@@ -333,6 +335,85 @@ describe('SHA Hash', () => {
   it('different inputs produce different hashes', async () => {
     const r1 = await processBytes(new ShaHashPipe(), encode('a'));
     const r2 = await processBytes(new ShaHashPipe(), encode('b'));
+    expect([...r1]).not.toEqual([...r2]);
+  });
+});
+
+describe('MD5 Hash', () => {
+  const hex = (bytes) => [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+
+  it('produces the correct MD5 digest for known inputs', async () => {
+    // RFC 1321 test vectors
+    expect(hex(await processBytes(new Md5HashPipe(), []))).toBe('d41d8cd98f00b204e9800998ecf8427e');
+    expect(hex(await processBytes(new Md5HashPipe(), encode('a')))).toBe('0cc175b9c0f1b6a831c399e269772661');
+    expect(hex(await processBytes(new Md5HashPipe(), encode('abc')))).toBe('900150983cd24fb0d6963f7d28e17f72');
+    expect(hex(await processBytes(new Md5HashPipe(), encode('message digest')))).toBe('f96b697d7cb7938d525a2f31aaf161d0');
+  });
+
+  it('produces a 16-byte digest', async () => {
+    const result = await processBytes(new Md5HashPipe(), encode('hello'));
+    expect(result.length).toBe(16);
+  });
+
+  it('different inputs produce different digests', async () => {
+    const r1 = await processBytes(new Md5HashPipe(), encode('foo'));
+    const r2 = await processBytes(new Md5HashPipe(), encode('bar'));
+    expect([...r1]).not.toEqual([...r2]);
+  });
+
+  it('handles arbitrary byte input (not just ASCII)', async () => {
+    const bytes = new Uint8Array([0x00, 0xff, 0x80, 0x7f]);
+    const result = await processBytes(new Md5HashPipe(), bytes);
+    expect(result.length).toBe(16);
+  });
+});
+
+describe('CRC-32', () => {
+  const hex = (bytes) => [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+
+  it('produces the correct CRC-32 for known inputs', async () => {
+    // CRC-32 of empty input is 0x00000000
+    expect(hex(await processBytes(new Crc32Pipe(), []))).toBe('00000000');
+    // CRC-32("hello world") = 0x0d4a1185 (standard IEEE 802.3)
+    expect(hex(await processBytes(new Crc32Pipe(), encode('hello world')))).toBe('0d4a1185');
+  });
+
+  it('produces a 4-byte big-endian output', async () => {
+    const result = await processBytes(new Crc32Pipe(), encode('test'));
+    expect(result.length).toBe(4);
+  });
+
+  it('different inputs produce different checksums', async () => {
+    const r1 = await processBytes(new Crc32Pipe(), encode('foo'));
+    const r2 = await processBytes(new Crc32Pipe(), encode('bar'));
+    expect([...r1]).not.toEqual([...r2]);
+  });
+
+  it('handles arbitrary byte input', async () => {
+    const bytes = new Uint8Array([0x00, 0xff, 0x80, 0x7f]);
+    const result = await processBytes(new Crc32Pipe(), bytes);
+    expect(result.length).toBe(4);
+  });
+});
+
+describe('Adler-32', () => {
+  const hex = (bytes) => [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+
+  it('produces the correct Adler-32 for known inputs', async () => {
+    // Adler-32("") = 0x00000001 (a=1, b=0)
+    expect(hex(await processBytes(new Adler32Pipe(), []))).toBe('00000001');
+    // Adler-32("Wikipedia") = 0x11e60398
+    expect(hex(await processBytes(new Adler32Pipe(), encode('Wikipedia')))).toBe('11e60398');
+  });
+
+  it('produces a 4-byte big-endian output', async () => {
+    const result = await processBytes(new Adler32Pipe(), encode('test'));
+    expect(result.length).toBe(4);
+  });
+
+  it('different inputs produce different checksums', async () => {
+    const r1 = await processBytes(new Adler32Pipe(), encode('foo'));
+    const r2 = await processBytes(new Adler32Pipe(), encode('bar'));
     expect([...r1]).not.toEqual([...r2]);
   });
 });

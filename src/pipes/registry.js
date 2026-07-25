@@ -28,6 +28,8 @@ import { FormUrlencodedEncodePipe, FormUrlencodedDecodePipe } from './builtin/en
 import { HmacPipe }                         from './builtin/encoding/hmac.js';
 import { MimeHeaderDecodePipe, MimeHeaderEncodePipe } from './builtin/encoding/mime-header.js';
 import { ShaHashPipe }                      from './builtin/encoding/sha-hash.js';
+import { Md5HashPipe }                      from './builtin/encoding/md5.js';
+import { Crc32Pipe, Adler32Pipe }           from './builtin/encoding/crc32.js';
 import { UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe } from './builtin/encoding/unicode-escape.js';
 import { UnicodeNormalizePipe }             from './builtin/encoding/unicode-normalize.js';
 import { PunycodeEncodePipe, PunycodeDecodePipe } from './builtin/encoding/punycode.js';
@@ -90,6 +92,9 @@ const ALL_PIPES = [
   MimeHeaderDecodePipe,
   MimeHeaderEncodePipe,
   ShaHashPipe,
+  Md5HashPipe,
+  Crc32Pipe,
+  Adler32Pipe,
   UnicodeEscapeEncodePipe,
   UnicodeEscapeDecodePipe,
   UnicodeNormalizePipe,

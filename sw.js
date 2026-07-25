@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'encodeomatic2-v';
-const CACHE_NAME = 'encodeomatic2-v1.1.1';
+const CACHE_NAME = 'encodeomatic2-v1.1.2';
 
 const PRECACHE_URLS = [
   './',
@@ -58,6 +58,8 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/form-urlencoded.js',
   './src/pipes/builtin/encoding/hmac.js',
   './src/pipes/builtin/encoding/sha-hash.js',
+  './src/pipes/builtin/encoding/md5.js',
+  './src/pipes/builtin/encoding/crc32.js',
   './src/pipes/builtin/encoding/unicode-escape.js',
   './src/pipes/builtin/encoding/unicode-normalize.js',
   './src/pipes/builtin/parsing/cookie-parser.js',

@@ -38,6 +38,8 @@ import { FormUrlencodedEncodePipe, FormUrlencodedDecodePipe } from '../pipes/bui
 import { HmacPipe }                        from '../pipes/builtin/encoding/hmac.js';
 import { MimeHeaderDecodePipe, MimeHeaderEncodePipe } from '../pipes/builtin/encoding/mime-header.js';
 import { ShaHashPipe }                     from '../pipes/builtin/encoding/sha-hash.js';
+import { Md5HashPipe }                     from '../pipes/builtin/encoding/md5.js';
+import { Crc32Pipe, Adler32Pipe }          from '../pipes/builtin/encoding/crc32.js';
 import { UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe } from '../pipes/builtin/encoding/unicode-escape.js';
 import { UnicodeNormalizePipe }            from '../pipes/builtin/encoding/unicode-normalize.js';
 import { PunycodeEncodePipe, PunycodeDecodePipe } from '../pipes/builtin/encoding/punycode.js';
@@ -97,6 +99,9 @@ const REGISTRY = new Map([
   ['MimeHeaderDecode', MimeHeaderDecodePipe],
   ['MimeHeaderEncode', MimeHeaderEncodePipe],
   ['ShaHash',         ShaHashPipe],
+  ['Md5Hash',         Md5HashPipe],
+  ['Crc32',           Crc32Pipe],
+  ['Adler32',         Adler32Pipe],
   ['UnicodeEscapeEncode', UnicodeEscapeEncodePipe],
   ['UnicodeEscapeDecode', UnicodeEscapeDecodePipe],
   ['UnicodeNormalize', UnicodeNormalizePipe],

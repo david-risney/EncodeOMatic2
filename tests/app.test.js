@@ -112,7 +112,7 @@ describe('application integration', () => {
     vi.stubGlobal('Worker', SilentWorker);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      text: async () => "export const APP_VERSION = '1.1.0';",
+      text: async () => "export const APP_VERSION = '1.1.2';",
     }));
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -157,7 +157,7 @@ describe('application integration', () => {
 
     document.getElementById('btn-about').click();
     expect(document.getElementById('about-dialog').open).toBe(true);
-    expect(document.getElementById('about-version').textContent).toBe('1.1.0');
+    expect(document.getElementById('about-version').textContent).toBe('1.1.2');
     await vi.waitFor(() => {
       expect(document.getElementById('update-status').textContent)
         .toBe('Encode-O-Matic 2 is up to date.');
