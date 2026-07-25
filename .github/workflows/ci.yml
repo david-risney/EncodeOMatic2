@@ -29,3 +29,23 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+  version-bump:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check version was bumped
+        run: |
+          BASE_VERSION=$(git show origin/${{ github.base_ref }}:src/version.js | grep -oP "APP_VERSION = '\K[^']+")
+          PR_VERSION=$(grep -oP "APP_VERSION = '\K[^']+" src/version.js)
+          if [ "$BASE_VERSION" = "$PR_VERSION" ]; then
+            echo "❌ Version was not bumped (still $PR_VERSION)."
+            echo "   Run: pwsh scripts/bump-version.ps1 <new-version>"
+            exit 1
+          fi
+          echo "✅ Version bumped: $BASE_VERSION → $PR_VERSION"
