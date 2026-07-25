@@ -11,13 +11,21 @@ import {
   FormUrlencodedDecodePipe,
 } from '../src/pipes/builtin/encoding/form-urlencoded.js';
 import { HmacPipe } from '../src/pipes/builtin/encoding/hmac.js';
-import { MimeHeaderDecodePipe } from '../src/pipes/builtin/encoding/mime-header.js';
+import { MimeHeaderDecodePipe, MimeHeaderEncodePipe } from '../src/pipes/builtin/encoding/mime-header.js';
 import { ShaHashPipe } from '../src/pipes/builtin/encoding/sha-hash.js';
 import {
   UnicodeEscapeEncodePipe,
   UnicodeEscapeDecodePipe,
 } from '../src/pipes/builtin/encoding/unicode-escape.js';
 import { UnicodeNormalizePipe } from '../src/pipes/builtin/encoding/unicode-normalize.js';
+import { Base32EncodePipe, Base32DecodePipe } from '../src/pipes/builtin/encoding/base32.js';
+import { Base58EncodePipe, Base58DecodePipe } from '../src/pipes/builtin/encoding/base58.js';
+import { Ascii85EncodePipe, Ascii85DecodePipe } from '../src/pipes/builtin/encoding/ascii85.js';
+import { PunycodeEncodePipe, PunycodeDecodePipe } from '../src/pipes/builtin/encoding/punycode.js';
+import { CssEscapePipe, CssUnescapePipe } from '../src/pipes/builtin/encoding/css-escape.js';
+import { CharWidthToHalfwidthPipe, CharWidthToFullwidthPipe } from '../src/pipes/builtin/encoding/char-width.js';
+import { StringReversePipe } from '../src/pipes/builtin/encoding/reverse.js';
+import { PercentEncodePipe } from '../src/pipes/builtin/encoding/percent.js';
 import { decode, encode, processBytes, processText } from './helpers.js';
 
 describe('Base64url encoding', () => {
@@ -444,5 +452,356 @@ describe('Unicode Normalize', () => {
 
   it('handles empty input', async () => {
     expect(await processText(new UnicodeNormalizePipe(), '')).toBe('');
+  });
+});
+
+describe('Base32 encoding', () => {
+  it('encodes bytes to standard Base32 (RFC 4648)', async () => {
+    expect(decode(await processBytes(new Base32EncodePipe(), []))).toBe('');
+    expect(decode(await processBytes(new Base32EncodePipe(), [0x66]))).toBe('MY======');
+    expect(decode(await processBytes(new Base32EncodePipe(), [0x66, 0x6F]))).toBe('MZXQ====');
+    expect(decode(await processBytes(new Base32EncodePipe(), [0x66, 0x6F, 0x6F]))).toBe('MZXW6===');
+    expect(decode(await processBytes(new Base32EncodePipe(), [0x66, 0x6F, 0x6F, 0x62]))).toBe('MZXW6YQ=');
+    expect(decode(await processBytes(new Base32EncodePipe(), [0x66, 0x6F, 0x6F, 0x62, 0x61]))).toBe('MZXW6YTB');
+  });
+
+  it('encodes without padding when padding is disabled', async () => {
+    const pipe = new Base32EncodePipe();
+    pipe.setConfig('padding', false);
+    expect(decode(await processBytes(pipe, [0x66]))).toBe('MY');
+  });
+
+  it('encodes to Base32hex alphabet', async () => {
+    const pipe = new Base32EncodePipe();
+    pipe.setConfig('alphabet', 'base32hex');
+    expect(decode(await processBytes(pipe, [0x66, 0x6F, 0x6F]))).toBe('CPNMU===');
+  });
+
+  it('decodes standard Base32 to bytes', async () => {
+    expect([...await processBytes(new Base32DecodePipe(), encode('MY======'))]).toEqual([0x66]);
+    expect([...await processBytes(new Base32DecodePipe(), encode('MZXW6YTB'))]).toEqual([0x66, 0x6F, 0x6F, 0x62, 0x61]);
+  });
+
+  it('decodes without padding (loose mode)', async () => {
+    expect([...await processBytes(new Base32DecodePipe(), encode('MY'))]).toEqual([0x66]);
+  });
+
+  it('round trips arbitrary bytes', async () => {
+    const bytes = Array.from({ length: 30 }, (_, i) => i);
+    const encoded = await processBytes(new Base32EncodePipe(), bytes);
+    expect([...await processBytes(new Base32DecodePipe(), encoded)]).toEqual(bytes);
+  });
+
+  it('scores decode appropriateness correctly', () => {
+    expect(Base32DecodePipe.getInputAppropriateness(null)).toBe(0);
+    expect(Base32DecodePipe.getInputAppropriateness(new Uint8Array())).toBe(0);
+    // Requires total length >= 8 to avoid false positives on short letter strings
+    expect(Base32DecodePipe.getInputAppropriateness(encode('MZXW6YTB'))).toBe(8);
+    expect(Base32DecodePipe.getInputAppropriateness(encode('MZXW6==='))).toBe(8);
+    expect(Base32DecodePipe.getInputAppropriateness(encode('MY======'))).toBe(8);
+    // Base32hex inputs that contain digits (0-9) are scored as 7
+    // Note: 'CPNMU===' matches both alphabets, so it scores as standard base32 (8)
+    expect(Base32DecodePipe.getInputAppropriateness(encode('00000000'))).toBe(7);
+    // Short inputs (total length < 8) score 0
+    expect(Base32DecodePipe.getInputAppropriateness(encode('MY'))).toBe(0);
+    expect(Base32DecodePipe.getInputAppropriateness(encode('Hello'))).toBe(0);
+    expect(Base32DecodePipe.getInputAppropriateness(encode('hello!'))).toBe(-10);
+  });
+
+  it('rejects invalid Base32 input', async () => {
+    await expect(processBytes(new Base32DecodePipe(), encode('MZXW!@#$'))).rejects
+      .toMatchObject({ message: /Invalid Base32/ });
+  });
+});
+
+describe('Base58 encoding', () => {
+  it('encodes bytes to Base58', async () => {
+    expect(decode(await processBytes(new Base58EncodePipe(), []))).toBe('');
+    expect(decode(await processBytes(new Base58EncodePipe(), [0x00]))).toBe('1');
+    expect(decode(await processBytes(new Base58EncodePipe(), [0x00, 0x00, 0x28, 0x7f, 0xb4, 0xcd]))).toBe('11233QC4');
+  });
+
+  it('decodes Base58 to bytes', async () => {
+    expect([...await processBytes(new Base58DecodePipe(), encode('1'))]).toEqual([0x00]);
+    expect([...await processBytes(new Base58DecodePipe(), encode('11233QC4'))]).toEqual([0x00, 0x00, 0x28, 0x7f, 0xb4, 0xcd]);
+  });
+
+  it('round trips arbitrary bytes', async () => {
+    const bytes = [1, 2, 3, 4, 5, 200, 201, 202];
+    const encoded = await processBytes(new Base58EncodePipe(), bytes);
+    expect([...await processBytes(new Base58DecodePipe(), encoded)]).toEqual(bytes);
+  });
+
+  it('scores decode appropriateness correctly', () => {
+    expect(Base58DecodePipe.getInputAppropriateness(null)).toBe(0);
+    expect(Base58DecodePipe.getInputAppropriateness(new Uint8Array())).toBe(0);
+    expect(Base58DecodePipe.getInputAppropriateness(encode('11233QC4'))).toBe(7);
+    // Chars excluded from Base58: 0, O, I, l
+    expect(Base58DecodePipe.getInputAppropriateness(encode('0ABC'))).toBe(-10);
+    expect(Base58DecodePipe.getInputAppropriateness(encode('OldMan'))).toBe(-10);
+  });
+
+  it('rejects invalid Base58 input', async () => {
+    await expect(processBytes(new Base58DecodePipe(), encode('0OIl'))).rejects
+      .toMatchObject({ message: /Invalid Base58/ });
+  });
+});
+
+describe('Ascii85 encoding', () => {
+  it('encodes bytes to Ascii85 without delimiters', async () => {
+    // All-zero 4-byte group encodes as 'z'
+    expect(decode(await processBytes(new Ascii85EncodePipe(), [0, 0, 0, 0]))).toBe('z');
+    // "Man " encodes to "9jqo^"
+    expect(decode(await processBytes(new Ascii85EncodePipe(), [0x4D, 0x61, 0x6E, 0x20]))).toBe('9jqo^');
+  });
+
+  it('decodes Ascii85 to bytes', async () => {
+    expect([...await processBytes(new Ascii85DecodePipe(), encode('z'))]).toEqual([0, 0, 0, 0]);
+    expect([...await processBytes(new Ascii85DecodePipe(), encode('9jqo^'))]).toEqual([0x4D, 0x61, 0x6E, 0x20]);
+  });
+
+  it('decodes Ascii85 with <~ ~> delimiters', async () => {
+    expect([...await processBytes(new Ascii85DecodePipe(), encode('<~9jqo^~>'))]).toEqual([0x4D, 0x61, 0x6E, 0x20]);
+  });
+
+  it('round trips arbitrary bytes', async () => {
+    const bytes = Array.from({ length: 20 }, (_, i) => i * 13);
+    const encoded = await processBytes(new Ascii85EncodePipe(), bytes);
+    expect([...await processBytes(new Ascii85DecodePipe(), encoded)]).toEqual(bytes);
+  });
+
+  it('scores decode appropriateness correctly', () => {
+    expect(Ascii85DecodePipe.getInputAppropriateness(null)).toBe(0);
+    expect(Ascii85DecodePipe.getInputAppropriateness(new Uint8Array())).toBe(0);
+    // Requires at least 8 chars to avoid false positives on short printable strings
+    expect(Ascii85DecodePipe.getInputAppropriateness(encode('9jqo^BlbD'))).toBe(7);
+    expect(Ascii85DecodePipe.getInputAppropriateness(encode('<~9jqo^~>'))).toBe(7);
+    // Short inputs (< 8 chars of content) score 0
+    expect(Ascii85DecodePipe.getInputAppropriateness(encode('9jqo^'))).toBe(0);
+    // Chars outside Ascii85 range
+    expect(Ascii85DecodePipe.getInputAppropriateness(encode('~}{longstring'))).toBe(0);
+  });
+});
+
+describe('Punycode (IDN) encoding', () => {
+  it('converts Unicode domain to Punycode ASCII', async () => {
+    expect(await processText(new PunycodeEncodePipe(), 'münchen.de')).toBe('xn--mnchen-3ya.de');
+    expect(await processText(new PunycodeEncodePipe(), 'example.com')).toBe('example.com');
+  });
+
+  it('converts Punycode ASCII domain to Unicode', async () => {
+    expect(await processText(new PunycodeDecodePipe(), 'xn--mnchen-3ya.de')).toBe('münchen.de');
+    expect(await processText(new PunycodeDecodePipe(), 'example.com')).toBe('example.com');
+  });
+
+  it('round trips internationalized domain names', async () => {
+    const domain = '日本語.jp';
+    const ascii = await processText(new PunycodeEncodePipe(), domain);
+    expect(ascii).toMatch(/^xn--/);
+    expect(await processText(new PunycodeDecodePipe(), ascii)).toBe(domain);
+  });
+
+  it('handles empty input', async () => {
+    expect(await processText(new PunycodeEncodePipe(), '')).toBe('');
+    expect(await processText(new PunycodeDecodePipe(), '')).toBe('');
+  });
+
+  it('scores decode appropriateness correctly', () => {
+    expect(PunycodeDecodePipe.getInputAppropriateness(null)).toBe(0);
+    expect(PunycodeDecodePipe.getInputAppropriateness(new Uint8Array())).toBe(0);
+    expect(PunycodeDecodePipe.getInputAppropriateness(encode('xn--mnchen-3ya.de'))).toBe(10);
+    expect(PunycodeDecodePipe.getInputAppropriateness(encode('sub.xn--nxasmq6b.com'))).toBe(10);
+    expect(PunycodeDecodePipe.getInputAppropriateness(encode('example.com'))).toBe(0);
+    expect(PunycodeDecodePipe.getInputAppropriateness(new Uint8Array([0xff]))).toBe(-10);
+  });
+});
+
+describe('CSS Escape/Unescape', () => {
+  it('escapes special characters for CSS identifiers', async () => {
+    expect(await processText(new CssEscapePipe(), 'hello world')).toBe('hello\\ world');
+    expect(await processText(new CssEscapePipe(), 'a#b')).toBe('a\\#b');
+    expect(await processText(new CssEscapePipe(), '1abc')).toBe('\\31 abc');
+  });
+
+  it('leaves safe identifier characters unescaped', async () => {
+    expect(await processText(new CssEscapePipe(), 'hello-world_123')).toBe('hello-world_123');
+    expect(await processText(new CssEscapePipe(), 'myClass')).toBe('myClass');
+  });
+
+  it('handles empty input', async () => {
+    expect(await processText(new CssEscapePipe(), '')).toBe('');
+    expect(await processText(new CssUnescapePipe(), '')).toBe('');
+  });
+
+  it('unescapes CSS hex escape sequences', async () => {
+    expect(await processText(new CssUnescapePipe(), '\\41 ')).toBe('A');
+    expect(await processText(new CssUnescapePipe(), '\\000041 ')).toBe('A');
+    expect(await processText(new CssUnescapePipe(), '\\1F600 ')).toBe('😀');
+  });
+
+  it('unescapes CSS non-hex backslash sequences', async () => {
+    expect(await processText(new CssUnescapePipe(), 'hello\\ world')).toBe('hello world');
+    expect(await processText(new CssUnescapePipe(), 'a\\#b')).toBe('a#b');
+  });
+
+  it('removes CSS line continuations (backslash-newline)', async () => {
+    expect(await processText(new CssUnescapePipe(), 'hel\\\nlo')).toBe('hello');
+  });
+
+  it('round trips CSS escaping', async () => {
+    const source = 'my #id .class > [attr="val"]';
+    const escaped = await processText(new CssEscapePipe(), source);
+    expect(await processText(new CssUnescapePipe(), escaped)).toBe(source);
+  });
+
+  it('scores unescape appropriateness correctly', () => {
+    expect(CssUnescapePipe.getInputAppropriateness(null)).toBe(0);
+    expect(CssUnescapePipe.getInputAppropriateness(new Uint8Array())).toBe(0);
+    expect(CssUnescapePipe.getInputAppropriateness(encode('\\41 '))).toBe(8);
+    expect(CssUnescapePipe.getInputAppropriateness(encode('hello\\ world'))).toBe(8);
+    expect(CssUnescapePipe.getInputAppropriateness(encode('plain text'))).toBe(0);
+    expect(CssUnescapePipe.getInputAppropriateness(new Uint8Array([0xff]))).toBe(-10);
+  });
+});
+
+describe('Character Width Conversion', () => {
+  it('converts fullwidth ASCII to halfwidth', async () => {
+    // Fullwidth 'Ａ' (U+FF21) → 'A', fullwidth '！' (U+FF01) → '!'
+    expect(await processText(new CharWidthToHalfwidthPipe(), '\uFF21\uFF22\uFF23')).toBe('ABC');
+    expect(await processText(new CharWidthToHalfwidthPipe(), '\uFF01')).toBe('!');
+    expect(await processText(new CharWidthToHalfwidthPipe(), '\uFF5E')).toBe('~');
+  });
+
+  it('converts ideographic space to ASCII space', async () => {
+    expect(await processText(new CharWidthToHalfwidthPipe(), '\u3000')).toBe(' ');
+  });
+
+  it('converts halfwidth ASCII to fullwidth', async () => {
+    expect(await processText(new CharWidthToFullwidthPipe(), 'ABC')).toBe('\uFF21\uFF22\uFF23');
+    expect(await processText(new CharWidthToFullwidthPipe(), '!')).toBe('\uFF01');
+    expect(await processText(new CharWidthToFullwidthPipe(), '~')).toBe('\uFF5E');
+  });
+
+  it('converts ASCII space to ideographic space', async () => {
+    expect(await processText(new CharWidthToFullwidthPipe(), ' ')).toBe('\u3000');
+  });
+
+  it('leaves non-ASCII/non-ASCII-range characters unchanged', async () => {
+    expect(await processText(new CharWidthToHalfwidthPipe(), '日本語')).toBe('日本語');
+    expect(await processText(new CharWidthToFullwidthPipe(), '日本語')).toBe('日本語');
+  });
+
+  it('handles empty input', async () => {
+    expect(await processText(new CharWidthToHalfwidthPipe(), '')).toBe('');
+    expect(await processText(new CharWidthToFullwidthPipe(), '')).toBe('');
+  });
+
+  it('scores halfwidth appropriateness for inputs containing fullwidth chars', () => {
+    expect(CharWidthToHalfwidthPipe.getInputAppropriateness(null)).toBe(0);
+    expect(CharWidthToHalfwidthPipe.getInputAppropriateness(encode('\uFF21'))).toBe(8);
+    expect(CharWidthToHalfwidthPipe.getInputAppropriateness(encode('\u3000'))).toBe(8);
+    expect(CharWidthToHalfwidthPipe.getInputAppropriateness(encode('ABC'))).toBe(0);
+  });
+
+  it('scores fullwidth appropriateness for inputs containing ASCII chars', () => {
+    expect(CharWidthToFullwidthPipe.getInputAppropriateness(null)).toBe(0);
+    expect(CharWidthToFullwidthPipe.getInputAppropriateness(encode('ABC'))).toBe(5);
+    expect(CharWidthToFullwidthPipe.getInputAppropriateness(encode('\uFF21'))).toBe(0);
+  });
+});
+
+describe('String Reverse', () => {
+  it('reverses ASCII strings', async () => {
+    expect(await processText(new StringReversePipe(), 'hello')).toBe('olleh');
+    expect(await processText(new StringReversePipe(), 'abcde')).toBe('edcba');
+  });
+
+  it('handles empty input', async () => {
+    expect(await processText(new StringReversePipe(), '')).toBe('');
+  });
+
+  it('handles single character', async () => {
+    expect(await processText(new StringReversePipe(), 'a')).toBe('a');
+  });
+
+  it('preserves emoji grapheme clusters (grapheme-safe reversal)', async () => {
+    // Without grapheme-awareness, 😀 would split into surrogate pairs
+    const result = await processText(new StringReversePipe(), 'ab😀');
+    expect(result).toBe('😀ba');
+  });
+
+  it('preserves combining characters', async () => {
+    // é = e + combining acute accent (U+0301)
+    const result = await processText(new StringReversePipe(), 'ae\u0301b');
+    expect(result).toBe('be\u0301a');
+  });
+});
+
+describe('PercentEncode custom mode', () => {
+  it('encodes only characters matching the custom pattern', async () => {
+    const pipe = new PercentEncodePipe();
+    pipe.setConfig('mode', 'custom');
+    pipe.setConfig('customPattern', '[^A-Za-z0-9]');
+    expect(await processText(pipe, 'Hello World!')).toBe('Hello%20World%21');
+  });
+
+  it('encodes only whitespace when pattern is \\s', async () => {
+    const pipe = new PercentEncodePipe();
+    pipe.setConfig('mode', 'custom');
+    pipe.setConfig('customPattern', '\\s');
+    expect(await processText(pipe, 'hello world\ttab')).toBe('hello%20world%09tab');
+  });
+
+  it('handles empty input in custom mode', async () => {
+    const pipe = new PercentEncodePipe();
+    pipe.setConfig('mode', 'custom');
+    expect(await processText(pipe, '')).toBe('');
+  });
+
+  it('throws PipeError on invalid regex pattern', async () => {
+    const pipe = new PercentEncodePipe();
+    pipe.setConfig('mode', 'custom');
+    pipe.setConfig('customPattern', '[invalid');
+    await expect(processText(pipe, 'test')).rejects
+      .toMatchObject({ message: /Invalid custom pattern/ });
+  });
+
+  it('encodes multibyte UTF-8 characters correctly', async () => {
+    const pipe = new PercentEncodePipe();
+    pipe.setConfig('mode', 'custom');
+    pipe.setConfig('customPattern', '[^A-Za-z0-9]');
+    // © (U+00A9) is 2 bytes in UTF-8: 0xC2 0xA9
+    expect(await processText(pipe, '©')).toBe('%C2%A9');
+  });
+});
+
+describe('MimeHeaderEncode', () => {
+  it('encodes non-ASCII text as Base64 encoded word (B encoding)', async () => {
+    const pipe = new MimeHeaderEncodePipe();
+    const result = await processText(pipe, 'Héllo');
+    // Should produce a valid RFC 2047 encoded word
+    expect(result).toMatch(/^=\?UTF-8\?B\?[A-Za-z0-9+/=]+\?=$/);
+  });
+
+  it('leaves pure ASCII content unchanged (no encoding needed)', async () => {
+    expect(await processText(new MimeHeaderEncodePipe(), 'Hello')).toBe('Hello');
+  });
+
+  it('encodes as Q (Quoted-Printable) when transferEncoding is Q', async () => {
+    const pipe = new MimeHeaderEncodePipe();
+    pipe.setConfig('transferEncoding', 'Q');
+    const result = await processText(pipe, 'Héllo');
+    expect(result).toMatch(/^=\?UTF-8\?Q\?/);
+  });
+
+  it('round trips non-ASCII content via B encoding', async () => {
+    const source = 'Héllo Wörld';
+    const encoded = await processText(new MimeHeaderEncodePipe(), source);
+    expect(encoded).toMatch(/^=\?UTF-8\?B\?/);
+    expect(await processText(new MimeHeaderDecodePipe(), encoded)).toBe(source);
+  });
+
+  it('handles empty input', async () => {
+    expect(await processText(new MimeHeaderEncodePipe(), '')).toBe('');
   });
 });

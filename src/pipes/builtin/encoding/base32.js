@@ -66,10 +66,11 @@ export class Base32DecodePipe extends Pipe {
       return -10;
     }
     if (text.length === 0) return 0;
-    // Standard Base32: A-Z 2-7 with optional = padding
-    if (/^[A-Z2-7]+=*$/.test(text) && text.replace(/=+$/, '').length > 0) return 8;
+    // Standard Base32: A-Z 2-7 with optional = padding.
+    // Require total length >= 8 to avoid false positives on short letter strings.
+    if (/^[A-Z2-7]+=*$/.test(text)) return text.length >= 8 ? 8 : 0;
     // Base32hex: 0-9 A-V with optional = padding
-    if (/^[0-9A-V]+=*$/.test(text) && text.replace(/=+$/, '').length > 0) return 7;
+    if (/^[0-9A-V]+=*$/.test(text)) return text.length >= 8 ? 7 : 0;
     return -10;
   }
 

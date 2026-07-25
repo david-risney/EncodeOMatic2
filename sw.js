@@ -74,7 +74,6 @@ const PRECACHE_URLS = [
   './vendor/mime-codec.js',
   './vendor/rfc4648.js',
   './vendor/bs58.js',
-  './vendor/ascii85.js',
   './vendor/punycode.js',
 ];
 

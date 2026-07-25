@@ -18,6 +18,10 @@ function scoreHtmlEntities(input) {
     return -10;
   }
 
+  if (!text.includes('&')) return 0;
+  // Malformed: & followed by non-space/non-semicolon content ending with whitespace or end-of-string
+  if (/&[a-zA-Z#][^;&\s]*(?:\s|$)/u.test(text)) return -10;
+
   let found = false;
   for (const match of text.matchAll(/&([^&\s;]*);/g)) {
     const entity = match[1];
@@ -27,12 +31,16 @@ function scoreHtmlEntities(input) {
     } else if (/^#[0-9]+$/.test(entity)) {
       const cp = parseInt(entity.slice(1), 10);
       if (cp > 0x10FFFF) return -10;
+    } else if (/^#/.test(entity)) {
+      // Looks like a numeric ref but malformed (e.g. &#xZZZ;)
+      return -10;
+    } else if (/^[a-zA-Z][a-zA-Z0-9]*$/.test(entity)) {
+      // Check if he recognizes this named entity — unknown ones pass through unchanged
+      const testStr = `&${entity};`;
+      if (he.decode(testStr) === testStr) return -10;
     }
-    // he.decode will return the entity unchanged if unknown — treat unknown names
-    // as valid candidates since they may still decode
     found = true;
   }
-  if (/&#(?:x)?[^&\s;]*(?:\s|$)/i.test(text)) return -10;
   return found ? 10 : 0;
 }
 

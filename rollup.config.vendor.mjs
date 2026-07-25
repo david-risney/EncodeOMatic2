@@ -14,7 +14,6 @@ const vendors = [
   ['scripts/mime-codec-entry.js',        'vendor/mime-codec.js'],
   ['scripts/rfc4648-entry.js',           'vendor/rfc4648.js'],
   ['scripts/bs58-entry.js',              'vendor/bs58.js'],
-  ['scripts/ascii85-entry.js',           'vendor/ascii85.js'],
   ['scripts/punycode-entry.js',          'vendor/punycode.js'],
 ];
 

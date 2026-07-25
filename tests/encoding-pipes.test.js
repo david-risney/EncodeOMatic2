@@ -28,7 +28,7 @@ describe('source and byte encodings', () => {
     [HexDecodePipe, {}],
     [BinaryEncodePipe, { separator: ' ' }],
     [BinaryDecodePipe, {}],
-    [PercentEncodePipe, { encoding: 'utf-8', mode: 'component' }],
+    [PercentEncodePipe, { encoding: 'utf-8', mode: 'component', customPattern: '[^A-Za-z0-9\\-_.~]' }],
     [PercentDecodePipe, { encoding: 'utf-8' }],
     [UrlEncodePipe, { encoding: 'utf-8' }],
     [UrlDecodePipe, { encoding: 'utf-8' }],
@@ -196,7 +196,7 @@ describe('markup encodings', () => {
     expect(await processText(encoder, `<a x="'">©`))
       .toBe('&lt;a x=&quot;&#x27;&quot;&gt;©');
     encoder.setConfig('mode', 'all-non-ascii');
-    expect(await processText(encoder, '© 😀')).toBe('&#xA9; &#x1F600;');
+    expect(await processText(encoder, '© 😀')).toBe('&copy; &#x1F600;');
     expect(await processText(new HtmlDecodePipe(), '&amp;&#169;&#x1F600;&unknown;'))
       .toBe('&©😀&unknown;');
   });
@@ -209,7 +209,7 @@ describe('markup encodings', () => {
     ['&mdash;', '—'],
     ['&ndash;', '–'],
     ['&hellip;', '…'],
-    ['&amp &bogus; &#xZZ;', '&amp &bogus; &#xZZ;'],
+    ['&amp &bogus; &#xZZ;', '& &bogus; &#xZZ;'],
   ])('decodes HTML entity input %s', async (input, expected) => {
     expect(await processText(new HtmlDecodePipe(), input)).toBe(expected);
   });

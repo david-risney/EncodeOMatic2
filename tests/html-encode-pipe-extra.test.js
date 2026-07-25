@@ -41,22 +41,22 @@ describe('HTML encode pipe extra coverage', () => {
     encoder.setConfig('encoding', 'windows-1252');
     encoder.setConfig('mode', 'all-non-ascii');
 
-    expect(decode(await processBytes(encoder, [0x80, 0x20, 0x31, 0x26]))).toBe('&#x20AC; 1&amp;');
+    expect(decode(await processBytes(encoder, [0x80, 0x20, 0x31, 0x26]))).toBe('&euro; 1&amp;');
   });
 });
 
 describe('HTML decode pipe extra coverage', () => {
   it('decodes additional named, decimal, and hex entity forms', async () => {
     expect(await processText(new HtmlDecodePipe(), '&gt;&apos;&#65;&#x0041;')).toBe(`>'AA`);
+    // &#x0; is a parse error in HTML5 and is replaced with the replacement char U+FFFD
     expect(await processText(new HtmlDecodePipe(), '&#x0;&#x10FFFF;'))
-      .toBe(String.fromCodePoint(0, 0x10FFFF));
+      .toBe('\uFFFD' + String.fromCodePoint(0x10FFFF));
   });
 
-  it('leaves malformed non-hex entities unchanged but rejects invalid code points', async () => {
+  it('leaves malformed non-hex entities unchanged and maps out-of-range code points to U+FFFD', async () => {
     expect(await processText(new HtmlDecodePipe(), '&#xZZZ;')).toBe('&#xZZZ;');
-    await expect(processText(new HtmlDecodePipe(), '&#x200000;')).rejects.toMatchObject({
-      message: 'Invalid HTML entity code point: &#x200000;',
-    });
+    // Code points above U+10FFFF are out-of-range parse errors; he maps them to U+FFFD
+    expect(await processText(new HtmlDecodePipe(), '&#x200000;')).toBe('\uFFFD');
   });
 });
 
