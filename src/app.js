@@ -21,7 +21,7 @@ import {
 import { guessPipeChain } from './guess.js';
 import { randomSessionName } from './session-name.js';
 import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
-import { APP_VERSION } from './version.js';
+import { APP_COMMIT } from './version.js';
 import { getInstallPrompt, clearInstallPrompt, isInstalledPWA } from './services/install.js';
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
@@ -219,7 +219,7 @@ function initAboutDialog() {
     updateInstallStatus();
   };
 
-  document.getElementById('about-version').textContent = APP_VERSION;
+  document.getElementById('about-version').textContent = APP_COMMIT;
   document.querySelectorAll('[data-about-trigger]').forEach(button => {
     button.addEventListener('click', showAboutDialog);
   });
@@ -249,22 +249,22 @@ function initAboutDialog() {
       const response = await fetch(versionUrl, { cache: 'no-store' });
       if (!response.ok) throw new Error(`Update check returned ${response.status}`);
       const versionSource = await response.text();
-      const latestVersion = versionSource
-        .match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/)?.[1];
-      if (!latestVersion) throw new Error('Update check returned an invalid version');
+      const latestCommit = versionSource
+        .match(/APP_COMMIT\s*=\s*['"]([^'"]+)['"]/)?.[1];
+      if (!latestCommit) throw new Error('Update check returned an invalid commit');
       if (currentCheck !== checkId) return;
 
       checkUpdatesButton.disabled = false;
-      if (latestVersion === APP_VERSION) {
+      if (latestCommit === APP_COMMIT) {
         status.className = 'update-status success';
         status.textContent = 'Encode-O-Matic 2 is up to date.';
         return;
       }
 
-      availableVersion = latestVersion;
+      availableVersion = latestCommit;
       status.className = 'update-status';
-      status.textContent = `Version ${latestVersion} is available.`;
-      updateButton.textContent = `Update to version ${latestVersion}`;
+      status.textContent = 'A new version is available.';
+      updateButton.textContent = 'Update';
       updateButton.hidden = false;
     } catch (error) {
       if (currentCheck !== checkId) return;
