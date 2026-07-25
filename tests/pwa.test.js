@@ -59,4 +59,21 @@ describe('PWA assets', () => {
       expect(workerSource).toContain(`'./src/${modulePath}'`);
     }
   });
+
+  it('keeps committed vendor modules browser-safe', async () => {
+    const vendorDir = resolve(root, 'vendor');
+    const vendorFiles = (await readdir(vendorDir))
+      .filter((file) => file.endsWith('.js'));
+    const browserBlockingImports = /\bfrom ['"](?:node:)?(?:fs|path|stream|util)['"]/;
+
+    expect(vendorFiles.length).toBeGreaterThan(0);
+
+    const sources = await Promise.all(
+      vendorFiles.map(async (file) => [file, await readFile(resolve(vendorDir, file), 'utf8')])
+    );
+
+    for (const [file, source] of sources) {
+      expect(source, file).not.toMatch(browserBlockingImports);
+    }
+  });
 });
