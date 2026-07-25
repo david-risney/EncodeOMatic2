@@ -13849,14 +13849,21 @@ function requireStreams () {
 	return streams;
 }
 
-var _nodeResolve_empty = {};
-
-var _nodeResolve_empty$1 = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	default: _nodeResolve_empty
+const unsupported = new Proxy({}, {
+  get(_target, property) {
+    throw new Error(
+      'Node built-in module ' + "stream" +
+      ' is unavailable in browsers; attempted to access "' + String(property) + '".'
+    );
+  },
 });
 
-var require$$5 = /*@__PURE__*/getAugmentedNamespace(_nodeResolve_empty$1);
+var _browserBuiltinShim_stream = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	default: unsupported
+});
+
+var require$$5 = /*@__PURE__*/getAugmentedNamespace(_browserBuiltinShim_stream);
 
 lib.exports;
 
