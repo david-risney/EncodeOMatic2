@@ -1,8 +1,34 @@
-import require$$1 from 'path';
-import require$$2 from 'fs';
-
 function getDefaultExportFromCjs (x) {
 	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+}
+
+function getAugmentedNamespace(n) {
+  if (Object.prototype.hasOwnProperty.call(n, '__esModule')) return n;
+  var f = n.default;
+	if (typeof f == "function") {
+		var a = function a () {
+			var isInstance = false;
+      try {
+        isInstance = this instanceof a;
+      } catch (e) {}
+			if (isInstance) {
+        return Reflect.construct(f, arguments, this.constructor);
+			}
+			return f.apply(this, arguments);
+		};
+		a.prototype = f.prototype;
+  } else a = {};
+  Object.defineProperty(a, '__esModule', {value: true});
+	Object.keys(n).forEach(function (k) {
+		var d = Object.getOwnPropertyDescriptor(n, k);
+		Object.defineProperty(a, k, d.get ? d : {
+			enumerable: true,
+			get: function () {
+				return n[k];
+			}
+		});
+	});
+	return a;
 }
 
 var nearley$2 = {exports: {}};
@@ -587,6 +613,38 @@ var nearleyExports = requireNearley();
 var nearley = /*@__PURE__*/getDefaultExportFromCjs(nearleyExports);
 
 var compile$2 = {exports: {}};
+
+const unsupported$1 = new Proxy({}, {
+  get(_target, property) {
+    throw new Error(
+      'Node built-in module ' + "path" +
+      ' is unavailable in browsers; attempted to access "' + String(property) + '".'
+    );
+  },
+});
+
+var _browserBuiltinShim_path = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	default: unsupported$1
+});
+
+var require$$1 = /*@__PURE__*/getAugmentedNamespace(_browserBuiltinShim_path);
+
+const unsupported = new Proxy({}, {
+  get(_target, property) {
+    throw new Error(
+      'Node built-in module ' + "fs" +
+      ' is unavailable in browsers; attempted to access "' + String(property) + '".'
+    );
+  },
+});
+
+var _browserBuiltinShim_fs = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	default: unsupported
+});
+
+var require$$2 = /*@__PURE__*/getAugmentedNamespace(_browserBuiltinShim_fs);
 
 var nearleyLanguageBootstrapped$1 = {exports: {}};
 
