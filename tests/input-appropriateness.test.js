@@ -8,6 +8,7 @@ import { HtmlDecodePipe } from '../src/pipes/builtin/encoding/html-encode.js';
 import { PercentDecodePipe } from '../src/pipes/builtin/encoding/percent.js';
 import { QuotedPrintableDecodePipe } from '../src/pipes/builtin/encoding/quoted-printable.js';
 import { SlashUnescapePipe } from '../src/pipes/builtin/encoding/slash-escape.js';
+import { MorseDecodePipe } from '../src/pipes/builtin/encoding/morse.js';
 import { UrlDecodePipe } from '../src/pipes/builtin/encoding/url-encode.js';
 import { XmlDecodePipe } from '../src/pipes/builtin/encoding/xml-encode.js';
 import { JsonParserPipe } from '../src/pipes/builtin/parsing/json-parser.js';
@@ -44,6 +45,9 @@ test('structured byte decoders score their accepted syntax', () => {
   expect(BinaryDecodePipe.getInputAppropriateness(encode('01000002'))).toBe(-10);
   expect(QuotedPrintableDecodePipe.getInputAppropriateness(encode('caf=C3=A9'))).toBe(8);
   expect(QuotedPrintableDecodePipe.getInputAppropriateness(encode('plain text'))).toBe(0);
+  expect(MorseDecodePipe.getInputAppropriateness(encode('... --- ...'))).toBe(7);
+  expect(MorseDecodePipe.getInputAppropriateness(encode('... --- ... / .----'))).toBe(8);
+  expect(MorseDecodePipe.getInputAppropriateness(encode('... _ ...'))).toBe(-10);
 });
 
 test('entity decoders require recognized, complete entities', () => {

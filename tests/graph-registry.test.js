@@ -241,6 +241,7 @@ describe('registry', () => {
       'CssEscape', 'CssUnescape',
       'UrlEncode', 'UrlDecode',
       'Rot',
+      'MorseEncode', 'MorseDecode',
       'GzipCompress', 'GzipDecompress',
       'DeflateCompress', 'DeflateDecompress',
       'FormUrlencodedEncode', 'FormUrlencodedDecode',
