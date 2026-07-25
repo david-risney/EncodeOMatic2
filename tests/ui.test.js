@@ -419,18 +419,19 @@ describe('GraphEditor', () => {
       position: { x: 240, y: 190 },
     });
     expect(editor._draftFrom).toBeNull();
+    // After the draft ends the graph has pipes, so the button moves to corner mode.
     expect(editor._addPipeControl.hidden).toBe(false);
-    expect(editor._addPipeControl.style.getPropertyValue('--graph-item-x')).toBe('330px');
-    expect(editor._addPipeControl.style.getPropertyValue('--graph-item-y')).toBe('270px');
+    expect(editor._addPipeControl.classList.contains('corner')).toBe(true);
+    expect(editor._addPipeControl.parentElement).toBe(editor._canvas);
   });
 
-  it('shows a centered add-pipe control even when the graph has pipes', () => {
+  it('shows the add-pipe control in corner mode when the graph has pipes', () => {
     setCanvasSize(editor);
     editor._syncAddPipeControl();
 
     expect(editor._addPipeControl.hidden).toBe(false);
-    expect(editor._addPipeControl.style.getPropertyValue('--graph-item-x')).toBe('330px');
-    expect(editor._addPipeControl.style.getPropertyValue('--graph-item-y')).toBe('270px');
+    expect(editor._addPipeControl.classList.contains('corner')).toBe(true);
+    expect(editor._addPipeControl.parentElement).toBe(editor._canvas);
   });
 
   it('shows a centered add-pipe control for an empty graph', () => {

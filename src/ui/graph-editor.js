@@ -827,8 +827,14 @@ class GraphEditor extends HTMLElement {
 
   _positionAddPipeControl(x, y) {
     if (!this._addPipeControl) return;
+    // Draft mode requires canvas-space coordinates, so the button must live in
+    // the inner (transformed) container regardless of whether pipes exist.
+    if (this._addPipeControl.parentElement !== this._inner) {
+      this._inner.appendChild(this._addPipeControl);
+    }
     this._addPipeControl.hidden = false;
     this._addPipeControl.classList.add('draft');
+    this._addPipeControl.classList.remove('corner');
     this._positionElement(this._addPipeControl, x - ADD_PIPE_CONTROL_WIDTH / 2, y - ADD_PIPE_CONTROL_HEIGHT / 2);
   }
 
@@ -850,7 +856,21 @@ class GraphEditor extends HTMLElement {
     if (!this._addPipeControl || this._draftFrom) return;
     this._addPipeControl.hidden = false;
     this._addPipeControl.classList.remove('draft');
-    this._positionAddPipeControlAtViewportCenter();
+    const hasPipes = (this._graph?.pipes.size ?? 0) > 0;
+    if (hasPipes) {
+      // Move out of the transformed inner container so pan/zoom doesn't affect it.
+      if (this._addPipeControl.parentElement !== this._canvas) {
+        this._canvas.appendChild(this._addPipeControl);
+      }
+      this._addPipeControl.classList.add('corner');
+    } else {
+      // Keep in the inner container, centered.
+      if (this._addPipeControl.parentElement !== this._inner) {
+        this._inner.appendChild(this._addPipeControl);
+      }
+      this._addPipeControl.classList.remove('corner');
+      this._positionAddPipeControlAtViewportCenter();
+    }
   }
 
   _requestAddPipe() {
@@ -858,14 +878,19 @@ class GraphEditor extends HTMLElement {
     const input = this._draftFrom
       ? { pipeId: this._draftFrom.pipeId, portName: this._draftFrom.portName }
       : null;
+    let x, y;
+    if (this._addPipeControl.classList.contains('corner')) {
+      // Convert viewport centre to canvas-space so the new pipe lands in view.
+      const width = this._canvas?.clientWidth ?? 0;
+      const height = this._canvas?.clientHeight ?? 0;
+      x = (width / 2 - this._panX) / this._scale - ADD_PIPE_CONTROL_WIDTH / 2;
+      y = (height / 2 - this._panY) / this._scale - ADD_PIPE_CONTROL_HEIGHT / 2;
+    } else {
+      x = parseFloat(this._addPipeControl.style.getPropertyValue('--graph-item-x')) || DEFAULT_ADD_PIPE_CONTROL_X;
+      y = parseFloat(this._addPipeControl.style.getPropertyValue('--graph-item-y')) || DEFAULT_ADD_PIPE_CONTROL_Y;
+    }
     this.dispatchEvent(new CustomEvent('add-pipe-request', {
-      detail: {
-        input,
-        position: {
-          x: parseFloat(this._addPipeControl.style.getPropertyValue('--graph-item-x')) || DEFAULT_ADD_PIPE_CONTROL_X,
-          y: parseFloat(this._addPipeControl.style.getPropertyValue('--graph-item-y')) || DEFAULT_ADD_PIPE_CONTROL_Y,
-        },
-      },
+      detail: { input, position: { x, y } },
       bubbles: true,
     }));
   }
