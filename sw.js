@@ -1,5 +1,5 @@
-const CACHE_PREFIX = 'encodeomatic2-v';
-const CACHE_NAME = 'encodeomatic2-v1.1.1';
+const CACHE_PREFIX = 'encodeomatic2-';
+const CACHE_NAME = 'encodeomatic2-dev';
 
 const PRECACHE_URLS = [
   './',

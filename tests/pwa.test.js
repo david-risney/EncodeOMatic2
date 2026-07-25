@@ -20,17 +20,17 @@ describe('PWA assets', () => {
     )).resolves.toHaveLength(assets.length);
   });
 
-  it('keeps app and cache versions synchronized', async () => {
+  it('keeps app and cache commits synchronized', async () => {
     const [versionSource, workerSource] = await Promise.all([
       readFile(resolve(root, 'src/version.js'), 'utf8'),
       readFile(resolve(root, 'sw.js'), 'utf8'),
     ]);
-    const appVersion = versionSource.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/)?.[1];
-    const cacheVersion = workerSource
-      .match(/CACHE_NAME\s*=\s*['"]encodeomatic2-v([^'"]+)['"]/)?.[1];
+    const appCommit = versionSource.match(/APP_COMMIT\s*=\s*['"]([^'"]+)['"]/)?.[1];
+    const cacheCommit = workerSource
+      .match(/CACHE_NAME\s*=\s*['"]encodeomatic2-([^'"]+)['"]/)?.[1];
 
-    expect(appVersion).toBeTruthy();
-    expect(cacheVersion).toBe(appVersion);
+    expect(appCommit).toBeTruthy();
+    expect(cacheCommit).toBe(appCommit);
   });
 
   it('only precaches assets that exist', async () => {
