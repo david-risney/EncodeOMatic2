@@ -23,6 +23,14 @@ npm run check
 npm test
 ```
 
+Every PR must bump the version. Run the bump script before opening a PR:
+
+```sh
+pwsh scripts/bump-version.ps1 <major.minor.patch>
+```
+
+The CI `version-bump` job enforces this on every pull request.
+
 For pull request reviews, prioritize functional regressions, security issues,
 missing edge-case coverage, and violations of the pipe architecture. Do not
 report formatting or stylistic preferences unless they affect correctness.

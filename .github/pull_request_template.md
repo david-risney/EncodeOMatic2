@@ -12,6 +12,7 @@
 
 - [ ] `npm run check`
 - [ ] `npm test`
+- [ ] Version bumped with `pwsh scripts/bump-version.ps1 <new-version>`
 
 ## Screenshots
 
