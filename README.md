@@ -20,47 +20,19 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 
 ### Encoding
 - **Base64 Encode / Decode**
-- **Base64url Encode / Decode**
 - **Percent Encode / Decode** (URL encoding, RFC 3986)
-- **Form URL Encode / Decode** (`application/x-www-form-urlencoded`)
 - **Hex Encode / Decode**
-- **Binary Encode / Decode** (base-2 bit strings)
 - **HTML Encode / Decode**
-- **XML Encode / Decode** (XML/SGML entities)
-- **Quoted-Printable Encode / Decode** (MIME Content-Transfer-Encoding)
-- **Unicode Escape Encode / Decode** (`\\uXXXX` / `\\u{...}`)
-- **Unicode Normalize** (NFC, NFD, NFKC, NFKD)
-- **Charset Decode / Encode** (all iconv-lite supported encodings)
+- **XML Encode / Decode**
+- **Charset Decode / Encode** (UTF-8, UTF-16, ISO-8859-1, GBK, Shift-JIS, and more)
+- **Binary Encode / Decode** (base-2 bit strings)
 - **Slash Escape / Unescape** (C-style backslash sequences)
 - **URL Encode / Decode** (`encodeURI` / `decodeURI`)
-- **ROT Cipher** (default ROT13 with configurable rotation)
-- **Gzip Compress / Decompress**
-- **Deflate Compress / Decompress**
-- **SHA Hash**
-- **HMAC**
-- **MIME Header Decode** (RFC 2047 encoded words)
 
 ### Parsing
 - **URL Parser** — splits a URL into protocol, hostname, path, query params (one output per param), hash
 - **JSON Parser** — parses JSON and exposes top-level keys as separate outputs
 - **Regex Match** — applies a regex and exposes capture groups as outputs
-- **Cookie Parser** — splits cookie header text into one output per cookie name
-- **CSV Parser** — parses CSV text into JSON output
-- **HTTP Request Parser** — parses HTTP request start line, headers, and body
-- **HTTP Response Parser** — parses status line, headers, and body
-- **JWT Parser** — decodes JWT header/payload/signature and parses JSON sections
-- **Search Params Parser** — parses query string into one output per parameter
-
-## Legacy conversion parity notes
-
-Compared with the original EncodeOMatic conversion help list, Encode-O-Matic 2
-still does **not** have dedicated built-in pipes for:
-
-- Character Width Conversion
-- IDN ToUnicode / IDN ToASCII
-- Reverse (byte/character/string modes)
-- Base Convert (custom source/destination alphabets)
-- CSS Encode / Decode
 
 ## Usage
 
