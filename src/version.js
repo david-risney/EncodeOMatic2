@@ -1,3 +1,3 @@
 // Single source of truth for the app version.
 // Bump with: pwsh scripts/bump-version.ps1 <major.minor.patch>
-export const APP_VERSION = '1.1.2';
+export const APP_VERSION = '1.1.3';
