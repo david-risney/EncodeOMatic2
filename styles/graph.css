@@ -164,6 +164,21 @@ graph-editor {
 
   &.draft { pointer-events: none; }
   &[hidden] { display: none; }
+
+  &.corner {
+    top: unset;
+    left: unset;
+    right: 12px;
+    bottom: 12px;
+    width: 32px;
+    min-height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    justify-content: center;
+
+    & span:first-child { font-size: 18px; }
+    & span:last-child { display: none; }
+  }
 }
 
 .port-wrapper {
