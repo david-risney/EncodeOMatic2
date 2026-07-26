@@ -45,6 +45,7 @@ const DEFAULT_ADD_PIPE_CONTROL_X = 60;
 const DEFAULT_ADD_PIPE_CONTROL_Y = 80;
 const INPUT_DROP_TARGET_PADDING_X = 18;
 const INPUT_DROP_TARGET_PADDING_Y = 16;
+const DRAFT_DROP_CLICK_TOLERANCE_PX = 14;
 
 // Drag plug ghost dimensions — must match the .drag-plug-ghost CSS rule.
 const DRAG_PLUG_WIDTH = 18;
@@ -69,7 +70,7 @@ class GraphEditor extends HTMLElement {
     this._interactionPointerId = null;
 
     // Connection draft state
-    this._draftFrom = null; // {pipeId, portName, portType, x, y}
+    this._draftFrom = null; // {pipeId, portName, portType, x, y, startClientX, startClientY}
     this._draftPath = null; // SVGPathElement
     this._draftPlug = null; // HTMLElement — floating plug ghost during drag
     this._draftTargetPort = null;
@@ -545,7 +546,15 @@ class GraphEditor extends HTMLElement {
       const portEl = this._portElements.get(`${pipeId}:output:${portName}`);
       if (!portEl) return;
       const pos = this._portCenter(portEl);
-      this._draftFrom = { pipeId, portName, portType: 'output', x: pos.x, y: pos.y };
+      this._draftFrom = {
+        pipeId,
+        portName,
+        portType: 'output',
+        x: pos.x,
+        y: pos.y,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+      };
       this._draftValidTargetPipeIds = this._collectDraftValidTargetPipeIds(pipeId);
       this._draftInputTargets = this._collectDraftInputTargets();
       this._canvas.classList.add('connecting');
@@ -690,6 +699,15 @@ class GraphEditor extends HTMLElement {
       this._isPanning = false;
     }
     if (this._draftFrom) {
+      if (this._isDraftDropNearOrigin(e.clientX, e.clientY)) {
+        const { pipeId, portName, portType } = this._draftFrom;
+        this._cancelDraft();
+        this.dispatchEvent(new CustomEvent('pipe-port-click', {
+          detail: { pipeId, portName, portType },
+          bubbles: true,
+        }));
+        return;
+      }
       const targetPort = this._draftTargetPort ?? this._findInputDropTarget(e.clientX, e.clientY);
       if (targetPort) {
         this._completeConnection(targetPort.dataset.pipeId, targetPort.dataset.portName);
@@ -964,6 +982,15 @@ class GraphEditor extends HTMLElement {
   _canConnectDraftTo(toPipeId) {
     if (!this._draftFrom || !this._graph) return false;
     return this._draftValidTargetPipeIds?.has(toPipeId) ?? false;
+  }
+
+  _isDraftDropNearOrigin(clientX, clientY) {
+    if (!this._draftFrom) return false;
+    const { startClientX, startClientY } = this._draftFrom;
+    if (!Number.isFinite(startClientX) || !Number.isFinite(startClientY)) return false;
+    const dx = clientX - startClientX;
+    const dy = clientY - startClientY;
+    return (dx * dx + dy * dy) <= (DRAFT_DROP_CLICK_TOLERANCE_PX * DRAFT_DROP_CLICK_TOLERANCE_PX);
   }
 
   _collectDraftValidTargetPipeIds(fromPipeId) {
