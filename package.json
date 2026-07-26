@@ -6,6 +6,7 @@
     "build:vendor": "rollup -c rollup.config.vendor.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "check": "node --check sw.js && find src tests -name \"*.js\" -print0 | xargs -0 -n1 node --check"
   },
   "repository": {
@@ -20,6 +21,7 @@
   },
   "homepage": "https://github.com/david-risney/EncodeOMatic2#readme",
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@rollup/plugin-commonjs": "^29.0.3",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",

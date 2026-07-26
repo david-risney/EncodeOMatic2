@@ -53,3 +53,5 @@ export class UrlDecodePipe extends StringPipe {
     }
   }
 }
+
+export const builtinPipes = [UrlEncodePipe, UrlDecodePipe];

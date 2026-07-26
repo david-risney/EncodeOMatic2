@@ -169,3 +169,5 @@ export class SlashUnescapePipe extends StringPipe {
     return out;
   }
 }
+
+export const builtinPipes = [SlashEscapePipe, SlashUnescapePipe];

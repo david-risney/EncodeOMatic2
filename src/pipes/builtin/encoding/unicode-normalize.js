@@ -25,3 +25,5 @@ export class UnicodeNormalizePipe extends StringPipe {
     return str.normalize(form);
   }
 }
+
+export const builtinPipes = [UnicodeNormalizePipe];

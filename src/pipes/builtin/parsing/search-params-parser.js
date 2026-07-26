@@ -75,3 +75,5 @@ export class SearchParamsParserPipe extends Pipe {
     return result;
   }
 }
+
+export const builtinPipes = [SearchParamsParserPipe];

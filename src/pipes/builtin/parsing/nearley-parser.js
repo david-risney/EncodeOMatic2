@@ -185,3 +185,5 @@ export class NearleyParserPipe extends Pipe {
     return out;
   }
 }
+
+export const builtinPipes = [NearleyParserPipe];

@@ -54,3 +54,5 @@ export class PunycodeDecodePipe extends StringPipe {
     }
   }
 }
+
+export const builtinPipes = [PunycodeEncodePipe, PunycodeDecodePipe];

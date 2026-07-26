@@ -70,3 +70,5 @@ export class KeccakHashPipe extends HashWasmPipe {
     return this.processWithHasher(inputs, () => createKeccak(bits), 'Keccak hashing failed');
   }
 }
+
+export const builtinPipes = [ShaHashPipe, Sha3HashPipe, KeccakHashPipe];

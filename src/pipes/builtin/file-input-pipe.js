@@ -64,3 +64,5 @@ export class FileInputPipe extends Pipe {
     return btoa(binary);
   }
 }
+
+export const builtinPipes = [FileInputPipe];

@@ -52,3 +52,5 @@ export class RotPipe extends StringPipe {
     return out;
   }
 }
+
+export const builtinPipes = [RotPipe];

@@ -13,10 +13,12 @@
 
 ## Coupled registrations
 
-The UI/deserializer registry and worker allowlist are separate by design. When
-adding or renaming a worker-executed pipe, update both
-`src/pipes/registry.js` and `src/worker/pipe-worker.js`, plus their tests.
-Stable `typeName` values are persisted in URLs and IndexedDB.
+Built-in registration now flows through per-module `builtinPipes` exports and
+the ordered category indexes under `src/pipes/builtin/`. The main-thread
+registry and worker allowlist both derive from that shared list, so adding a
+pipe means updating its module export and the relevant category index rather
+than editing multiple registries. Stable `typeName` values are still persisted
+in URLs and IndexedDB.
 
 ## Dynamic ports
 
