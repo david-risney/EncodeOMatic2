@@ -32,7 +32,7 @@ function findHeaderBodySeparator(data) {
 export class HttpRequestParserPipe extends Pipe {
   static typeName = 'HttpRequestParser';
   static typeDescription = 'HTTP Request Parse';
-  static category = 'Parsing';
+  static category = 'Web';
   static categoryDescription = 'Parse a raw HTTP/1.1 request into its components.';
 
   static getInputAppropriateness(input) {

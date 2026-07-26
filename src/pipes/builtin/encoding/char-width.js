@@ -59,7 +59,7 @@ function hasHalfwidthAscii(text) {
 export class CharWidthToHalfwidthPipe extends StringPipe {
   static typeName = 'CharWidthToHalfwidth';
   static typeDescription = 'Fullwidth to Halfwidth';
-  static category = 'Encoding';
+  static category = 'Character Sets';
   static categoryDescription = 'Convert Unicode fullwidth characters to ASCII halfwidth equivalents.';
 
   static getInputAppropriateness(input) {
@@ -81,7 +81,7 @@ export class CharWidthToHalfwidthPipe extends StringPipe {
 export class CharWidthToFullwidthPipe extends StringPipe {
   static typeName = 'CharWidthToFullwidth';
   static typeDescription = 'Halfwidth to Fullwidth';
-  static category = 'Encoding';
+  static category = 'Character Sets';
   static categoryDescription = 'Convert ASCII halfwidth characters to Unicode fullwidth equivalents.';
 
   static getInputAppropriateness(input) {

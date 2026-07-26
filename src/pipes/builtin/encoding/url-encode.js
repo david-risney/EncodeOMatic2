@@ -9,7 +9,7 @@ import { PipeError } from '../../pipe.js';
 export class UrlEncodePipe extends StringPipe {
   static typeName = 'UrlEncode';
   static typeDescription = 'URL Encode';
-  static category = 'Encoding';
+  static category = 'URL Encoding';
   static categoryDescription = 'Encode a URI using encodeURI (preserves URI structure characters).';
 
   async processString(input) {
@@ -24,7 +24,7 @@ export class UrlEncodePipe extends StringPipe {
 export class UrlDecodePipe extends StringPipe {
   static typeName = 'UrlDecode';
   static typeDescription = 'URL Decode';
-  static category = 'Encoding';
+  static category = 'URL Encoding';
   static categoryDescription = 'Decode a URI using decodeURI.';
 
   static getInputAppropriateness(input) {

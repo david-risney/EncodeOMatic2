@@ -81,7 +81,7 @@ function tokenizeMorse(input) {
 export class MorseEncodePipe extends StringPipe {
   static typeName = 'MorseEncode';
   static typeDescription = 'Morse Code Encode';
-  static category = 'Encoding';
+  static category = 'String Transform';
   static categoryDescription = 'Encode text to International Morse code with "/" as a word separator.';
 
   async processString(input) {
@@ -105,7 +105,7 @@ export class MorseEncodePipe extends StringPipe {
 export class MorseDecodePipe extends StringPipe {
   static typeName = 'MorseDecode';
   static typeDescription = 'Morse Code Decode';
-  static category = 'Encoding';
+  static category = 'String Transform';
   static categoryDescription = 'Decode International Morse code (letters separated by spaces, words by "/").';
 
   static getInputAppropriateness(input) {

@@ -20,7 +20,7 @@ function getSeed64(pipe) {
 export class XxHash32Pipe extends HashWasmPipe {
   static typeName = 'XxHash32';
   static typeDescription = 'xxHash32';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute an xxHash32 digest from input bytes.';
 
   defineConfigs() {
@@ -38,7 +38,7 @@ export class XxHash32Pipe extends HashWasmPipe {
 export class XxHash64Pipe extends HashWasmPipe {
   static typeName = 'XxHash64';
   static typeDescription = 'xxHash64';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute an xxHash64 digest from input bytes.';
 
   defineConfigs() {
@@ -57,7 +57,7 @@ export class XxHash64Pipe extends HashWasmPipe {
 export class XxHash3Pipe extends HashWasmPipe {
   static typeName = 'XxHash3';
   static typeDescription = 'xxHash3';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute an xxHash3 digest from input bytes.';
 
   defineConfigs() {
@@ -76,7 +76,7 @@ export class XxHash3Pipe extends HashWasmPipe {
 export class XxHash128Pipe extends HashWasmPipe {
   static typeName = 'XxHash128';
   static typeDescription = 'xxHash128';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute an xxHash128 digest from input bytes.';
 
   defineConfigs() {

@@ -24,7 +24,7 @@ import peggy from '../../../../vendor/peggy.js';
 export class PegParserPipe extends Pipe {
   static typeName = 'PegParser';
   static typeDescription = 'PEG Parser';
-  static category = 'Parsing';
+  static category = 'Grammar';
   static categoryDescription = 'Parse text against a PEG grammar (peggy syntax). Wire a grammar text to the grammar input.';
 
   constructor() {

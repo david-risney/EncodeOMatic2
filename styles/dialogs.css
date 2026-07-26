@@ -101,6 +101,18 @@
 
   & .pipe-list-item-name { font-size: 13px; font-weight: 600; }
   & .pipe-list-item-desc { color: var(--color-text-dim); font-size: 11px; }
+
+  & .pipe-list-category {
+    margin: 8px 0 2px;
+    padding: 0 4px;
+    color: var(--color-text-dim);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    &:first-child { margin-top: 0; }
+  }
 }
 
 .config-fields {

@@ -20,7 +20,7 @@ function validateBlake3Bits(bits) {
 export class Blake2bHashPipe extends HashWasmPipe {
   static typeName = 'Blake2bHash';
   static typeDescription = 'BLAKE2b Hash';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute a BLAKE2b digest from input bytes.';
 
   defineConfigs() {
@@ -39,7 +39,7 @@ export class Blake2bHashPipe extends HashWasmPipe {
 export class Blake2sHashPipe extends HashWasmPipe {
   static typeName = 'Blake2sHash';
   static typeDescription = 'BLAKE2s Hash';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute a BLAKE2s digest from input bytes.';
 
   defineConfigs() {
@@ -58,7 +58,7 @@ export class Blake2sHashPipe extends HashWasmPipe {
 export class Blake3HashPipe extends HashWasmPipe {
   static typeName = 'Blake3Hash';
   static typeDescription = 'BLAKE3 Hash';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute a BLAKE3 digest from input bytes.';
 
   defineConfigs() {

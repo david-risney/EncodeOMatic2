@@ -47,7 +47,7 @@ function scoreHtmlEntities(input) {
 export class HtmlEncodePipe extends StringPipe {
   static typeName = 'HtmlEncode';
   static typeDescription = 'HTML Encode';
-  static category = 'Encoding';
+  static category = 'Escaping';
   static categoryDescription = 'Encode special characters as HTML entities.';
 
   defineConfigs() {
@@ -77,7 +77,7 @@ export class HtmlEncodePipe extends StringPipe {
 export class HtmlDecodePipe extends StringPipe {
   static typeName = 'HtmlDecode';
   static typeDescription = 'HTML Decode';
-  static category = 'Encoding';
+  static category = 'Escaping';
   static categoryDescription = 'Decode HTML entities to characters.';
 
   static getInputAppropriateness(input) {

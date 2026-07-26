@@ -61,7 +61,7 @@ function decodeUnicodeEscapes(text) {
 export class UnicodeEscapeEncodePipe extends Pipe {
   static typeName = 'UnicodeEscapeEncode';
   static typeDescription = 'Unicode Escape Encode';
-  static category = 'Encoding';
+  static category = 'Escaping';
   static categoryDescription = 'Encode text as \\uXXXX and \\u{...} escape sequences.';
 
   async process(inputs) {
@@ -81,7 +81,7 @@ export class UnicodeEscapeEncodePipe extends Pipe {
 export class UnicodeEscapeDecodePipe extends Pipe {
   static typeName = 'UnicodeEscapeDecode';
   static typeDescription = 'Unicode Escape Decode';
-  static category = 'Encoding';
+  static category = 'Escaping';
   static categoryDescription = 'Decode \\uXXXX and \\u{...} escape sequences to UTF-8 text.';
 
   static getInputAppropriateness(input) {
