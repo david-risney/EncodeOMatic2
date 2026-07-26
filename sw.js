@@ -83,6 +83,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/parsing/abnf-parser.js',
   './src/pipes/builtin/parsing/nearley-parser.js',
   './src/pipes/builtin/parsing/peg-parser.js',
+  './src/pipes/builtin/parsing/protobuf-parser.js',
   './vendor/iconv-lite.js',
   './vendor/he.js',
   './vendor/mime-codec.js',
@@ -93,6 +94,7 @@ const PRECACHE_URLS = [
   './vendor/apg-js.js',
   './vendor/nearley.js',
   './vendor/peggy.js',
+  './vendor/protobufjs.js',
 ];
 
 self.addEventListener('install', (event) => {
