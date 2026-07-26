@@ -162,6 +162,13 @@ graph-editor {
     line-height: 1;
   }
 
+  & .add-pipe-control-icon {
+    display: inline-grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+  }
+
   &.draft { pointer-events: none; }
   &[hidden] { display: none; }
 
@@ -175,10 +182,41 @@ graph-editor {
     padding: 0;
     border-radius: 50%;
     justify-content: center;
+    align-items: center;
 
     & span:first-child { font-size: 18px; }
     & span:last-child { display: none; }
   }
+}
+
+.delete-pipe-control {
+  position: absolute;
+  right: 52px;
+  bottom: 12px;
+  z-index: 1;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 2px solid var(--color-pipe-border);
+  border-radius: 50%;
+  background: var(--color-pipe-bg);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  font-size: 14px;
+
+  &:hover {
+    border-color: var(--color-accent);
+  }
+
+  &.active {
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+
+  &[hidden] { display: none; }
 }
 
 .port-wrapper {
