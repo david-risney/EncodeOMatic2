@@ -252,6 +252,23 @@ describe('GraphEditor', () => {
     expect(editor._canvas.classList.contains('connecting')).toBe(false);
   });
 
+  it('treats tiny output drags as click-like and does not connect or add a pipe', () => {
+    const request = vi.fn();
+    const select = vi.fn();
+    editor.addEventListener('add-pipe-request', request);
+    editor.addEventListener('pipe-port-click', select);
+
+    editor._onPortMouseDown({ clientX: 120, clientY: 140 }, source.id, 'output', 'output');
+    editor._onCanvasPointerUp({ clientX: 131, clientY: 145 });
+
+    expect(graph.connections).toHaveLength(0);
+    expect(request).not.toHaveBeenCalled();
+    expect(select).toHaveBeenCalledWith(expect.objectContaining({
+      detail: { pipeId: source.id, portName: 'output', portType: 'output' },
+    }));
+    expect(editor._draftFrom).toBeNull();
+  });
+
   it('snaps draft connections to nearby inputs with a larger drop target', () => {
     const process = vi.spyOn(graph, 'processFrom').mockResolvedValue();
     const from = editor._portElements.get(`${source.id}:output:output`);
