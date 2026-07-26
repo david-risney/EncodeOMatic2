@@ -2,9 +2,9 @@
  * Regex Match pipe.
  *
  * Applies a regex to the input string and produces:
- *   - match (default): the full match
- *   - group:1, group:2, ...: capture groups
- *   - all-matches: all matches joined by newlines
+ *   - match (default): the full first match
+ *   - all-matches: all full matches joined by newlines
+ *   - group:1, group:2, ...: all values of each capture group across all matches, joined by newlines
  */
 
 import { Pipe, PipeConfig, PortDef, PipeError } from '../../pipe.js';
@@ -79,13 +79,13 @@ export class RegexMatchPipe extends Pipe {
     result.set('match', enc.encode(first[0]));
     result.set('all-matches', enc.encode(matches.map(m => m[0]).join('\n')));
 
-    // Capture groups from first match
+    // Capture groups — collect all values across every match, joined by newlines
     this._dynamicOutputs = [];
     for (let i = 1; i < first.length; i++) {
       const portName = `group:${i}`;
-      this._dynamicOutputs.push(new PortDef(portName, `Capture group ${i}`));
+      this._dynamicOutputs.push(new PortDef(portName, `All values of capture group ${i}, newline-separated`));
       if (!this._outputData.has(portName)) this._outputData.set(portName, null);
-      result.set(portName, enc.encode(first[i] ?? ''));
+      result.set(portName, enc.encode(matches.map(m => m[i] ?? '').join('\n')));
     }
 
     return result;

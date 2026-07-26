@@ -61,6 +61,15 @@ describe('RegexMatchPipe extra coverage', () => {
     expect(decode(result.get('match'))).toBe('�a');
   });
 
+  it('collects all values of each capture group across multiple matches', async () => {
+    const pipe = new RegexMatchPipe();
+    pipe.setConfig('pattern', '(\\w+)=(\\d+)');
+    const result = await pipe.process(new Map([['input', encode('a=1 b=2 c=3')]]));
+
+    expect(decode(result.get('group:1'))).toBe('a\nb\nc');
+    expect(decode(result.get('group:2'))).toBe('1\n2\n3');
+  });
+
   it('supports backreferences', async () => {
     const pipe = new RegexMatchPipe();
     pipe.setConfig('pattern', '(a)\\1');
