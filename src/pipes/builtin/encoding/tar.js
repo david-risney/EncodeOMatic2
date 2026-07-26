@@ -81,8 +81,12 @@ export class TarExtractPipe extends Pipe {
     }
 
     const fileEntries = entries.filter(e => e.type === 'file');
-    const index = Number(this.getConfig('fileIndex').value) || 0;
 
+    const rawIndex = this.getConfig('fileIndex')?.value ?? 0;
+    const index = Number(rawIndex);
+    if (!Number.isInteger(index)) {
+      throw new PipeError('File index must be an integer');
+    }
     if (fileEntries.length === 0) {
       throw new PipeError('Tar archive contains no files');
     }
