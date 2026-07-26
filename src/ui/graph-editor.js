@@ -295,13 +295,18 @@ class GraphEditor extends HTMLElement {
     el.tabIndex = 0;
     el.setAttribute('role', 'button');
     el.setAttribute('aria-label', `Select ${pipe.displayName} pipe`);
-    cfgBtn.setAttribute('aria-label', `Configure ${pipe.displayName}`);
-    cfgBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.dispatchEvent(new CustomEvent('pipe-config-click', {
-        detail: { pipeId: pipe.id }, bubbles: true
-      }));
-    });
+    const hasVisibleConfigs = [...pipe.configs.values()].some(cfg => cfg.type !== 'hidden');
+    if (hasVisibleConfigs) {
+      cfgBtn.setAttribute('aria-label', `Configure ${pipe.displayName}`);
+      cfgBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.dispatchEvent(new CustomEvent('pipe-config-click', {
+          detail: { pipeId: pipe.id }, bubbles: true
+        }));
+      });
+    } else {
+      cfgBtn.hidden = true;
+    }
     let inputArea = null;
     if (pipe.constructor.typeName === 'InputPipe') {
       inputArea = cloneTemplate('pipe-text-input-template');
