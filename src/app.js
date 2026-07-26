@@ -778,10 +778,20 @@ function onPipeSelect(e) {
     if (!pipeToDelete) return;
     const confirmed = window.confirm(`Delete "${pipeToDelete.displayName}"?`);
     if (confirmed) {
+      const upstreamPipeIds = graph.connections
+        .filter(c => c.toPipeId === pipeId)
+        .map(c => c.fromPipeId);
+      const downstreamPipeIds = graph.connections
+        .filter(c => c.fromPipeId === pipeId)
+        .map(c => c.toPipeId);
       graph.removePipe(pipeId);
       editor.removePipeElement(pipeId);
       if (configView?.pipeId === pipeId) removeConfigView();
       setDeletePipeMode(false);
+      const reprocessIds = upstreamPipeIds.length > 0 ? upstreamPipeIds : downstreamPipeIds;
+      for (const id of reprocessIds) {
+        graph.processFrom(id).catch(console.error);
+      }
     }
     return;
   }
