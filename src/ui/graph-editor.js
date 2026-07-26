@@ -25,6 +25,7 @@
 
 import { Connection } from '../pipes/graph.js';
 import { FileInputPipe } from '../pipes/builtin/file-input-pipe.js';
+import { WebInputPipe } from '../pipes/builtin/web-input-pipe.js';
 import { cloneTemplate } from './templates.js';
 
 /**
@@ -337,6 +338,16 @@ class GraphEditor extends HTMLElement {
         };
         fileInput.click();
       });
+    } else if (pipe.constructor.typeName === 'WebInputPipe') {
+      inputArea = cloneTemplate('pipe-web-input-template');
+      const urlInput = inputArea.querySelector('.pipe-url-input');
+      urlInput.value = pipe.getConfig('url')?.value ?? '';
+      urlInput.addEventListener('change', () => {
+        pipe.setConfig('url', urlInput.value);
+        if (this._graph) {
+          this._graph.processFrom(pipe.id).catch(console.error);
+        }
+      });
     }
 
     if (inputArea) botPorts.before(inputArea);
@@ -345,7 +356,7 @@ class GraphEditor extends HTMLElement {
 
     // Drag to move
     el.addEventListener('pointerdown', (e) => {
-      if (e.target.classList.contains('port') || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
+      if (e.target.classList.contains('port') || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
       e.stopPropagation();
       if (this._trackPointerDown(e)) return;
       const rect = el.getBoundingClientRect();

@@ -349,6 +349,22 @@ graph-editor {
     gap: 4px;
   }
 
+  &.pipe-web-area {
+    & .pipe-url-input {
+      width: 100%;
+      padding: 4px 6px;
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      outline: none;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font: 11px var(--font-mono);
+      box-sizing: border-box;
+
+      &:focus { border-color: var(--color-accent); }
+    }
+  }
+
   & .pipe-file-name {
     max-width: 140px;
     overflow: hidden;
