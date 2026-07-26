@@ -6,6 +6,10 @@
   overflow: hidden;
   border-bottom: 1px solid var(--color-border);
 
+  &.dragging {
+    opacity: 0.6;
+  }
+
   &.minimized {
     flex: 0 0 auto;
 
@@ -36,6 +40,10 @@
     display: flex;
     flex-shrink: 0;
     gap: 4px;
+
+    & [data-action="move"] {
+      cursor: grab;
+    }
   }
 }
 

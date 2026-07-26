@@ -118,19 +118,6 @@
     </form>
   </dialog>
 
-  <!-- Pipe Config Dialog -->
-  <dialog id="config-dialog" class="dialog" aria-labelledby="config-dialog-title">
-    <form method="dialog" class="dialog-form">
-      <h2 id="config-dialog-title">Configure Pipe</h2>
-      <div id="config-fields" class="config-fields"></div>
-      <div class="dialog-footer">
-        <button id="config-delete-btn" type="button" class="btn btn-danger">Delete Pipe</button>
-        <button value="cancel" class="btn">Cancel</button>
-        <button value="ok" class="btn btn-primary">OK</button>
-      </div>
-    </form>
-  </dialog>
-
   <dialog id="guess-dialog" class="dialog" aria-labelledby="guess-dialog-title">
     <form id="guess-form" class="dialog-form">
       <h2 id="guess-dialog-title">Guess Encoding</h2>
@@ -179,7 +166,10 @@
       <div class="graph-canvas-inner">
         <svg class="connections-layer" width="8000" height="6000" aria-hidden="true"></svg>
         <button class="add-pipe-control" type="button" aria-label="Add Pipe">
-          <span aria-hidden="true">+</span><span>Add Pipe</span>
+          <span class="add-pipe-control-icon" aria-hidden="true">+</span><span>Add Pipe</span>
+        </button>
+        <button class="delete-pipe-control" type="button" aria-label="Delete Pipe Mode" aria-pressed="false" hidden>
+          <span aria-hidden="true">🗑️</span>
         </button>
       </div>
     </div>
@@ -250,6 +240,8 @@
       <div class="data-panel-header">
         <span class="data-panel-title"></span>
         <div class="data-panel-controls">
+          <button data-action="move" class="btn btn-sm" type="button"
+                  title="Move view" aria-label="Move view" draggable="true">↕</button>
           <button data-action="copy" class="btn btn-sm" type="button"
                   title="Copy to clipboard" aria-label="Copy to clipboard">📋</button>
           <button data-action="mode" class="btn btn-sm active" type="button"
@@ -263,6 +255,19 @@
       </div>
       <div class="data-view-errors" role="alert" hidden></div>
       <data-viewer></data-viewer>
+    </section>
+  </template>
+
+  <template id="config-view-template">
+    <section class="data-view config-view">
+      <div class="data-panel-header">
+        <span class="data-panel-title"></span>
+        <div class="data-panel-controls">
+          <button data-action="move" class="btn btn-sm" type="button"
+                  title="Move view" aria-label="Move view" draggable="true">↕</button>
+        </div>
+      </div>
+      <div class="config-fields"></div>
     </section>
   </template>
 
