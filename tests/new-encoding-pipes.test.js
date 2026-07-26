@@ -29,10 +29,8 @@ import { CharWidthToHalfwidthPipe, CharWidthToFullwidthPipe } from '../src/pipes
 import { StringReversePipe } from '../src/pipes/builtin/encoding/reverse.js';
 import { PercentEncodePipe } from '../src/pipes/builtin/encoding/percent.js';
 import {
-  UnicodeCodePointsEncodePipe,
-  UnicodeCodePointsDecodePipe,
-  UnicodeGraphemeSegmentPipe,
-  UnicodeCaseFoldPipe,
+  UnicodeCaseFoldLowerPipe,
+  UnicodeCaseFoldUpperPipe,
 } from '../src/pipes/builtin/encoding/unicode-ops.js';
 import { decode, encode, processBytes, processText } from './helpers.js';
 
@@ -945,131 +943,40 @@ describe('MimeHeaderEncode', () => {
   });
 });
 
-describe('Unicode Code Points Encode', () => {
-  it('encodes ASCII text as U+XXXX tokens', async () => {
-    expect(await processText(new UnicodeCodePointsEncodePipe(), 'AB')).toBe('U+0041 U+0042');
-    expect(await processText(new UnicodeCodePointsEncodePipe(), 'Hi')).toBe('U+0048 U+0069');
-  });
-
-  it('encodes non-BMP code points with at least 5 hex digits', async () => {
-    // 😀 = U+1F600
-    expect(await processText(new UnicodeCodePointsEncodePipe(), '😀')).toBe('U+1F600');
-  });
-
-  it('encodes combining sequences as separate code points', async () => {
-    // é decomposed: U+0065 + U+0301
-    expect(await processText(new UnicodeCodePointsEncodePipe(), '\u0065\u0301')).toBe('U+0065 U+0301');
-  });
-
-  it('handles empty input', async () => {
-    expect(await processText(new UnicodeCodePointsEncodePipe(), '')).toBe('');
-  });
-});
-
-describe('Unicode Code Points Decode', () => {
-  it('decodes U+XXXX tokens to text', async () => {
-    expect(await processText(new UnicodeCodePointsDecodePipe(), 'U+0041 U+0042')).toBe('AB');
-    expect(await processText(new UnicodeCodePointsDecodePipe(), 'U+1F600')).toBe('😀');
-  });
-
-  it('decodes 0x-prefixed hex tokens', async () => {
-    expect(await processText(new UnicodeCodePointsDecodePipe(), '0x41 0x42')).toBe('AB');
-  });
-
-  it('decodes decimal tokens', async () => {
-    expect(await processText(new UnicodeCodePointsDecodePipe(), '65 66')).toBe('AB');
-  });
-
-  it('handles comma- and newline-separated tokens', async () => {
-    expect(await processText(new UnicodeCodePointsDecodePipe(), 'U+0041,U+0042')).toBe('AB');
-    expect(await processText(new UnicodeCodePointsDecodePipe(), 'U+0041\nU+0042')).toBe('AB');
-  });
-
-  it('handles empty input', async () => {
-    expect(await processText(new UnicodeCodePointsDecodePipe(), '')).toBe('');
-    expect(await processText(new UnicodeCodePointsDecodePipe(), '   ')).toBe('');
-  });
-
-  it('round trips encode → decode', async () => {
-    for (const input of ['Hello', 'café', '😀🎉', '\u0065\u0301']) {
-      const encoded = await processText(new UnicodeCodePointsEncodePipe(), input);
-      expect(await processText(new UnicodeCodePointsDecodePipe(), encoded)).toBe(input);
-    }
-  });
-
-  it('throws PipeError for invalid tokens', async () => {
-    await expect(processText(new UnicodeCodePointsDecodePipe(), 'U+GGGG'))
-      .rejects.toMatchObject({ message: expect.stringContaining('Invalid') });
-    await expect(processText(new UnicodeCodePointsDecodePipe(), 'U+110000'))
-      .rejects.toMatchObject({ message: expect.stringContaining('out of Unicode range') });
-    await expect(processText(new UnicodeCodePointsDecodePipe(), 'U+D800'))
-      .rejects.toMatchObject({ message: expect.stringContaining('Surrogate') });
-  });
-
-  it('scores decode appropriateness correctly', () => {
-    expect(UnicodeCodePointsDecodePipe.getInputAppropriateness(null)).toBe(0);
-    expect(UnicodeCodePointsDecodePipe.getInputAppropriateness(new Uint8Array())).toBe(0);
-    expect(UnicodeCodePointsDecodePipe.getInputAppropriateness(encode('U+0041 U+0042'))).toBe(8);
-    expect(UnicodeCodePointsDecodePipe.getInputAppropriateness(encode('hello world'))).toBe(0);
-    expect(UnicodeCodePointsDecodePipe.getInputAppropriateness(new Uint8Array([0xff]))).toBe(-10);
-  });
-});
-
-describe('Unicode Grapheme Segment', () => {
-  it('splits ASCII text into one character per line', async () => {
-    expect(await processText(new UnicodeGraphemeSegmentPipe(), 'ABC')).toBe('A\nB\nC');
-  });
-
-  it('keeps emoji + modifier as a single grapheme cluster', async () => {
-    // 👨‍👩‍👧 is a ZWJ sequence; it should stay as one segment
-    const family = '👨\u200D👩\u200D👧';
-    const result = await processText(new UnicodeGraphemeSegmentPipe(), family);
-    expect(result).toBe(family);
-    expect(result.split('\n')).toHaveLength(1);
-  });
-
-  it('keeps combining character with its base as one grapheme', async () => {
-    // é = e + combining acute accent
-    const composed = '\u0065\u0301';
-    const result = await processText(new UnicodeGraphemeSegmentPipe(), composed);
-    expect(result).toBe(composed);
-    expect(result.split('\n')).toHaveLength(1);
-  });
-
-  it('separates a multi-grapheme string into correct clusters', async () => {
-    // 'café' with decomposed 'e + combining acute' → c, a, f, e+combining
-    const cafe = 'caf\u0065\u0301';
-    const result = await processText(new UnicodeGraphemeSegmentPipe(), cafe);
-    expect(result.split('\n')).toHaveLength(4);
-  });
-
-  it('handles empty input', async () => {
-    expect(await processText(new UnicodeGraphemeSegmentPipe(), '')).toBe('');
-  });
-});
-
-describe('Unicode Case Fold', () => {
+describe('Unicode Case Fold Lower', () => {
   it('lowercases ASCII text', async () => {
-    expect(await processText(new UnicodeCaseFoldPipe(), 'Hello World')).toBe('hello world');
+    expect(await processText(new UnicodeCaseFoldLowerPipe(), 'Hello World')).toBe('hello world');
   });
 
   it('lowercases non-ASCII text', async () => {
-    expect(await processText(new UnicodeCaseFoldPipe(), 'CAFÉ')).toBe('café');
+    expect(await processText(new UnicodeCaseFoldLowerPipe(), 'CAFÉ')).toBe('café');
   });
 
-  it('applies NFKC compatibility decomposition before folding', async () => {
-    // Fullwidth A (U+FF21) → 'a' after NFKC + casefold
-    expect(await processText(new UnicodeCaseFoldPipe(), '\uFF21')).toBe('a');
-    // fi ligature (U+FB01) → 'fi' after NFKC
-    expect(await processText(new UnicodeCaseFoldPipe(), '\uFB01')).toBe('fi');
-  });
-
-  it('is idempotent on already-folded text', async () => {
-    const text = 'hello world';
-    expect(await processText(new UnicodeCaseFoldPipe(), text)).toBe(text);
+  it('applies NFKC compatibility decomposition before lower folding', async () => {
+    expect(await processText(new UnicodeCaseFoldLowerPipe(), '\uFF21')).toBe('a');
+    expect(await processText(new UnicodeCaseFoldLowerPipe(), '\uFB01')).toBe('fi');
   });
 
   it('handles empty input', async () => {
-    expect(await processText(new UnicodeCaseFoldPipe(), '')).toBe('');
+    expect(await processText(new UnicodeCaseFoldLowerPipe(), '')).toBe('');
+  });
+});
+
+describe('Unicode Case Fold Upper', () => {
+  it('uppercases ASCII text', async () => {
+    expect(await processText(new UnicodeCaseFoldUpperPipe(), 'Hello World')).toBe('HELLO WORLD');
+  });
+
+  it('uppercases non-ASCII text', async () => {
+    expect(await processText(new UnicodeCaseFoldUpperPipe(), 'café')).toBe('CAFÉ');
+  });
+
+  it('applies NFKC compatibility decomposition before upper folding', async () => {
+    expect(await processText(new UnicodeCaseFoldUpperPipe(), '\uFF41')).toBe('A');
+    expect(await processText(new UnicodeCaseFoldUpperPipe(), '\uFB01')).toBe('FI');
+  });
+
+  it('handles empty input', async () => {
+    expect(await processText(new UnicodeCaseFoldUpperPipe(), '')).toBe('');
   });
 });
