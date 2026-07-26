@@ -290,10 +290,19 @@ function initAboutDialog() {
         return;
       }
 
-      const reloadForUpdate = () => window.location.reload();
-      navigator.serviceWorker.addEventListener('controllerchange', reloadForUpdate, { once: true });
-      await registration.update();
+      let reloaded = false;
+      const doReload = () => { if (!reloaded) { reloaded = true; window.location.reload(); } };
+      navigator.serviceWorker.addEventListener('controllerchange', doReload, { once: true });
+      const updatedRegistration = await registration.update();
       status.textContent = 'Update downloaded. Reloading…';
+      // If no new SW is installing or waiting, the update already activated in the
+      // background (skipWaiting fired before the user clicked Update), so reload now.
+      if (!updatedRegistration.installing && !updatedRegistration.waiting) {
+        doReload();
+        return;
+      }
+      // Fallback: reload after 15 s in case controllerchange never fires.
+      setTimeout(doReload, 15000);
     } catch (error) {
       console.warn('Update failed:', error);
       status.className = 'update-status error';
