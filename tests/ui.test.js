@@ -254,13 +254,18 @@ describe('GraphEditor', () => {
 
   it('treats tiny output drags as click-like and does not connect or add a pipe', () => {
     const request = vi.fn();
+    const select = vi.fn();
     editor.addEventListener('add-pipe-request', request);
+    editor.addEventListener('pipe-port-click', select);
 
     editor._onPortMouseDown({ clientX: 120, clientY: 140 }, source.id, 'output', 'output');
-    editor._onCanvasPointerUp({ clientX: 124, clientY: 143 });
+    editor._onCanvasPointerUp({ clientX: 131, clientY: 145 });
 
     expect(graph.connections).toHaveLength(0);
     expect(request).not.toHaveBeenCalled();
+    expect(select).toHaveBeenCalledWith(expect.objectContaining({
+      detail: { pipeId: source.id, portName: 'output', portType: 'output' },
+    }));
     expect(editor._draftFrom).toBeNull();
   });
 

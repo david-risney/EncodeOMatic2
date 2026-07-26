@@ -45,7 +45,7 @@ const DEFAULT_ADD_PIPE_CONTROL_X = 60;
 const DEFAULT_ADD_PIPE_CONTROL_Y = 80;
 const INPUT_DROP_TARGET_PADDING_X = 18;
 const INPUT_DROP_TARGET_PADDING_Y = 16;
-const DRAFT_DROP_CLICK_TOLERANCE_PX = 10;
+const DRAFT_DROP_CLICK_TOLERANCE_PX = 14;
 
 // Drag plug ghost dimensions — must match the .drag-plug-ghost CSS rule.
 const DRAG_PLUG_WIDTH = 18;
@@ -700,7 +700,12 @@ class GraphEditor extends HTMLElement {
     }
     if (this._draftFrom) {
       if (this._isDraftDropNearOrigin(e.clientX, e.clientY)) {
+        const { pipeId, portName, portType } = this._draftFrom;
         this._cancelDraft();
+        this.dispatchEvent(new CustomEvent('pipe-port-click', {
+          detail: { pipeId, portName, portType },
+          bubbles: true,
+        }));
         return;
       }
       const targetPort = this._draftTargetPort ?? this._findInputDropTarget(e.clientX, e.clientY);
