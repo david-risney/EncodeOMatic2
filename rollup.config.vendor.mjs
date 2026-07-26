@@ -49,6 +49,7 @@ const vendors = [
   ['scripts/nearley-entry.js',           'vendor/nearley.js'],
   ['scripts/peggy-entry.js',             'vendor/peggy.js'],
   ['scripts/fflate-entry.js',            'vendor/fflate.js'],
+  ['scripts/protobufjs-entry.js',        'vendor/protobufjs.js'],
 ];
 
 export default vendors.map(([input, file]) => ({
