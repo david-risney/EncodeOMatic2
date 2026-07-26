@@ -32,6 +32,7 @@ import {
   UnicodeCaseFoldLowerPipe,
   UnicodeCaseFoldUpperPipe,
 } from '../src/pipes/builtin/encoding/unicode-ops.js';
+import { ZipPipe, UnzipPipe } from '../src/pipes/builtin/encoding/zip.js';
 import { decode, encode, processBytes, processText } from './helpers.js';
 
 function makePseudoRandomBytes(length, seed = 0x1234abcd) {
@@ -978,5 +979,64 @@ describe('Unicode Case Fold Upper', () => {
 
   it('handles empty input', async () => {
     expect(await processText(new UnicodeCaseFoldUpperPipe(), '')).toBe('');
+  });
+});
+
+describe('Zip / Unzip', () => {
+  it('exposes expected configuration', () => {
+    expect(new ZipPipe().configs.size).toBe(1);
+    expect(new ZipPipe().getConfig('filename').value).toBe('data.bin');
+    expect(new UnzipPipe().configs.size).toBe(1);
+    expect(new UnzipPipe().getConfig('filename').value).toBe('');
+  });
+
+  it('produces a ZIP archive with the correct magic bytes', async () => {
+    const output = await processBytes(new ZipPipe(), [1, 2, 3]);
+    expect(output[0]).toBe(0x50); // P
+    expect(output[1]).toBe(0x4b); // K
+    expect(output[2]).toBe(0x03);
+    expect(output[3]).toBe(0x04);
+  });
+
+  it('round trips arbitrary bytes through zip and unzip', async () => {
+    const bytes = Array.from({ length: 256 }, (_, i) => i);
+    const zipped = await processBytes(new ZipPipe(), bytes);
+    expect([...await processBytes(new UnzipPipe(), zipped)]).toEqual(bytes);
+  });
+
+  it('handles empty input', async () => {
+    const zipped = await processBytes(new ZipPipe(), []);
+    expect([...await processBytes(new UnzipPipe(), zipped)]).toEqual([]);
+  });
+
+  it('respects the filename config when zipping and unzipping', async () => {
+    const pipe = new ZipPipe();
+    pipe.setConfig('filename', 'hello.txt');
+    const zipped = await processBytes(pipe, [72, 105]);
+
+    const extractPipe = new UnzipPipe();
+    extractPipe.setConfig('filename', 'hello.txt');
+    expect([...await processBytes(extractPipe, zipped)]).toEqual([72, 105]);
+  });
+
+  it('unzip scores input appropriateness by ZIP magic bytes', () => {
+    const zipMagic = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0]);
+    expect(UnzipPipe.getInputAppropriateness(zipMagic)).toBe(8);
+    expect(UnzipPipe.getInputAppropriateness(new Uint8Array([0, 1, 2, 3]))).toBe(0);
+    expect(UnzipPipe.getInputAppropriateness(new Uint8Array([0x50, 0x4b]))).toBe(0);
+    expect(UnzipPipe.getInputAppropriateness(null)).toBe(0);
+  });
+
+  it('throws PipeError for corrupt ZIP data', async () => {
+    await expect(processBytes(new UnzipPipe(), [0, 1, 2, 3, 4])).rejects
+      .toMatchObject({ message: 'Unzip failed: corrupt or invalid ZIP data' });
+  });
+
+  it('throws PipeError when requested filename is not in archive', async () => {
+    const zipped = await processBytes(new ZipPipe(), [1, 2, 3]);
+    const pipe = new UnzipPipe();
+    pipe.setConfig('filename', 'missing.txt');
+    await expect(processBytes(pipe, zipped)).rejects
+      .toMatchObject({ message: 'File "missing.txt" not found in ZIP archive' });
   });
 });

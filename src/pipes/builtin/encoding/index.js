@@ -16,6 +16,7 @@ import { builtinPipes as urlEncodePipes } from './url-encode.js';
 import { builtinPipes as rotPipes } from './rot.js';
 import { builtinPipes as morsePipes } from './morse.js';
 import { builtinPipes as compressionPipes } from './compression.js';
+import { builtinPipes as zipPipes } from './zip.js';
 import { builtinPipes as formUrlencodedPipes } from './form-urlencoded.js';
 import { builtinPipes as hmacPipes } from './hmac.js';
 import { builtinPipes as mimeHeaderPipes } from './mime-header.js';
@@ -30,6 +31,7 @@ import { builtinPipes as unicodeOpsPipes } from './unicode-ops.js';
 import { builtinPipes as punycodePipes } from './punycode.js';
 import { builtinPipes as charWidthPipes } from './char-width.js';
 import { builtinPipes as reversePipes } from './reverse.js';
+import { builtinPipes as tarPipes } from './tar.js';
 
 export const builtinEncodingPipes = [
   ...base64Pipes,
@@ -50,6 +52,7 @@ export const builtinEncodingPipes = [
   ...rotPipes,
   ...morsePipes,
   ...compressionPipes,
+  ...zipPipes,
   ...formUrlencodedPipes,
   ...hmacPipes,
   ...mimeHeaderPipes,
@@ -64,4 +67,5 @@ export const builtinEncodingPipes = [
   ...punycodePipes,
   ...charWidthPipes,
   ...reversePipes,
+  ...tarPipes,
 ];
