@@ -274,6 +274,7 @@ describe('registry', () => {
       'CookieParser', 'CsvParser',
       'HttpRequestParser', 'HttpResponseParser',
       'JwtParser', 'SearchParamsParser',
+      'AbnfParser', 'NearleyParser', 'PegParser',
     ]);
     expect(createPipe('HexEncode')).toBeInstanceOf(HexEncodePipe);
     expect(createPipe('missing')).toBeNull();
@@ -285,6 +286,6 @@ describe('registry', () => {
     expect(groups.get('Input')[0].typeName).toBe('InputPipe');
     expect(groups.get('Encoding').map(({ typeName }) => typeName))
       .toContain('QuotedPrintableEncode');
-    expect(groups.get('Parsing').at(-1).typeName).toBe('SearchParamsParser');
+    expect(groups.get('Parsing').at(-1).typeName).toBe('PegParser');
   });
 });

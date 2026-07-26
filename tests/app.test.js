@@ -112,7 +112,7 @@ describe('application integration', () => {
     vi.stubGlobal('Worker', SilentWorker);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      text: async () => "export const APP_VERSION = '1.1.3';",
+      text: async () => "export const APP_COMMIT = 'dev';",
     }));
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -157,7 +157,7 @@ describe('application integration', () => {
 
     document.getElementById('btn-about').click();
     expect(document.getElementById('about-dialog').open).toBe(true);
-    expect(document.getElementById('about-version').textContent).toBe('1.1.3');
+    expect(document.getElementById('about-version').textContent).toBe('dev');
     await vi.waitFor(() => {
       expect(document.getElementById('update-status').textContent)
         .toBe('Encode-O-Matic 2 is up to date.');
@@ -170,16 +170,16 @@ describe('application integration', () => {
     document.getElementById('about-dialog').close();
     fetch.mockResolvedValueOnce({
       ok: true,
-      text: async () => "export const APP_VERSION = '1.2.0';",
+      text: async () => "export const APP_COMMIT = 'abc1234';",
     });
     document.getElementById('btn-about').click();
     await vi.waitFor(() => {
       expect(document.getElementById('update-status').textContent)
-        .toBe('Version 1.2.0 is available.');
+        .toBe('A new version is available.');
     });
     expect(document.getElementById('btn-update').hidden).toBe(false);
     expect(document.getElementById('btn-update').textContent)
-      .toBe('Update to version 1.2.0');
+      .toBe('Update');
     document.getElementById('about-dialog').close();
 
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

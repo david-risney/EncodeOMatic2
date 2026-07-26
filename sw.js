@@ -1,5 +1,5 @@
-const CACHE_PREFIX = 'encodeomatic2-v';
-const CACHE_NAME = 'encodeomatic2-v1.1.3';
+const CACHE_PREFIX = 'encodeomatic2-';
+const CACHE_NAME = 'encodeomatic2-dev';
 
 const PRECACHE_URLS = [
   './',
@@ -74,6 +74,9 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/parsing/json-parser.js',
   './src/pipes/builtin/parsing/regex-match.js',
   './src/pipes/builtin/parsing/url-parser.js',
+  './src/pipes/builtin/parsing/abnf-parser.js',
+  './src/pipes/builtin/parsing/nearley-parser.js',
+  './src/pipes/builtin/parsing/peg-parser.js',
   './vendor/iconv-lite.js',
   './vendor/he.js',
   './vendor/mime-codec.js',
@@ -81,6 +84,9 @@ const PRECACHE_URLS = [
   './vendor/bs58.js',
   './vendor/hash-wasm.js',
   './vendor/punycode.js',
+  './vendor/apg-js.js',
+  './vendor/nearley.js',
+  './vendor/peggy.js',
 ];
 
 self.addEventListener('install', (event) => {
