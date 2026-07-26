@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TarCreatePipe, TarExtractPipe } from '../src/pipes/builtin/encoding/tar.js';
-import { processBytes, encode, decode } from './helpers.js';
+import { processBytes } from './helpers.js';
 
 describe('Tar Create', () => {
   it('exposes expected default configuration', () => {
