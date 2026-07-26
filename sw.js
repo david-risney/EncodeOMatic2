@@ -60,6 +60,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/url-encode.js',
   './src/pipes/builtin/encoding/xml-encode.js',
   './src/pipes/builtin/encoding/compression.js',
+  './src/pipes/builtin/encoding/zip.js',
   './src/pipes/builtin/encoding/form-urlencoded.js',
   './src/pipes/builtin/encoding/hash-wasm.js',
   './src/pipes/builtin/encoding/hmac.js',
@@ -94,6 +95,7 @@ const PRECACHE_URLS = [
   './vendor/apg-js.js',
   './vendor/nearley.js',
   './vendor/peggy.js',
+  './vendor/fflate.js',
   './vendor/protobufjs.js',
 ];
 

@@ -77,7 +77,19 @@ let activeSelections = new Map();
 let selectionRefreshFrame = null;
 let selectedPipeId = null;
 let deletePipeMode = false;
-let configView = null;
+/** @type {Map<string, {
+ *   pipeId: string,
+ *   pinned: boolean,
+ *   minimized: boolean,
+ *   element: HTMLElement,
+ *   title: HTMLElement,
+ *   fields: HTMLElement,
+ *   pinButton: HTMLButtonElement,
+ *   minimizeButton: HTMLButtonElement,
+ *   moveButton: HTMLButtonElement
+ * }>} */
+const configViews = new Map();
+let selectedConfigPipeId = null;
 
 /** Current layout mode: 'both' | 'graph' | 'data' */
 let layoutMode = 'both';
@@ -436,7 +448,7 @@ function initDataPanelResizer() {
 function onGraphEvent(event) {
   scheduleUrlUpdate();
   if (event.type === 'pipe-removed') {
-    if (configView?.pipeId === event.pipeId) removeConfigView();
+    if (configViews.has(event.pipeId)) removeConfigView(event.pipeId);
     removeDataView(event.pipeId);
     return;
   }
@@ -732,7 +744,7 @@ function removeDataView(pipeId) {
 }
 
 function updateDataPanelVisibility() {
-  const hasViews = dataViews.size > 0 || configView !== null;
+  const hasViews = dataViews.size > 0 || configViews.size > 0;
   dataPanel.hidden = !hasViews || layoutMode === 'graph';
 }
 
@@ -786,7 +798,7 @@ function onPipeSelect(e) {
         .map(c => c.toPipeId);
       graph.removePipe(pipeId);
       editor.removePipeElement(pipeId);
-      if (configView?.pipeId === pipeId) removeConfigView();
+      if (configViews.has(pipeId)) removeConfigView(pipeId);
       setDeletePipeMode(false);
       const reprocessIds = upstreamPipeIds.length > 0 ? upstreamPipeIds : downstreamPipeIds;
       for (const id of reprocessIds) {
@@ -915,29 +927,70 @@ function showConfigView(pipeId) {
   const pipe = graph.pipes.get(pipeId);
   if (!pipe) return;
 
-  if (!configView) {
+  // Remove the unpin config view for the previously selected config pipe
+  if (selectedConfigPipeId && selectedConfigPipeId !== pipeId) {
+    const prev = configViews.get(selectedConfigPipeId);
+    if (prev && !prev.pinned) removeConfigView(selectedConfigPipeId);
+  }
+
+  selectedConfigPipeId = pipeId;
+  let view = configViews.get(pipeId);
+  if (!view) {
     const element = cloneTemplate('config-view-template');
     const title = element.querySelector('.data-panel-title');
     const fields = element.querySelector('.config-fields');
     const moveButton = element.querySelector('[data-action="move"]');
+    const pinButton = element.querySelector('[data-action="pin"]');
+    const minimizeButton = element.querySelector('[data-action="minimize"]');
     dataViewStack.appendChild(element);
     wireMoveButton(element, moveButton);
-    configView = { pipeId, element, title, fields, moveButton };
-  } else {
-    configView.pipeId = pipeId;
+    view = { pipeId, element, title, fields, moveButton, pinButton, minimizeButton, pinned: false, minimized: false };
+    pinButton.addEventListener('click', () => toggleConfigPinned(view));
+    minimizeButton.addEventListener('click', () => toggleConfigMinimized(view));
+    configViews.set(pipeId, view);
+  } else if (view.minimized) {
+    toggleConfigMinimized(view);
   }
 
-  configView.title.textContent = `Configure: ${pipe.displayName}`;
-  configView.fields.replaceChildren();
-  renderConfigFields(pipe, configView.fields);
+  view.title.textContent = `Configure: ${pipe.displayName}`;
+  view.fields.replaceChildren();
+  renderConfigFields(pipe, view.fields);
   updateDataPanelVisibility();
 }
 
-function removeConfigView() {
-  if (!configView) return;
-  configView.element.remove();
-  configView = null;
+function removeConfigView(pipeId) {
+  const view = configViews.get(pipeId);
+  if (!view) return;
+  view.element.remove();
+  configViews.delete(pipeId);
+  if (selectedConfigPipeId === pipeId) selectedConfigPipeId = null;
   updateDataPanelVisibility();
+}
+
+function toggleConfigPinned(view) {
+  const wasPinned = view.pinned;
+  if (wasPinned && view.pipeId !== selectedConfigPipeId) {
+    removeConfigView(view.pipeId);
+    return;
+  }
+  if (wasPinned && view.minimized) toggleConfigMinimized(view);
+  view.pinned = !wasPinned;
+  view.pinButton.classList.toggle('active', view.pinned);
+  view.pinButton.textContent = view.pinned ? '📌' : '📍';
+  view.pinButton.setAttribute('aria-pressed', String(view.pinned));
+  view.pinButton.title = view.pinned ? 'Allow this view to close' : 'Keep this view open';
+  view.pinButton.setAttribute('aria-label', view.pinButton.title);
+  view.minimizeButton.hidden = !view.pinned;
+}
+
+function toggleConfigMinimized(view) {
+  view.minimized = !view.minimized;
+  view.element.classList.toggle('minimized', view.minimized);
+  view.minimizeButton.classList.toggle('active', view.minimized);
+  view.minimizeButton.setAttribute('aria-pressed', String(view.minimized));
+  view.minimizeButton.textContent = view.minimized ? '□' : '_';
+  view.minimizeButton.title = view.minimized ? 'Restore this view' : 'Minimize this view';
+  view.minimizeButton.setAttribute('aria-label', view.minimizeButton.title);
 }
 
 function renderConfigFields(pipe, fields) {
@@ -1382,7 +1435,7 @@ function clearGraphWithoutConfirmation() {
   }
   editor.updateConnections();
   for (const id of Array.from(dataViews.keys())) removeDataView(id);
-  removeConfigView();
+  for (const id of Array.from(configViews.keys())) removeConfigView(id);
 }
 
 // ── Toast ────────────────────────────────────────────────────────
