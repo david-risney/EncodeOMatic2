@@ -2,7 +2,7 @@
  * Tar archive create/extract pipes.
  *
  * TarCreatePipe wraps input bytes as a single-file tar archive.
- * TarExtractPipe extracts a file from a tar archive by index or name.
+ * TarExtractPipe extracts a file from a tar archive by index.
  *
  * Uses the `nanotar` library.
  */
