@@ -37,6 +37,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/parsing/index.js',
   './src/pipes/builtin/input-pipe.js',
   './src/pipes/builtin/file-input-pipe.js',
+  './src/pipes/builtin/web-input-pipe.js',
   './src/pipes/builtin/encoding/base64.js',
   './src/pipes/builtin/encoding/base64url.js',
   './src/pipes/builtin/encoding/base32.js',
