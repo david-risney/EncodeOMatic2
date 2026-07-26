@@ -266,7 +266,7 @@ describe('registry', () => {
       'XxHash64',
       'XxHash3',
       'XxHash128',
-      'UnicodeEscapeEncode', 'UnicodeEscapeDecode',
+      'JavaScriptEscapeEncode', 'JavaScriptEscapeDecode',
       'UnicodeNormalize',
       'PunycodeEncode', 'PunycodeDecode',
       'CharWidthToHalfwidth', 'CharWidthToFullwidth',

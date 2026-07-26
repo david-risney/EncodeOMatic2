@@ -49,7 +49,7 @@ import {
 import { Blake2bHashPipe, Blake2sHashPipe, Blake3HashPipe } from '../pipes/builtin/encoding/blake.js';
 import { Crc32Pipe, Crc32cPipe, Crc64Pipe, Adler32Pipe } from '../pipes/builtin/encoding/crc32.js';
 import { XxHash32Pipe, XxHash64Pipe, XxHash3Pipe, XxHash128Pipe } from '../pipes/builtin/encoding/xxhash.js';
-import { UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe } from '../pipes/builtin/encoding/unicode-escape.js';
+import { JavaScriptEscapeEncodePipe, JavaScriptEscapeDecodePipe } from '../pipes/builtin/encoding/javascript-escape.js';
 import { UnicodeNormalizePipe }            from '../pipes/builtin/encoding/unicode-normalize.js';
 import { PunycodeEncodePipe, PunycodeDecodePipe } from '../pipes/builtin/encoding/punycode.js';
 import { CssEscapePipe, CssUnescapePipe }  from '../pipes/builtin/encoding/css-escape.js';
@@ -131,8 +131,8 @@ const REGISTRY = new Map([
   ['XxHash64',        XxHash64Pipe],
   ['XxHash3',         XxHash3Pipe],
   ['XxHash128',       XxHash128Pipe],
-  ['UnicodeEscapeEncode', UnicodeEscapeEncodePipe],
-  ['UnicodeEscapeDecode', UnicodeEscapeDecodePipe],
+  ['JavaScriptEscapeEncode', JavaScriptEscapeEncodePipe],
+  ['JavaScriptEscapeDecode', JavaScriptEscapeDecodePipe],
   ['UnicodeNormalize', UnicodeNormalizePipe],
   ['PunycodeEncode',  PunycodeEncodePipe],
   ['PunycodeDecode',  PunycodeDecodePipe],

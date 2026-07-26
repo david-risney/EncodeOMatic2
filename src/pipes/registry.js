@@ -39,7 +39,7 @@ import {
 import { Blake2bHashPipe, Blake2sHashPipe, Blake3HashPipe } from './builtin/encoding/blake.js';
 import { Crc32Pipe, Crc32cPipe, Crc64Pipe, Adler32Pipe } from './builtin/encoding/crc32.js';
 import { XxHash32Pipe, XxHash64Pipe, XxHash3Pipe, XxHash128Pipe } from './builtin/encoding/xxhash.js';
-import { UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe } from './builtin/encoding/unicode-escape.js';
+import { JavaScriptEscapeEncodePipe, JavaScriptEscapeDecodePipe } from './builtin/encoding/javascript-escape.js';
 import { UnicodeNormalizePipe }             from './builtin/encoding/unicode-normalize.js';
 import { PunycodeEncodePipe, PunycodeDecodePipe } from './builtin/encoding/punycode.js';
 import { CssEscapePipe, CssUnescapePipe }   from './builtin/encoding/css-escape.js';
@@ -124,8 +124,8 @@ const ALL_PIPES = [
   XxHash64Pipe,
   XxHash3Pipe,
   XxHash128Pipe,
-  UnicodeEscapeEncodePipe,
-  UnicodeEscapeDecodePipe,
+  JavaScriptEscapeEncodePipe,
+  JavaScriptEscapeDecodePipe,
   UnicodeNormalizePipe,
   PunycodeEncodePipe,
   PunycodeDecodePipe,
