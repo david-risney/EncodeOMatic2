@@ -43,6 +43,7 @@ const vendors = [
   ['scripts/mime-codec-entry.js',        'vendor/mime-codec.js'],
   ['scripts/rfc4648-entry.js',           'vendor/rfc4648.js'],
   ['scripts/bs58-entry.js',              'vendor/bs58.js'],
+  ['scripts/hash-wasm-entry.js',         'vendor/hash-wasm.js'],
   ['scripts/punycode-entry.js',          'vendor/punycode.js'],
   ['scripts/apg-js-entry.js',            'vendor/apg-js.js'],
   ['scripts/nearley-entry.js',           'vendor/nearley.js'],
