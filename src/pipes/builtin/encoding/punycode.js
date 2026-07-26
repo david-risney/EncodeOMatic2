@@ -15,7 +15,7 @@ import { toASCII, toUnicode } from '../../../../vendor/punycode.js';
 export class PunycodeEncodePipe extends StringPipe {
   static typeName = 'PunycodeEncode';
   static typeDescription = 'Punycode Encode';
-  static category = 'Encoding';
+  static category = 'URL Encoding';
   static categoryDescription = 'Encode a Unicode domain name to its ASCII-compatible Punycode form (xn--).';
 
   async processString(input) {
@@ -30,7 +30,7 @@ export class PunycodeEncodePipe extends StringPipe {
 export class PunycodeDecodePipe extends StringPipe {
   static typeName = 'PunycodeDecode';
   static typeDescription = 'Punycode Decode';
-  static category = 'Encoding';
+  static category = 'URL Encoding';
   static categoryDescription = 'Decode a Punycode-encoded domain name (xn--) to its Unicode form.';
 
   static getInputAppropriateness(input) {

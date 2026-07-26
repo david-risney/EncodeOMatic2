@@ -31,7 +31,7 @@ function decodeBase64urlPart(part, label) {
 export class JwtParserPipe extends Pipe {
   static typeName = 'JwtParser';
   static typeDescription = 'JWT Parse';
-  static category = 'Parsing';
+  static category = 'Data Formats';
   static categoryDescription = 'Split a JWT into header, payload, and signature.';
 
   static getInputAppropriateness(input) {

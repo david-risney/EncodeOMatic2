@@ -20,7 +20,7 @@ function rotateLetter(ch, rotation) {
 export class RotPipe extends StringPipe {
   static typeName = 'Rot';
   static typeDescription = 'ROT Cipher';
-  static category = 'Encoding';
+  static category = 'String Transform';
   static categoryDescription = 'Apply a ROT (rotation) cipher to ASCII letters. Default is ROT13.';
 
   defineConfigs() {

@@ -10,7 +10,7 @@ import { Pipe, PortDef, PipeConfig } from '../../pipe.js';
 export class SearchParamsParserPipe extends Pipe {
   static typeName = 'SearchParamsParser';
   static typeDescription = 'Search Params Parse';
-  static category = 'Parsing';
+  static category = 'Web';
   static categoryDescription = 'Parse a URL query string into key-value pairs.';
 
   static getInputAppropriateness(input) {

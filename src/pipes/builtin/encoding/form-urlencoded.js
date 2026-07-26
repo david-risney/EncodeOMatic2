@@ -8,7 +8,7 @@ import { PipeError } from '../../pipe.js';
 export class FormUrlencodedEncodePipe extends StringPipe {
   static typeName = 'FormUrlencodedEncode';
   static typeDescription = 'Form URL Encode';
-  static category = 'Encoding';
+  static category = 'URL Encoding';
   static categoryDescription = 'Encode text as application/x-www-form-urlencoded.';
 
   async processString(input) {
@@ -19,7 +19,7 @@ export class FormUrlencodedEncodePipe extends StringPipe {
 export class FormUrlencodedDecodePipe extends StringPipe {
   static typeName = 'FormUrlencodedDecode';
   static typeDescription = 'Form URL Decode';
-  static category = 'Encoding';
+  static category = 'URL Encoding';
   static categoryDescription = 'Decode application/x-www-form-urlencoded text.';
 
   static getInputAppropriateness(input) {

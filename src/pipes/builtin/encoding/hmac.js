@@ -46,7 +46,7 @@ const HMAC_ALGORITHMS = new Map([
 export class HmacPipe extends Pipe {
   static typeName = 'Hmac';
   static typeDescription = 'HMAC';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute an HMAC digest using a key.';
 
   defineInputs() {

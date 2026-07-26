@@ -112,7 +112,7 @@ function cssUnescape(value) {
 export class CssEscapePipe extends StringPipe {
   static typeName = 'CssEscape';
   static typeDescription = 'CSS Escape';
-  static category = 'Encoding';
+  static category = 'Escaping';
   static categoryDescription = 'Escape a string for safe use as a CSS identifier.';
 
   async processString(input) {
@@ -127,7 +127,7 @@ export class CssEscapePipe extends StringPipe {
 export class CssUnescapePipe extends StringPipe {
   static typeName = 'CssUnescape';
   static typeDescription = 'CSS Unescape';
-  static category = 'Encoding';
+  static category = 'Escaping';
   static categoryDescription = 'Decode CSS escape sequences in a string.';
 
   static getInputAppropriateness(input) {

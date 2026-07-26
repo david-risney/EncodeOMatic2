@@ -35,7 +35,7 @@ function normalizeBase64url(text) {
 export class Base64urlEncodePipe extends Pipe {
   static typeName = 'Base64urlEncode';
   static typeDescription = 'Base64url Encode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Encode bytes to a Base64url ASCII string.';
 
   defineOutputs() {
@@ -55,7 +55,7 @@ export class Base64urlEncodePipe extends Pipe {
 export class Base64urlDecodePipe extends Pipe {
   static typeName = 'Base64urlDecode';
   static typeDescription = 'Base64url Decode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Decode Base64url ASCII text to raw bytes.';
 
   static getInputAppropriateness(input) {

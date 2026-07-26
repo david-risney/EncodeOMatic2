@@ -105,7 +105,7 @@ function isWHATWGEncoding(enc) {
 export class CharsetDecodePipe extends Pipe {
   static typeName = 'CharsetDecode';
   static typeDescription = 'Charset Decode';
-  static category = 'Encoding';
+  static category = 'Character Sets';
   static categoryDescription = 'Decode bytes from a specified character encoding to UTF-8 text.';
 
   static getInputAppropriateness(input) {
@@ -166,7 +166,7 @@ export class CharsetDecodePipe extends Pipe {
 export class CharsetEncodePipe extends Pipe {
   static typeName = 'CharsetEncode';
   static typeDescription = 'Charset Encode';
-  static category = 'Encoding';
+  static category = 'Character Sets';
   static categoryDescription = 'Encode UTF-8 text bytes to a target character encoding.';
 
   static getInputAppropriateness(input) {

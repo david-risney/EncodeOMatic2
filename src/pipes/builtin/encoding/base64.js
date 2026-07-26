@@ -9,7 +9,7 @@ const UTF8_DECODER = new TextDecoder('utf-8', { fatal: true });
 export class Base64EncodePipe extends Pipe {
   static typeName = 'Base64Encode';
   static typeDescription = 'Base64 Encode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Encode bytes to a Base64 ASCII string.';
 
   defineOutputs() {
@@ -32,7 +32,7 @@ export class Base64EncodePipe extends Pipe {
 export class Base64DecodePipe extends Pipe {
   static typeName = 'Base64Decode';
   static typeDescription = 'Base64 Decode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Decode Base64 ASCII text to raw bytes.';
 
   static getInputAppropriateness(input) {

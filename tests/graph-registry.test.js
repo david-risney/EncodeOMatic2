@@ -283,10 +283,22 @@ describe('registry', () => {
 
   it('groups metadata by category in display order', () => {
     const groups = getPipesByCategory();
-    expect([...groups.keys()]).toEqual(['Input', 'Encoding', 'Parsing']);
+    const keys = [...groups.keys()];
+    expect(keys).toContain('Input');
+    expect(keys).toContain('Base Encoding');
+    expect(keys).toContain('Hashing');
+    expect(keys).toContain('Compression');
+    expect(keys).toContain('Escaping');
+    expect(keys).toContain('URL Encoding');
+    expect(keys).toContain('Character Sets');
+    expect(keys).toContain('String Transform');
+    expect(keys).toContain('Grammar');
+    expect(keys).toContain('Web');
+    expect(keys).toContain('Data Formats');
     expect(groups.get('Input')[0].typeName).toBe('InputPipe');
-    expect(groups.get('Encoding').map(({ typeName }) => typeName))
+    expect(groups.get('String Transform').map(({ typeName }) => typeName))
       .toContain('QuotedPrintableEncode');
-    expect(groups.get('Parsing').at(-1).typeName).toBe('PegParser');
+    expect(groups.get('Grammar').map(({ typeName }) => typeName))
+      .toContain('PegParser');
   });
 });

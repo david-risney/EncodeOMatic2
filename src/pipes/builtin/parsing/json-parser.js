@@ -10,7 +10,7 @@ import { Pipe, PortDef, PipeError } from '../../pipe.js';
 export class JsonParserPipe extends Pipe {
   static typeName = 'JsonParser';
   static typeDescription = 'JSON Parser';
-  static category = 'Parsing';
+  static category = 'Data Formats';
   static categoryDescription = 'Parse JSON and expose top-level keys as separate outputs.';
 
   static getInputAppropriateness(input) {

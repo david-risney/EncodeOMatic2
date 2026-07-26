@@ -959,36 +959,58 @@ function initAddPipeDialog() {
   dialog.addEventListener('close', () => { _addPipeContext = null; });
 }
 
+function makePipeListItem(pipe) {
+  const item = cloneTemplate('pipe-list-item-template');
+  item.querySelector('.pipe-list-item-name').textContent = pipe.typeDescription;
+  item.querySelector('.pipe-list-item-desc').textContent = pipe.categoryDescription;
+  item.addEventListener('click', () => addPipe(pipe.typeName));
+  return item;
+}
+
 function renderPipeList(query) {
   const list = document.getElementById('pipe-list');
   list.replaceChildren();
   const q = query.toLowerCase();
   const inputData = _addPipeContext?.sourceData ?? null;
-  const pipes = [...getPipesByCategory().values()]
-    .flat()
-    .filter(pipe =>
-      !q ||
-      pipe.typeDescription.toLowerCase().includes(q) ||
-      pipe.typeName.toLowerCase().includes(q) ||
-      pipe.categoryDescription.toLowerCase().includes(q))
-    .map((pipe, index) => ({
-      ...pipe,
-      index,
-      appropriateness: Math.max(
-        MIN_INPUT_APPROPRIATENESS,
-        Math.min(MAX_INPUT_APPROPRIATENESS, pipe.cls.getInputAppropriateness(inputData))
-      ),
-    }))
-    .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
 
-  for (const pipe of pipes) {
-    const item = cloneTemplate('pipe-list-item-template');
-    const name = item.querySelector('.pipe-list-item-name');
-    name.textContent = pipe.typeDescription;
-    const desc = item.querySelector('.pipe-list-item-desc');
-    desc.textContent = pipe.categoryDescription;
-    item.addEventListener('click', () => addPipe(pipe.typeName));
-    list.appendChild(item);
+  const withAppropriateness = pipe => ({
+    ...pipe,
+    appropriateness: Math.max(
+      MIN_INPUT_APPROPRIATENESS,
+      Math.min(MAX_INPUT_APPROPRIATENESS, pipe.cls.getInputAppropriateness(inputData))
+    ),
+  });
+
+  if (q) {
+    // Flat search results sorted by appropriateness
+    const pipes = [...getPipesByCategory().values()]
+      .flat()
+      .filter(pipe =>
+        pipe.typeDescription.toLowerCase().includes(q) ||
+        pipe.typeName.toLowerCase().includes(q) ||
+        pipe.categoryDescription.toLowerCase().includes(q))
+      .map((pipe, index) => ({ ...withAppropriateness(pipe), index }))
+      .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
+
+    for (const pipe of pipes) {
+      list.appendChild(makePipeListItem(pipe));
+    }
+  } else {
+    // Grouped by category, each group sorted by appropriateness
+    for (const [category, pipes] of getPipesByCategory()) {
+      const header = document.createElement('h3');
+      header.className = 'pipe-list-category';
+      header.textContent = category;
+      list.appendChild(header);
+
+      const sorted = pipes
+        .map((pipe, index) => ({ ...withAppropriateness(pipe), index }))
+        .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
+
+      for (const pipe of sorted) {
+        list.appendChild(makePipeListItem(pipe));
+      }
+    }
   }
 }
 

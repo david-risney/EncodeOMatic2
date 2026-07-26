@@ -21,7 +21,7 @@ const BASE58_ALPHABET = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstu
 export class Base58EncodePipe extends Pipe {
   static typeName = 'Base58Encode';
   static typeDescription = 'Base58 Encode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Encode bytes to a Base58 ASCII string (Bitcoin/IPFS alphabet).';
 
   async process(inputs) {
@@ -34,7 +34,7 @@ export class Base58EncodePipe extends Pipe {
 export class Base58DecodePipe extends Pipe {
   static typeName = 'Base58Decode';
   static typeDescription = 'Base58 Decode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Decode a Base58 ASCII string to bytes (Bitcoin/IPFS alphabet).';
 
   static getInputAppropriateness(input) {

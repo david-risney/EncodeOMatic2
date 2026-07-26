@@ -20,7 +20,7 @@ function getCodec(alphabet) {
 export class Base32EncodePipe extends Pipe {
   static typeName = 'Base32Encode';
   static typeDescription = 'Base32 Encode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Encode bytes to a Base32 ASCII string (RFC 4648).';
 
   defineConfigs() {
@@ -54,7 +54,7 @@ export class Base32EncodePipe extends Pipe {
 export class Base32DecodePipe extends Pipe {
   static typeName = 'Base32Decode';
   static typeDescription = 'Base32 Decode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Decode a Base32 ASCII string to bytes (RFC 4648).';
 
   static getInputAppropriateness(input) {

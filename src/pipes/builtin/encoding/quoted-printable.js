@@ -74,7 +74,7 @@ function decodeQuotedPrintable(text) {
 export class QuotedPrintableEncodePipe extends Pipe {
   static typeName = 'QuotedPrintableEncode';
   static typeDescription = 'Quoted-Printable Encode';
-  static category = 'Encoding';
+  static category = 'String Transform';
   static categoryDescription = 'Encode bytes using MIME Quoted-Printable.';
 
   async process(inputs) {
@@ -86,7 +86,7 @@ export class QuotedPrintableEncodePipe extends Pipe {
 export class QuotedPrintableDecodePipe extends Pipe {
   static typeName = 'QuotedPrintableDecode';
   static typeDescription = 'Quoted-Printable Decode';
-  static category = 'Encoding';
+  static category = 'String Transform';
   static categoryDescription = 'Decode MIME Quoted-Printable data to bytes.';
 
   static getInputAppropriateness(input) {

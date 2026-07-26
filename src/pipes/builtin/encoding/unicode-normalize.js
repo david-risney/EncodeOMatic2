@@ -4,7 +4,7 @@ import { PipeConfig } from '../../pipe.js';
 export class UnicodeNormalizePipe extends StringPipe {
   static typeName = 'UnicodeNormalize';
   static typeDescription = 'Unicode Normalize';
-  static category = 'Encoding';
+  static category = 'Character Sets';
   static categoryDescription = 'Apply Unicode normalization (NFC, NFD, NFKC, or NFKD) to the input text.';
 
   defineConfigs() {

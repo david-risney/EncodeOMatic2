@@ -20,7 +20,7 @@ describe('AbnfParserPipe', () => {
 
   it('has expected static metadata', () => {
     expect(AbnfParserPipe.typeName).toBe('AbnfParser');
-    expect(AbnfParserPipe.category).toBe('Parsing');
+    expect(AbnfParserPipe.category).toBe('Grammar');
   });
 
   it('has grammar and input ports', () => {
@@ -114,7 +114,7 @@ describe('NearleyParserPipe', () => {
 
   it('has expected static metadata', () => {
     expect(NearleyParserPipe.typeName).toBe('NearleyParser');
-    expect(NearleyParserPipe.category).toBe('Parsing');
+    expect(NearleyParserPipe.category).toBe('Grammar');
   });
 
   it('has grammar and input ports', () => {
@@ -195,7 +195,7 @@ describe('PegParserPipe', () => {
 
   it('has expected static metadata', () => {
     expect(PegParserPipe.typeName).toBe('PegParser');
-    expect(PegParserPipe.category).toBe('Parsing');
+    expect(PegParserPipe.category).toBe('Grammar');
   });
 
   it('has grammar and input ports', () => {

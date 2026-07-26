@@ -9,7 +9,7 @@ const UTF8_ENCODER = new TextEncoder();
 export class HexEncodePipe extends Pipe {
   static typeName = 'HexEncode';
   static typeDescription = 'Hex Encode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Encode bytes to a hexadecimal string.';
 
   defineConfigs() {
@@ -86,7 +86,7 @@ export class HexEncodePipe extends Pipe {
 export class HexDecodePipe extends Pipe {
   static typeName = 'HexDecode';
   static typeDescription = 'Hex Decode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Decode a hexadecimal string to bytes.';
 
   static getInputAppropriateness(input) {

@@ -22,7 +22,7 @@ function reverseString(text) {
 export class StringReversePipe extends StringPipe {
   static typeName = 'StringReverse';
   static typeDescription = 'String Reverse';
-  static category = 'Encoding';
+  static category = 'String Transform';
   static categoryDescription = 'Reverse the characters in a string (grapheme-cluster-aware).';
 
   async processString(input) {

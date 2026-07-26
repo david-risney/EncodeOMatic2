@@ -82,7 +82,7 @@ function decodeAscii85(text) {
 export class Ascii85EncodePipe extends Pipe {
   static typeName = 'Ascii85Encode';
   static typeDescription = 'Ascii85 Encode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Encode bytes to Ascii85 (Base85) printable ASCII.';
 
   async process(inputs) {
@@ -99,7 +99,7 @@ export class Ascii85EncodePipe extends Pipe {
 export class Ascii85DecodePipe extends Pipe {
   static typeName = 'Ascii85Decode';
   static typeDescription = 'Ascii85 Decode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Decode Ascii85 (Base85) encoded text to bytes.';
 
   static getInputAppropriateness(input) {

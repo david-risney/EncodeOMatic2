@@ -70,7 +70,7 @@ function compileNearleyGrammar(grammarText) {
 export class NearleyParserPipe extends Pipe {
   static typeName = 'NearleyParser';
   static typeDescription = 'Nearley Parser';
-  static category = 'Parsing';
+  static category = 'Grammar';
   static categoryDescription = 'Parse text against a Nearley BNF-like grammar. Wire a grammar text to the grammar input.';
 
   constructor() {
