@@ -30,6 +30,7 @@ import { builtinPipes as unicodeNormalizePipes } from './unicode-normalize.js';
 import { builtinPipes as punycodePipes } from './punycode.js';
 import { builtinPipes as charWidthPipes } from './char-width.js';
 import { builtinPipes as reversePipes } from './reverse.js';
+import { builtinPipes as tarPipes } from './tar.js';
 
 export const builtinEncodingPipes = [
   ...base64Pipes,
@@ -64,4 +65,5 @@ export const builtinEncodingPipes = [
   ...punycodePipes,
   ...charWidthPipes,
   ...reversePipes,
+  ...tarPipes,
 ];
