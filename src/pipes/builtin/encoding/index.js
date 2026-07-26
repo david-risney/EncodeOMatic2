@@ -16,6 +16,7 @@ import { builtinPipes as urlEncodePipes } from './url-encode.js';
 import { builtinPipes as rotPipes } from './rot.js';
 import { builtinPipes as morsePipes } from './morse.js';
 import { builtinPipes as compressionPipes } from './compression.js';
+import { builtinPipes as zipPipes } from './zip.js';
 import { builtinPipes as formUrlencodedPipes } from './form-urlencoded.js';
 import { builtinPipes as hmacPipes } from './hmac.js';
 import { builtinPipes as mimeHeaderPipes } from './mime-header.js';
@@ -49,6 +50,7 @@ export const builtinEncodingPipes = [
   ...rotPipes,
   ...morsePipes,
   ...compressionPipes,
+  ...zipPipes,
   ...formUrlencodedPipes,
   ...hmacPipes,
   ...mimeHeaderPipes,
