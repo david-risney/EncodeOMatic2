@@ -254,6 +254,22 @@ describe('application integration', () => {
     expect(dataView.isConnected).toBe(false);
     expect(document.getElementById('data-panel').hidden).toBe(true);
 
+    // Connection click: clicking a connection should show the source output's data.
+    const editor = document.getElementById('graph-editor');
+    editor.dispatchEvent(new CustomEvent('connection-click', {
+      bubbles: true,
+      detail: {
+        connection: { fromPipeId: node.dataset.pipeId, fromOutput: 'output', toPipeId: 'other', toInput: 'input' },
+        clientX: 0,
+        clientY: 0,
+      },
+    }));
+    expect(document.getElementById('data-panel').hidden).toBe(false);
+    const connDataView = document.querySelector('.data-view');
+    expect(connDataView.querySelector('.data-panel-title').textContent).toContain('Input Buffer');
+    expect(connDataView.querySelector('.data-panel-title').textContent).toContain('output');
+    document.querySelector('.graph-canvas').click();
+
     node.click();
     const reopenedDataView = document.querySelector('.data-view');
     expect(reopenedDataView).not.toBeNull();

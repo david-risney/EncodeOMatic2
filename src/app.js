@@ -798,6 +798,7 @@ function hideConnActionPopover() {
 function onConnectionClick(e) {
   const { connection, clientX, clientY } = e.detail;
   showConnActionPopover(clientX, clientY, connection);
+  showDataView(connection.fromPipeId, connection.fromOutput, 'output');
 }
 
 // ── Config dialog ─────────────────────────────────────────────────
