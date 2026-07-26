@@ -72,6 +72,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/javascript-escape.js',
   './src/pipes/builtin/encoding/unicode-escape.js',
   './src/pipes/builtin/encoding/unicode-normalize.js',
+  './src/pipes/builtin/encoding/unicode-ops.js',
   './src/pipes/builtin/parsing/cookie-parser.js',
   './src/pipes/builtin/parsing/csv-parser.js',
   './src/pipes/builtin/parsing/http-request-parser.js',

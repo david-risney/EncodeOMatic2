@@ -28,6 +28,10 @@ import { CssEscapePipe, CssUnescapePipe } from '../src/pipes/builtin/encoding/cs
 import { CharWidthToHalfwidthPipe, CharWidthToFullwidthPipe } from '../src/pipes/builtin/encoding/char-width.js';
 import { StringReversePipe } from '../src/pipes/builtin/encoding/reverse.js';
 import { PercentEncodePipe } from '../src/pipes/builtin/encoding/percent.js';
+import {
+  UnicodeCaseFoldLowerPipe,
+  UnicodeCaseFoldUpperPipe,
+} from '../src/pipes/builtin/encoding/unicode-ops.js';
 import { ZipPipe, UnzipPipe } from '../src/pipes/builtin/encoding/zip.js';
 import { decode, encode, processBytes, processText } from './helpers.js';
 
@@ -937,6 +941,44 @@ describe('MimeHeaderEncode', () => {
 
   it('handles empty input', async () => {
     expect(await processText(new MimeHeaderEncodePipe(), '')).toBe('');
+  });
+});
+
+describe('Unicode Case Fold Lower', () => {
+  it('lowercases ASCII text', async () => {
+    expect(await processText(new UnicodeCaseFoldLowerPipe(), 'Hello World')).toBe('hello world');
+  });
+
+  it('lowercases non-ASCII text', async () => {
+    expect(await processText(new UnicodeCaseFoldLowerPipe(), 'CAFÉ')).toBe('café');
+  });
+
+  it('applies NFKC compatibility decomposition before lower folding', async () => {
+    expect(await processText(new UnicodeCaseFoldLowerPipe(), '\uFF21')).toBe('a');
+    expect(await processText(new UnicodeCaseFoldLowerPipe(), '\uFB01')).toBe('fi');
+  });
+
+  it('handles empty input', async () => {
+    expect(await processText(new UnicodeCaseFoldLowerPipe(), '')).toBe('');
+  });
+});
+
+describe('Unicode Case Fold Upper', () => {
+  it('uppercases ASCII text', async () => {
+    expect(await processText(new UnicodeCaseFoldUpperPipe(), 'Hello World')).toBe('HELLO WORLD');
+  });
+
+  it('uppercases non-ASCII text', async () => {
+    expect(await processText(new UnicodeCaseFoldUpperPipe(), 'café')).toBe('CAFÉ');
+  });
+
+  it('applies NFKC compatibility decomposition before upper folding', async () => {
+    expect(await processText(new UnicodeCaseFoldUpperPipe(), '\uFF41')).toBe('A');
+    expect(await processText(new UnicodeCaseFoldUpperPipe(), '\uFB01')).toBe('FI');
+  });
+
+  it('handles empty input', async () => {
+    expect(await processText(new UnicodeCaseFoldUpperPipe(), '')).toBe('');
   });
 });
 

@@ -27,6 +27,7 @@ import { builtinPipes as crc32Pipes } from './crc32.js';
 import { builtinPipes as xxhashPipes } from './xxhash.js';
 import { builtinPipes as unicodeEscapePipes } from './unicode-escape.js';
 import { builtinPipes as unicodeNormalizePipes } from './unicode-normalize.js';
+import { builtinPipes as unicodeOpsPipes } from './unicode-ops.js';
 import { builtinPipes as punycodePipes } from './punycode.js';
 import { builtinPipes as charWidthPipes } from './char-width.js';
 import { builtinPipes as reversePipes } from './reverse.js';
@@ -62,6 +63,7 @@ export const builtinEncodingPipes = [
   ...xxhashPipes,
   ...unicodeEscapePipes,
   ...unicodeNormalizePipes,
+  ...unicodeOpsPipes,
   ...punycodePipes,
   ...charWidthPipes,
   ...reversePipes,
