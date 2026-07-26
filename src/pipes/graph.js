@@ -256,7 +256,7 @@ export class PipeGraph {
       }
     }
 
-    if (this._workerPool && pipe.constructor.typeName) {
+    if (this._workerPool && pipe.constructor.typeName && pipe.constructor.supportsWorker !== false) {
       await this._runPipeInWorker(pipe);
     } else {
       await pipe.run();

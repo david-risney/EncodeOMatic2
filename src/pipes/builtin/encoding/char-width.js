@@ -99,3 +99,5 @@ export class CharWidthToFullwidthPipe extends StringPipe {
     return toFullwidth(input);
   }
 }
+
+export const builtinPipes = [CharWidthToHalfwidthPipe, CharWidthToFullwidthPipe];

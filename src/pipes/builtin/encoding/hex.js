@@ -166,3 +166,5 @@ export class HexDecodePipe extends Pipe {
     return null;
   }
 }
+
+export const builtinPipes = [HexEncodePipe, HexDecodePipe];

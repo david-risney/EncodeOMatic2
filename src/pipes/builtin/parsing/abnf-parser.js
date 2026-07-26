@@ -152,3 +152,5 @@ export class AbnfParserPipe extends Pipe {
     return out;
   }
 }
+
+export const builtinPipes = [AbnfParserPipe];

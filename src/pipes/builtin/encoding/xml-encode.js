@@ -80,3 +80,5 @@ export class XmlDecodePipe extends StringPipe {
       });
   }
 }
+
+export const builtinPipes = [XmlEncodePipe, XmlDecodePipe];

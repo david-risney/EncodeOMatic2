@@ -104,8 +104,8 @@ describe('RegexMatchPipe', () => {
     const result = await pipe.process(new Map([['input', encode('A ab')]]));
     expect(decode(result.get('match'))).toBe('A');
     expect(decode(result.get('all-matches'))).toBe('A\nab');
-    expect(decode(result.get('group:1'))).toBe('A');
-    expect(decode(result.get('group:2'))).toBe('');
+    expect(decode(result.get('group:1'))).toBe('A\na');
+    expect(decode(result.get('group:2'))).toBe('\nb');
     expect(pipe.defineOutputs().map(({ name }) => name)).toContain('group:2');
   });
 

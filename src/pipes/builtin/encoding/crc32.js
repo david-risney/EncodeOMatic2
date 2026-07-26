@@ -54,3 +54,5 @@ export class Adler32Pipe extends HashWasmPipe {
     return this.processWithHasher(inputs, createAdler32, 'Adler-32 hashing failed');
   }
 }
+
+export const builtinPipes = [Crc32Pipe, Crc32cPipe, Crc64Pipe, Adler32Pipe];

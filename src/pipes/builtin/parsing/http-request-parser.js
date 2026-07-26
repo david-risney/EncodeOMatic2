@@ -104,3 +104,5 @@ export class HttpRequestParserPipe extends Pipe {
     return result;
   }
 }
+
+export const builtinPipes = [HttpRequestParserPipe];

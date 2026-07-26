@@ -86,3 +86,5 @@ export class HmacPipe extends Pipe {
     }
   }
 }
+
+export const builtinPipes = [HmacPipe];

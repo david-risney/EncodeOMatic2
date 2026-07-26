@@ -148,3 +148,5 @@ export class CssUnescapePipe extends StringPipe {
     return cssUnescape(input);
   }
 }
+
+export const builtinPipes = [CssEscapePipe, CssUnescapePipe];

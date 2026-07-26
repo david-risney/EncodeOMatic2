@@ -91,3 +91,5 @@ export class XxHash128Pipe extends HashWasmPipe {
     return this.processWithHasher(inputs, () => createXXHash128(low, high), 'xxHash128 hashing failed');
   }
 }
+
+export const builtinPipes = [XxHash32Pipe, XxHash64Pipe, XxHash3Pipe, XxHash128Pipe];

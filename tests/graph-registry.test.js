@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Pipe, PortDef } from '../src/pipes/pipe.js';
 import { Connection, PipeGraph } from '../src/pipes/graph.js';
+import { builtinPipes } from '../src/pipes/builtin/index.js';
 import { createPipe, getPipesByCategory, registry } from '../src/pipes/registry.js';
 import { InputPipe } from '../src/pipes/builtin/input-pipe.js';
 import { HexEncodePipe } from '../src/pipes/builtin/encoding/hex.js';
@@ -222,62 +223,11 @@ describe('PipeGraph mutation and traversal', () => {
 
 describe('registry', () => {
   it('contains every built-in type and creates instances', () => {
-    expect([...registry.keys()]).toEqual([
-      'InputPipe',
-      'FileInputPipe',
-      'Base64Encode', 'Base64Decode',
-      'Base64urlEncode', 'Base64urlDecode',
-      'Base32Encode', 'Base32Decode',
-      'Base58Encode', 'Base58Decode',
-      'Ascii85Encode', 'Ascii85Decode',
-      'PercentEncode', 'PercentDecode',
-      'QuotedPrintableEncode', 'QuotedPrintableDecode',
-      'HexEncode', 'HexDecode',
-      'HtmlEncode', 'HtmlDecode',
-      'XmlEncode', 'XmlDecode',
-      'CharsetDecode', 'CharsetEncode',
-      'BinaryEncode', 'BinaryDecode',
-      'SlashEscape', 'SlashUnescape',
-      'CssEscape', 'CssUnescape',
-      'UrlEncode', 'UrlDecode',
-      'Rot',
-      'MorseEncode', 'MorseDecode',
-      'GzipCompress', 'GzipDecompress',
-      'DeflateCompress', 'DeflateDecompress',
-      'FormUrlencodedEncode', 'FormUrlencodedDecode',
-      'Hmac',
-      'MimeHeaderDecode', 'MimeHeaderEncode',
-      'ShaHash',
-      'Sha3Hash',
-      'KeccakHash',
-      'Blake2bHash',
-      'Blake2sHash',
-      'Blake3Hash',
-      'Md4Hash',
-      'Md5Hash',
-      'Ripemd160Hash',
-      'Sm3Hash',
-      'WhirlpoolHash',
-      'Crc32',
-      'Crc32c',
-      'Crc64',
-      'Adler32',
-      'XxHash32',
-      'XxHash64',
-      'XxHash3',
-      'XxHash128',
-      'JavaScriptEscapeEncode', 'JavaScriptEscapeDecode',
-      'UnicodeNormalize',
-      'PunycodeEncode', 'PunycodeDecode',
-      'CharWidthToHalfwidth', 'CharWidthToFullwidth',
-      'StringReverse',
-      'UrlParser', 'JsonParser', 'RegexMatch',
-      'CookieParser', 'CsvParser',
-      'HttpRequestParser', 'HttpResponseParser',
-      'JwtParser', 'SearchParamsParser',
-      'AbnfParser', 'NearleyParser', 'PegParser',
-    ]);
-    expect(createPipe('HexEncode')).toBeInstanceOf(HexEncodePipe);
+    expect([...registry.keys()]).toEqual(builtinPipes.map(({ typeName }) => typeName));
+
+    for (const PipeClass of builtinPipes) {
+      expect(createPipe(PipeClass.typeName)).toBeInstanceOf(PipeClass);
+    }
     expect(createPipe('missing')).toBeNull();
   });
 

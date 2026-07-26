@@ -51,3 +51,5 @@ export class FormUrlencodedDecodePipe extends StringPipe {
     }
   }
 }
+
+export const builtinPipes = [FormUrlencodedEncodePipe, FormUrlencodedDecodePipe];

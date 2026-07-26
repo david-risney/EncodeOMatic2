@@ -111,3 +111,5 @@ export class CookieParserPipe extends Pipe {
     return result;
   }
 }
+
+export const builtinPipes = [CookieParserPipe];

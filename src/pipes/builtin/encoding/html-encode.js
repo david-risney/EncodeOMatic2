@@ -88,3 +88,5 @@ export class HtmlDecodePipe extends StringPipe {
     return he.decode(input);
   }
 }
+
+export const builtinPipes = [HtmlEncodePipe, HtmlDecodePipe];

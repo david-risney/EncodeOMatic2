@@ -138,3 +138,5 @@ export class Ascii85DecodePipe extends Pipe {
     }
   }
 }
+
+export const builtinPipes = [Ascii85EncodePipe, Ascii85DecodePipe];

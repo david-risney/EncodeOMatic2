@@ -66,3 +66,5 @@ export class Base58DecodePipe extends Pipe {
     return new Map([['output', new Uint8Array(decoded)]]);
   }
 }
+
+export const builtinPipes = [Base58EncodePipe, Base58DecodePipe];

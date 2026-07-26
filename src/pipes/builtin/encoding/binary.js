@@ -158,3 +158,5 @@ export class BinaryDecodePipe extends Pipe {
     return null;
   }
 }
+
+export const builtinPipes = [BinaryEncodePipe, BinaryDecodePipe];

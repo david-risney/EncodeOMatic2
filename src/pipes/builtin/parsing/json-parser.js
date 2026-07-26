@@ -75,3 +75,5 @@ export class JsonParserPipe extends Pipe {
     return result;
   }
 }
+
+export const builtinPipes = [JsonParserPipe];

@@ -29,3 +29,5 @@ export class StringReversePipe extends StringPipe {
     return reverseString(input);
   }
 }
+
+export const builtinPipes = [StringReversePipe];

@@ -72,3 +72,5 @@ export class MimeHeaderEncodePipe extends StringPipe {
     }
   }
 }
+
+export const builtinPipes = [MimeHeaderDecodePipe, MimeHeaderEncodePipe];

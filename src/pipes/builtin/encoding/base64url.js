@@ -105,3 +105,5 @@ export class Base64urlDecodePipe extends Pipe {
     return new Map([['output', bytes]]);
   }
 }
+
+export const builtinPipes = [Base64urlEncodePipe, Base64urlDecodePipe];

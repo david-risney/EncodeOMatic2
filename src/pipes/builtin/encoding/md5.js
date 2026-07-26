@@ -61,3 +61,5 @@ export class WhirlpoolHashPipe extends HashWasmPipe {
     return this.processWithHasher(inputs, createWhirlpool, 'Whirlpool hashing failed');
   }
 }
+
+export const builtinPipes = [Md4HashPipe, Md5HashPipe, Ripemd160HashPipe, Sm3HashPipe, WhirlpoolHashPipe];

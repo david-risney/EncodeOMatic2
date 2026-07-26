@@ -141,3 +141,5 @@ export class CsvParserPipe extends Pipe {
     return result;
   }
 }
+
+export const builtinPipes = [CsvParserPipe];

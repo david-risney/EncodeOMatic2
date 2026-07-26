@@ -157,3 +157,5 @@ export class MorseDecodePipe extends StringPipe {
     return output.join('').trim();
   }
 }
+
+export const builtinPipes = [MorseEncodePipe, MorseDecodePipe];

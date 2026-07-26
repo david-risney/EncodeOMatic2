@@ -70,3 +70,5 @@ export class JwtParserPipe extends Pipe {
     ]);
   }
 }
+
+export const builtinPipes = [JwtParserPipe];
