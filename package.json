@@ -32,11 +32,14 @@
   },
   "type": "module",
   "dependencies": {
+    "apg-js": "^4.4.0",
     "ascii85": "^1.0.2",
     "bs58": "^6.0.0",
     "emailjs-mime-codec": "^2.0.9",
     "he": "^1.2.0",
     "iconv-lite": "^0.7.3",
+    "nearley": "^2.20.1",
+    "peggy": "^5.1.0",
     "punycode": "^2.3.1",
     "quoted-printable": "^1.0.1",
     "rfc4648": "^1.5.4"

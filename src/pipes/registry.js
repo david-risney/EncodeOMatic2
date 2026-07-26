@@ -44,6 +44,9 @@ import { SearchParamsParserPipe } from './builtin/parsing/search-params-parser.j
 import { UrlParserPipe }     from './builtin/parsing/url-parser.js';
 import { JsonParserPipe }    from './builtin/parsing/json-parser.js';
 import { RegexMatchPipe }    from './builtin/parsing/regex-match.js';
+import { AbnfParserPipe }    from './builtin/parsing/abnf-parser.js';
+import { NearleyParserPipe } from './builtin/parsing/nearley-parser.js';
+import { PegParserPipe }     from './builtin/parsing/peg-parser.js';
 
 /** All built-in pipe classes in the desired display order. */
 const ALL_PIPES = [
@@ -111,6 +114,9 @@ const ALL_PIPES = [
   HttpResponseParserPipe,
   JwtParserPipe,
   SearchParamsParserPipe,
+  AbnfParserPipe,
+  NearleyParserPipe,
+  PegParserPipe,
 ];
 
 /** Map from typeName string → Pipe class */

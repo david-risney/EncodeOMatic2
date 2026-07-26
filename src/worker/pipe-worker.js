@@ -54,6 +54,9 @@ import { SearchParamsParserPipe } from '../pipes/builtin/parsing/search-params-p
 import { UrlParserPipe }    from '../pipes/builtin/parsing/url-parser.js';
 import { JsonParserPipe }   from '../pipes/builtin/parsing/json-parser.js';
 import { RegexMatchPipe }   from '../pipes/builtin/parsing/regex-match.js';
+import { AbnfParserPipe }    from '../pipes/builtin/parsing/abnf-parser.js';
+import { NearleyParserPipe } from '../pipes/builtin/parsing/nearley-parser.js';
+import { PegParserPipe }     from '../pipes/builtin/parsing/peg-parser.js';
 
 const REGISTRY = new Map([
   ['InputPipe',       InputPipe],
@@ -117,6 +120,9 @@ const REGISTRY = new Map([
   ['HttpResponseParser', HttpResponseParserPipe],
   ['JwtParser',       JwtParserPipe],
   ['SearchParamsParser', SearchParamsParserPipe],
+  ['AbnfParser',      AbnfParserPipe],
+  ['NearleyParser',   NearleyParserPipe],
+  ['PegParser',       PegParserPipe],
 ]);
 
 self.onmessage = async ({ data }) => {
