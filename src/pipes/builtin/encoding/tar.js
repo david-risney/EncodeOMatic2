@@ -72,7 +72,10 @@ export class TarExtractPipe extends Pipe {
 
     let entries;
     try {
-      entries = parseTar(data);
+      const tarInput = (data.byteOffset !== 0 || data.byteLength !== data.buffer.byteLength)
+        ? data.slice()
+        : data;
+      entries = parseTar(tarInput);
     } catch {
       throw new PipeError('Invalid tar archive: could not parse');
     }
