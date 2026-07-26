@@ -106,3 +106,5 @@ export class Base32DecodePipe extends Pipe {
     }
   }
 }
+
+export const builtinPipes = [Base32EncodePipe, Base32DecodePipe];

@@ -111,3 +111,5 @@ export class UnicodeEscapeDecodePipe extends Pipe {
     return new Map([['output', UTF8_ENCODER.encode(decodeUnicodeEscapes(text))]]);
   }
 }
+
+export const builtinPipes = [UnicodeEscapeEncodePipe, UnicodeEscapeDecodePipe];

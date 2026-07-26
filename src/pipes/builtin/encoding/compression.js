@@ -96,3 +96,5 @@ export class DeflateDecompressPipe extends DecompressionPipe {
   static categoryDescription = 'Decompress deflate-compressed bytes.';
   static format = 'deflate';
 }
+
+export const builtinPipes = [GzipCompressPipe, GzipDecompressPipe, DeflateCompressPipe, DeflateDecompressPipe];

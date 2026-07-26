@@ -52,3 +52,5 @@ export class HmacPipe extends Pipe {
     return new Map([['output', new Uint8Array(signature)]]);
   }
 }
+
+export const builtinPipes = [HmacPipe];

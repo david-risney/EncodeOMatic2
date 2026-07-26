@@ -110,13 +110,17 @@ the main-thread model before the editor redraws ports.
 
 ## Registration
 
-`src/pipes/registry.js` is the main-thread source of built-in display order,
-creation, deserialization, categories, and guessing candidates.
+`src/pipes/builtin/*` modules export `builtinPipes` so each pipe file declares
+its own registration entries close to the implementation. The ordered category
+indexes under `src/pipes/builtin/encoding/` and `src/pipes/builtin/parsing/`,
+plus `src/pipes/builtin/index.js`, assemble the final built-in list used by
+`src/pipes/registry.js` for display order, creation, deserialization,
+categories, and guessing candidates.
 
-`src/worker/pipe-worker.js` has a separate allowlisted registry for worker
-dispatch. Processing-capable types intended to run in workers must use exactly
-the same stable `typeName` in both places. A renamed type also affects
-serialized graphs.
+`src/worker/pipe-worker.js` derives its allowlisted worker registry from that
+same shared built-in list. Processing-capable types intended to run in workers
+must therefore keep a stable `typeName`; a rename still affects serialized
+graphs.
 
 ## Adding or changing a pipe
 
@@ -124,9 +128,10 @@ serialized graphs.
    `Pipe` or `StringPipe`.
 2. Define stable metadata, ports, configurations, processing, errors, and
    appropriateness scoring where useful.
-3. Add it to the ordered main-thread registry.
-4. If it should execute in a worker, import and allowlist it in
-   `pipe-worker.js`.
+3. Export it from the module's `builtinPipes` list and add that module to the
+   relevant ordered built-in category index.
+4. If it should stay on the main thread only, set `static supportsWorker =
+   false`; otherwise the worker allowlist is derived automatically.
 5. Add focused pipe tests. Cover empty, malformed, non-ASCII, and arbitrary
    byte input as applicable.
 6. Update graph/worker tests for registration or dynamic-port behavior and UI

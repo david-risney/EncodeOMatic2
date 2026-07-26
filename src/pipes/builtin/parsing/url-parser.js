@@ -113,3 +113,5 @@ export class UrlParserPipe extends Pipe {
     return result;
   }
 }
+
+export const builtinPipes = [UrlParserPipe];

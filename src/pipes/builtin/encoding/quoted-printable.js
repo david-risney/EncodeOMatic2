@@ -124,3 +124,5 @@ export class QuotedPrintableDecodePipe extends Pipe {
     return new Map([['output', decodeQuotedPrintable(text)]]);
   }
 }
+
+export const builtinPipes = [QuotedPrintableEncodePipe, QuotedPrintableDecodePipe];

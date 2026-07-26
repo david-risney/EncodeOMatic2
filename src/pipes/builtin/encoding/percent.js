@@ -102,3 +102,5 @@ export class PercentDecodePipe extends StringPipe {
     }
   }
 }
+
+export const builtinPipes = [PercentEncodePipe, PercentDecodePipe];

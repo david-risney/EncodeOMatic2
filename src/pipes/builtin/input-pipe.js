@@ -46,3 +46,5 @@ export class InputPipe extends Pipe {
     return new Map([['output', encoder.encode(text)]]);
   }
 }
+
+export const builtinPipes = [InputPipe];

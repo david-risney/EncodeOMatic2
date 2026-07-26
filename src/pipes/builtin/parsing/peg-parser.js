@@ -133,3 +133,5 @@ export class PegParserPipe extends Pipe {
     return out;
   }
 }
+
+export const builtinPipes = [PegParserPipe];

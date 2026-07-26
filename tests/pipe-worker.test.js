@@ -1,14 +1,25 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { builtinPipes } from '../src/pipes/builtin/index.js';
+
+let workerModule;
 
 describe('pipe worker message handler', () => {
   beforeEach(async () => {
     vi.resetModules();
     vi.stubGlobal('postMessage', vi.fn());
-    await import('../src/worker/pipe-worker.js');
+    workerModule = await import('../src/worker/pipe-worker.js');
   });
 
   afterAll(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('registers every worker-capable builtin type', () => {
+    expect([...workerModule.workerRegistry.keys()]).toEqual(
+      builtinPipes
+        .filter((PipeClass) => PipeClass.supportsWorker !== false)
+        .map(({ typeName }) => typeName)
+    );
   });
 
   it('ignores unrelated messages and rejects unknown pipe types', async () => {
@@ -75,5 +86,24 @@ describe('pipe worker message handler', () => {
         selections: [{ index: 2, length: 1 }],
       }],
     }));
+  });
+
+  it('processes file input pipes through the worker registry', async () => {
+    await self.onmessage({
+      data: {
+        type: 'process',
+        id: 5,
+        pipeType: 'FileInputPipe',
+        configs: { fileData: 'AQID' },
+        inputs: {},
+      },
+    });
+    expect(self.postMessage).toHaveBeenLastCalledWith({
+      type: 'result',
+      id: 5,
+      outputs: { output: [1, 2, 3] },
+      errors: [],
+      dynamicOutputPorts: null,
+    });
   });
 });

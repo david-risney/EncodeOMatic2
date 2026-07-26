@@ -214,3 +214,5 @@ export class CharsetEncodePipe extends Pipe {
     }
   }
 }
+
+export const builtinPipes = [CharsetDecodePipe, CharsetEncodePipe];

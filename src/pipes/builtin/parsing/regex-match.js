@@ -91,3 +91,5 @@ export class RegexMatchPipe extends Pipe {
     return result;
   }
 }
+
+export const builtinPipes = [RegexMatchPipe];

@@ -33,3 +33,5 @@ export class ShaHashPipe extends Pipe {
     return new Map([['output', new Uint8Array(digest)]]);
   }
 }
+
+export const builtinPipes = [ShaHashPipe];
