@@ -131,7 +131,9 @@ graphs.
 3. Export it from the module's `builtinPipes` list and add that module to the
    relevant ordered built-in category index.
 4. If it should stay on the main thread only, set `static supportsWorker =
-   false`; otherwise the worker allowlist is derived automatically.
+   false`. This both excludes the pipe from the worker registry and causes
+   `PipeGraph._runPipe` to fall back to main-thread execution even when a
+   worker pool is available.
 5. Add focused pipe tests. Cover empty, malformed, non-ASCII, and arbitrary
    byte input as applicable.
 6. Update graph/worker tests for registration or dynamic-port behavior and UI
