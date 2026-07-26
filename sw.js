@@ -60,6 +60,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/url-encode.js',
   './src/pipes/builtin/encoding/xml-encode.js',
   './src/pipes/builtin/encoding/compression.js',
+  './src/pipes/builtin/encoding/zip.js',
   './src/pipes/builtin/encoding/form-urlencoded.js',
   './src/pipes/builtin/encoding/hash-wasm.js',
   './src/pipes/builtin/encoding/hmac.js',
@@ -83,6 +84,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/parsing/abnf-parser.js',
   './src/pipes/builtin/parsing/nearley-parser.js',
   './src/pipes/builtin/parsing/peg-parser.js',
+  './src/pipes/builtin/parsing/protobuf-parser.js',
   './vendor/iconv-lite.js',
   './vendor/he.js',
   './vendor/mime-codec.js',
@@ -95,6 +97,8 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/tar.js',
   './vendor/nanotar.js',
   './vendor/peggy.js',
+  './vendor/fflate.js',
+  './vendor/protobufjs.js',
 ];
 
 self.addEventListener('install', (event) => {
