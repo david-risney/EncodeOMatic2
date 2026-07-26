@@ -326,6 +326,26 @@ class DataViewer extends HTMLElement {
     }));
   }
 
+  /**
+   * Copy the current viewer content to the clipboard as text.
+   * In text mode copies the decoded UTF-8 string; in hex mode copies
+   * space-separated uppercase hex pairs.
+   * @returns {Promise<boolean>} true if the copy succeeded
+   */
+  async copyToClipboard() {
+    if (!this._data) return false;
+    let text;
+    if (this._mode === 'hex') {
+      text = [...this._data]
+        .map(byte => byte.toString(16).toUpperCase().padStart(2, '0'))
+        .join(' ');
+    } else {
+      text = decodeUtf8Lenient(this._data);
+    }
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
   _updateInfo(byteCount, charCount = null) {
     const info = this._inner.querySelector('.data-viewer-info');
     if (!info) return;

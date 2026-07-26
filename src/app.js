@@ -597,6 +597,7 @@ function createDataView(pipeId, portName, portType) {
   const title = element.querySelector('.data-panel-title');
   const errors = element.querySelector('.data-view-errors');
   const viewer = element.querySelector('data-viewer');
+  const copyButton = element.querySelector('[data-action="copy"]');
   const modeButton = element.querySelector('[data-action="mode"]');
   const pinButton = element.querySelector('[data-action="pin"]');
   const minimizeButton = element.querySelector('[data-action="minimize"]');
@@ -608,7 +609,7 @@ function createDataView(pipeId, portName, portType) {
     minimized: false,
     mode: 'text',
     element, title, errors, viewer,
-    pinButton, minimizeButton, modeButton,
+    copyButton, pinButton, minimizeButton, modeButton,
   };
   viewer.addEventListener('selection-change', event => {
     activeSelections = graph.translateSelections(
@@ -622,6 +623,14 @@ function createDataView(pipeId, portName, portType) {
         selectionRefreshFrame = null;
         refreshDataViews();
       });
+    }
+  });
+  copyButton.addEventListener('click', async () => {
+    try {
+      const copied = await view.viewer.copyToClipboard();
+      if (copied) showToast('Copied to clipboard!', 'success');
+    } catch {
+      showToast('Copy failed', 'error');
     }
   });
   modeButton.addEventListener('click', () =>
