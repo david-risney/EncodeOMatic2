@@ -36,7 +36,7 @@ const STATIC_OUTPUT_NAMES = new Set(STATIC_OUTPUTS.map(p => p.name));
 export class UrlParserPipe extends Pipe {
   static typeName = 'UrlParser';
   static typeDescription = 'URL Parser';
-  static category = 'Parsing';
+  static category = 'Web';
   static categoryDescription = 'Parse a URL into its component parts.';
 
   static getInputAppropriateness(input) {

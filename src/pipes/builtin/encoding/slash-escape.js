@@ -35,7 +35,7 @@ const UNESCAPE_MAP = {
 export class SlashEscapePipe extends StringPipe {
   static typeName = 'SlashEscape';
   static typeDescription = 'Slash Escape';
-  static category = 'Encoding';
+  static category = 'Escaping';
   static categoryDescription = 'Escape special characters with C-style backslash sequences.';
 
   defineConfigs() {
@@ -72,7 +72,7 @@ export class SlashEscapePipe extends StringPipe {
 export class SlashUnescapePipe extends StringPipe {
   static typeName = 'SlashUnescape';
   static typeDescription = 'Slash Unescape';
-  static category = 'Encoding';
+  static category = 'Escaping';
   static categoryDescription = 'Unescape C-style backslash sequences.';
 
   static getInputAppropriateness(input) {

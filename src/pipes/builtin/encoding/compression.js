@@ -61,7 +61,7 @@ class DecompressionPipe extends Pipe {
 export class GzipCompressPipe extends CompressionPipe {
   static typeName = 'GzipCompress';
   static typeDescription = 'Gzip Compress';
-  static category = 'Encoding';
+  static category = 'Compression';
   static categoryDescription = 'Compress bytes using gzip.';
   static format = 'gzip';
 }
@@ -69,7 +69,7 @@ export class GzipCompressPipe extends CompressionPipe {
 export class GzipDecompressPipe extends DecompressionPipe {
   static typeName = 'GzipDecompress';
   static typeDescription = 'Gzip Decompress';
-  static category = 'Encoding';
+  static category = 'Compression';
   static categoryDescription = 'Decompress gzip-compressed bytes.';
   static format = 'gzip';
 
@@ -84,7 +84,7 @@ export class GzipDecompressPipe extends DecompressionPipe {
 export class DeflateCompressPipe extends CompressionPipe {
   static typeName = 'DeflateCompress';
   static typeDescription = 'Deflate Compress';
-  static category = 'Encoding';
+  static category = 'Compression';
   static categoryDescription = 'Compress bytes using deflate.';
   static format = 'deflate';
 }
@@ -92,7 +92,7 @@ export class DeflateCompressPipe extends CompressionPipe {
 export class DeflateDecompressPipe extends DecompressionPipe {
   static typeName = 'DeflateDecompress';
   static typeDescription = 'Deflate Decompress';
-  static category = 'Encoding';
+  static category = 'Compression';
   static categoryDescription = 'Decompress deflate-compressed bytes.';
   static format = 'deflate';
 }

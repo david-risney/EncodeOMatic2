@@ -14,7 +14,7 @@ const MIME_HEADER_INPUT_PATTERN = /=\?[^?]+\?[BbQq]\?[^?]*\?=/;
 export class MimeHeaderDecodePipe extends StringPipe {
   static typeName = 'MimeHeaderDecode';
   static typeDescription = 'MIME Header Decode';
-  static category = 'Encoding';
+  static category = 'String Transform';
   static categoryDescription = 'Decode RFC 2047 encoded words in email headers.';
 
   static getInputAppropriateness(input) {
@@ -40,7 +40,7 @@ export class MimeHeaderDecodePipe extends StringPipe {
 export class MimeHeaderEncodePipe extends StringPipe {
   static typeName = 'MimeHeaderEncode';
   static typeDescription = 'MIME Header Encode';
-  static category = 'Encoding';
+  static category = 'String Transform';
   static categoryDescription = 'Encode text as RFC 2047 encoded words for use in email headers.';
 
   defineConfigs() {

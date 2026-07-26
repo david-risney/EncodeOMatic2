@@ -24,7 +24,7 @@ function splitNameValue(segment) {
 export class CookieParserPipe extends Pipe {
   static typeName = 'CookieParser';
   static typeDescription = 'Cookie Parse';
-  static category = 'Parsing';
+  static category = 'Web';
   static categoryDescription = 'Parse a Cookie or Set-Cookie header value into fields.';
 
   static getInputAppropriateness(input) {

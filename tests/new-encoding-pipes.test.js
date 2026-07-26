@@ -16,9 +16,9 @@ import { ShaHashPipe } from '../src/pipes/builtin/encoding/sha-hash.js';
 import { Md5HashPipe } from '../src/pipes/builtin/encoding/md5.js';
 import { Crc32Pipe, Adler32Pipe } from '../src/pipes/builtin/encoding/crc32.js';
 import {
-  UnicodeEscapeEncodePipe,
-  UnicodeEscapeDecodePipe,
-} from '../src/pipes/builtin/encoding/unicode-escape.js';
+  JavaScriptEscapeEncodePipe,
+  JavaScriptEscapeDecodePipe,
+} from '../src/pipes/builtin/encoding/javascript-escape.js';
 import { UnicodeNormalizePipe } from '../src/pipes/builtin/encoding/unicode-normalize.js';
 import { Base32EncodePipe, Base32DecodePipe } from '../src/pipes/builtin/encoding/base32.js';
 import { Base58EncodePipe, Base58DecodePipe } from '../src/pipes/builtin/encoding/base58.js';
@@ -431,72 +431,93 @@ describe('Adler-32', () => {
   });
 });
 
-describe('Unicode Escape encoding', () => {
+describe('JavaScript Escape encoding', () => {
   it('encodes all characters as \\uXXXX or \\u{...} escape sequences', async () => {
-    expect(await processText(new UnicodeEscapeEncodePipe(), 'A')).toBe('\\u0041');
-    expect(await processText(new UnicodeEscapeEncodePipe(), 'é')).toBe('\\u00E9');
-    expect(await processText(new UnicodeEscapeEncodePipe(), '😀')).toBe('\\u{1F600}');
-    expect(await processText(new UnicodeEscapeEncodePipe(), 'A😀')).toBe('\\u0041\\u{1F600}');
+    expect(await processText(new JavaScriptEscapeEncodePipe(), 'A')).toBe('\\u0041');
+    expect(await processText(new JavaScriptEscapeEncodePipe(), 'é')).toBe('\\u00E9');
+    expect(await processText(new JavaScriptEscapeEncodePipe(), '😀')).toBe('\\u{1F600}');
+    expect(await processText(new JavaScriptEscapeEncodePipe(), 'A😀')).toBe('\\u0041\\u{1F600}');
   });
 
   it('decodes \\uXXXX escape sequences', async () => {
-    expect(await processText(new UnicodeEscapeDecodePipe(), '\\u0041\\u0042')).toBe('AB');
-    expect(await processText(new UnicodeEscapeDecodePipe(), '\\u00E9')).toBe('é');
+    expect(await processText(new JavaScriptEscapeDecodePipe(), '\\u0041\\u0042')).toBe('AB');
+    expect(await processText(new JavaScriptEscapeDecodePipe(), '\\u00E9')).toBe('é');
   });
 
   it('decodes \\u{...} extended escape sequences', async () => {
-    expect(await processText(new UnicodeEscapeDecodePipe(), '\\u{1F600}')).toBe('😀');
-    expect(await processText(new UnicodeEscapeDecodePipe(), '\\u{0}')).toBe('\0');
+    expect(await processText(new JavaScriptEscapeDecodePipe(), '\\u{1F600}')).toBe('😀');
+    expect(await processText(new JavaScriptEscapeDecodePipe(), '\\u{0}')).toBe('\0');
+  });
+
+  it('decodes simple JavaScript escapes', async () => {
+    expect(await processText(new JavaScriptEscapeDecodePipe(), '\\n\\t\\r\\b\\f\\v\\0')).toBe('\n\t\r\b\f\v\0');
+    expect(await processText(new JavaScriptEscapeDecodePipe(), '\\\\\\"\\\'')).toBe('\\\"\'');
+  });
+
+  it('decodes \\xHH byte escapes', async () => {
+    expect(await processText(new JavaScriptEscapeDecodePipe(), '\\x41\\x7A')).toBe('Az');
   });
 
   it('passes non-escape characters through unchanged', async () => {
-    expect(await processText(new UnicodeEscapeDecodePipe(), 'hello\\u0020world')).toBe('hello world');
+    expect(await processText(new JavaScriptEscapeDecodePipe(), 'hello\\u0020world')).toBe('hello world');
   });
 
   it('round trips ASCII and non-BMP text', async () => {
     for (const input of ['Hello', 'café', '😀🎉']) {
-      const encoded = await processText(new UnicodeEscapeEncodePipe(), input);
-      expect(await processText(new UnicodeEscapeDecodePipe(), encoded)).toBe(input);
+      const encoded = await processText(new JavaScriptEscapeEncodePipe(), input);
+      expect(await processText(new JavaScriptEscapeDecodePipe(), encoded)).toBe(input);
     }
   });
 
   it('handles empty input', async () => {
-    expect(await processText(new UnicodeEscapeEncodePipe(), '')).toBe('');
-    expect(await processText(new UnicodeEscapeDecodePipe(), '')).toBe('');
+    expect(await processText(new JavaScriptEscapeEncodePipe(), '')).toBe('');
+    expect(await processText(new JavaScriptEscapeDecodePipe(), '')).toBe('');
   });
 
   it('throws PipeError for non-UTF-8 input to the encoder', async () => {
-    await expect(processBytes(new UnicodeEscapeEncodePipe(), [0xff])).rejects
+    await expect(processBytes(new JavaScriptEscapeEncodePipe(), [0xff])).rejects
       .toMatchObject({ message: 'Input is not valid UTF-8' });
   });
 
   it('throws PipeError for invalid \\u escape (non-hex chars)', async () => {
-    await expect(processText(new UnicodeEscapeDecodePipe(), '\\uGGGG')).rejects
-      .toMatchObject({ message: expect.stringContaining('Invalid Unicode escape') });
+    await expect(processText(new JavaScriptEscapeDecodePipe(), '\\uGGGG')).rejects
+      .toMatchObject({ message: expect.stringContaining('Invalid JavaScript escape') });
   });
 
   it('throws PipeError for incomplete \\u escape', async () => {
-    await expect(processText(new UnicodeEscapeDecodePipe(), '\\u004')).rejects
-      .toMatchObject({ message: expect.stringContaining('Invalid Unicode escape') });
+    await expect(processText(new JavaScriptEscapeDecodePipe(), '\\u004')).rejects
+      .toMatchObject({ message: expect.stringContaining('Invalid JavaScript escape') });
   });
 
   it('throws PipeError for unclosed \\u{...} escape', async () => {
-    await expect(processText(new UnicodeEscapeDecodePipe(), '\\u{1F600')).rejects
-      .toMatchObject({ message: expect.stringContaining('Invalid Unicode escape') });
+    await expect(processText(new JavaScriptEscapeDecodePipe(), '\\u{1F600')).rejects
+      .toMatchObject({ message: expect.stringContaining('Invalid JavaScript escape') });
   });
 
   it('throws PipeError for out-of-range code point in \\u{...}', async () => {
-    await expect(processText(new UnicodeEscapeDecodePipe(), '\\u{110000}')).rejects
-      .toMatchObject({ message: expect.stringContaining('Invalid Unicode escape') });
+    await expect(processText(new JavaScriptEscapeDecodePipe(), '\\u{110000}')).rejects
+      .toMatchObject({ message: expect.stringContaining('Invalid JavaScript escape') });
+  });
+
+  it('throws PipeError for invalid \\x escape', async () => {
+    await expect(processText(new JavaScriptEscapeDecodePipe(), '\\x4G')).rejects
+      .toMatchObject({ message: expect.stringContaining('Invalid JavaScript escape') });
+  });
+
+  it('throws PipeError for unknown escape', async () => {
+    await expect(processText(new JavaScriptEscapeDecodePipe(), '\\q')).rejects
+      .toMatchObject({ message: expect.stringContaining('Invalid JavaScript escape') });
   });
 
   it('scores decode appropriateness correctly', () => {
-    expect(UnicodeEscapeDecodePipe.getInputAppropriateness(null)).toBe(0);
-    expect(UnicodeEscapeDecodePipe.getInputAppropriateness(new Uint8Array())).toBe(0);
-    expect(UnicodeEscapeDecodePipe.getInputAppropriateness(encode('\\u0041'))).toBe(8);
-    expect(UnicodeEscapeDecodePipe.getInputAppropriateness(encode('\\u{1F600}'))).toBe(8);
-    expect(UnicodeEscapeDecodePipe.getInputAppropriateness(encode('plain text'))).toBe(0);
-    expect(UnicodeEscapeDecodePipe.getInputAppropriateness(new Uint8Array([0xff]))).toBe(-10);
+    expect(JavaScriptEscapeDecodePipe.getInputAppropriateness(null)).toBe(0);
+    expect(JavaScriptEscapeDecodePipe.getInputAppropriateness(new Uint8Array())).toBe(0);
+    expect(JavaScriptEscapeDecodePipe.getInputAppropriateness(encode('\\u0041'))).toBe(8);
+    expect(JavaScriptEscapeDecodePipe.getInputAppropriateness(encode('\\u{1F600}'))).toBe(8);
+    expect(JavaScriptEscapeDecodePipe.getInputAppropriateness(encode('\\x41'))).toBe(8);
+    expect(JavaScriptEscapeDecodePipe.getInputAppropriateness(encode('\\n'))).toBe(8);
+    expect(JavaScriptEscapeDecodePipe.getInputAppropriateness(encode('plain text'))).toBe(0);
+    expect(JavaScriptEscapeDecodePipe.getInputAppropriateness(new Uint8Array([0xff]))).toBe(-10);
   });
 });
 

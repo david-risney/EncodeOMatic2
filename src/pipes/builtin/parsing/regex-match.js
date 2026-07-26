@@ -12,7 +12,7 @@ import { Pipe, PipeConfig, PortDef, PipeError } from '../../pipe.js';
 export class RegexMatchPipe extends Pipe {
   static typeName = 'RegexMatch';
   static typeDescription = 'Regex Match';
-  static category = 'Parsing';
+  static category = 'Grammar';
   static categoryDescription = 'Match a regular expression against the input.';
 
   constructor() {

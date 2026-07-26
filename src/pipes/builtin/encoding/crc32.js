@@ -10,7 +10,7 @@ const CRC32C_POLYNOMIAL = 0x82f63b78;
 export class Crc32Pipe extends HashWasmPipe {
   static typeName = 'Crc32';
   static typeDescription = 'CRC-32';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute a CRC-32 checksum from input bytes.';
 
   async process(inputs) {
@@ -21,7 +21,7 @@ export class Crc32Pipe extends HashWasmPipe {
 export class Crc32cPipe extends HashWasmPipe {
   static typeName = 'Crc32c';
   static typeDescription = 'CRC-32C';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute a CRC-32C checksum from input bytes.';
 
   async process(inputs) {
@@ -36,7 +36,7 @@ export class Crc32cPipe extends HashWasmPipe {
 export class Crc64Pipe extends HashWasmPipe {
   static typeName = 'Crc64';
   static typeDescription = 'CRC-64';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute a CRC-64 checksum from input bytes.';
 
   async process(inputs) {
@@ -47,7 +47,7 @@ export class Crc64Pipe extends HashWasmPipe {
 export class Adler32Pipe extends HashWasmPipe {
   static typeName = 'Adler32';
   static typeDescription = 'Adler-32';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute an Adler-32 checksum from input bytes.';
 
   async process(inputs) {

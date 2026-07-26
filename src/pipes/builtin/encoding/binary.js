@@ -31,7 +31,7 @@ function getBinaryByteRanges(text) {
 export class BinaryEncodePipe extends Pipe {
   static typeName = 'BinaryEncode';
   static typeDescription = 'Binary Encode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Encode bytes to a binary (base-2) bit string.';
 
   defineConfigs() {
@@ -86,7 +86,7 @@ export class BinaryEncodePipe extends Pipe {
 export class BinaryDecodePipe extends Pipe {
   static typeName = 'BinaryDecode';
   static typeDescription = 'Binary Decode';
-  static category = 'Encoding';
+  static category = 'Base Encoding';
   static categoryDescription = 'Decode a binary (base-2) bit string to bytes.';
 
   static getInputAppropriateness(input) {

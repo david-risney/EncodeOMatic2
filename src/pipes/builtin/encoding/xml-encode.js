@@ -53,7 +53,7 @@ function scoreXmlEntities(input) {
 export class XmlEncodePipe extends StringPipe {
   static typeName = 'XmlEncode';
   static typeDescription = 'XML Encode';
-  static category = 'Encoding';
+  static category = 'Escaping';
   static categoryDescription = 'Encode special characters as XML/SGML entities.';
 
   async processString(input) {
@@ -64,7 +64,7 @@ export class XmlEncodePipe extends StringPipe {
 export class XmlDecodePipe extends StringPipe {
   static typeName = 'XmlDecode';
   static typeDescription = 'XML Decode';
-  static category = 'Encoding';
+  static category = 'Escaping';
   static categoryDescription = 'Decode XML/SGML entities to characters.';
 
   static getInputAppropriateness(input) {

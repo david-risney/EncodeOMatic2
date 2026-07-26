@@ -57,7 +57,7 @@ function parseCsv(text, delimiter) {
 export class CsvParserPipe extends Pipe {
   static typeName = 'CsvParser';
   static typeDescription = 'CSV Parse';
-  static category = 'Parsing';
+  static category = 'Data Formats';
   static categoryDescription = 'Parse CSV text into columns as separate outputs.';
 
   static getInputAppropriateness(input) {

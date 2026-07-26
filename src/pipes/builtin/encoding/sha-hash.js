@@ -20,7 +20,7 @@ const SHA_ALGORITHMS = new Map([
 export class ShaHashPipe extends HashWasmPipe {
   static typeName = 'ShaHash';
   static typeDescription = 'SHA Hash';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute a SHA digest from input bytes.';
 
   defineConfigs() {
@@ -38,7 +38,7 @@ export class ShaHashPipe extends HashWasmPipe {
 export class Sha3HashPipe extends HashWasmPipe {
   static typeName = 'Sha3Hash';
   static typeDescription = 'SHA-3 Hash';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute a SHA-3 digest from input bytes.';
 
   defineConfigs() {
@@ -56,7 +56,7 @@ export class Sha3HashPipe extends HashWasmPipe {
 export class KeccakHashPipe extends HashWasmPipe {
   static typeName = 'KeccakHash';
   static typeDescription = 'Keccak Hash';
-  static category = 'Encoding';
+  static category = 'Hashing';
   static categoryDescription = 'Compute a Keccak digest from input bytes.';
 
   defineConfigs() {

@@ -15,7 +15,7 @@ const RFC3986_UNRESERVED = /^[A-Za-z0-9\-_.~]$/;
 export class PercentEncodePipe extends StringPipe {
   static typeName = 'PercentEncode';
   static typeDescription = 'Percent Encode';
-  static category = 'Encoding';
+  static category = 'URL Encoding';
   static categoryDescription = 'Percent-encode (URL-encode) each character that needs encoding.';
 
   defineConfigs() {
@@ -73,7 +73,7 @@ export class PercentEncodePipe extends StringPipe {
 export class PercentDecodePipe extends StringPipe {
   static typeName = 'PercentDecode';
   static typeDescription = 'Percent Decode';
-  static category = 'Encoding';
+  static category = 'URL Encoding';
   static categoryDescription = 'Decode percent-encoded (URL-encoded) text.';
 
   static getInputAppropriateness(input) {

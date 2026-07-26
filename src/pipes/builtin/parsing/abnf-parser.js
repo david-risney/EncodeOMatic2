@@ -23,7 +23,7 @@ import { apgApi, apgLib } from '../../../../vendor/apg-js.js';
 export class AbnfParserPipe extends Pipe {
   static typeName = 'AbnfParser';
   static typeDescription = 'ABNF Parser';
-  static category = 'Parsing';
+  static category = 'Grammar';
   static categoryDescription = 'Parse text against an ABNF grammar (RFC 5234). Wire a grammar text to the grammar input.';
 
   constructor() {
