@@ -73,3 +73,5 @@ export class Blake3HashPipe extends HashWasmPipe {
     return this.processWithHasher(inputs, () => createBLAKE3(bits), 'BLAKE3 hashing failed');
   }
 }
+
+export const builtinPipes = [Blake2bHashPipe, Blake2sHashPipe, Blake3HashPipe];

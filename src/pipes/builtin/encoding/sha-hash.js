@@ -71,4 +71,4 @@ export class KeccakHashPipe extends HashWasmPipe {
   }
 }
 
-export const builtinPipes = [ShaHashPipe];
+export const builtinPipes = [ShaHashPipe, Sha3HashPipe, KeccakHashPipe];

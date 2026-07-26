@@ -14,11 +14,16 @@ import { builtinPipes as slashEscapePipes } from './slash-escape.js';
 import { builtinPipes as cssEscapePipes } from './css-escape.js';
 import { builtinPipes as urlEncodePipes } from './url-encode.js';
 import { builtinPipes as rotPipes } from './rot.js';
+import { builtinPipes as morsePipes } from './morse.js';
 import { builtinPipes as compressionPipes } from './compression.js';
 import { builtinPipes as formUrlencodedPipes } from './form-urlencoded.js';
 import { builtinPipes as hmacPipes } from './hmac.js';
 import { builtinPipes as mimeHeaderPipes } from './mime-header.js';
 import { builtinPipes as shaHashPipes } from './sha-hash.js';
+import { builtinPipes as blakePipes } from './blake.js';
+import { builtinPipes as md5Pipes } from './md5.js';
+import { builtinPipes as crc32Pipes } from './crc32.js';
+import { builtinPipes as xxhashPipes } from './xxhash.js';
 import { builtinPipes as unicodeEscapePipes } from './unicode-escape.js';
 import { builtinPipes as unicodeNormalizePipes } from './unicode-normalize.js';
 import { builtinPipes as punycodePipes } from './punycode.js';
@@ -42,11 +47,16 @@ export const builtinEncodingPipes = [
   ...cssEscapePipes,
   ...urlEncodePipes,
   ...rotPipes,
+  ...morsePipes,
   ...compressionPipes,
   ...formUrlencodedPipes,
   ...hmacPipes,
   ...mimeHeaderPipes,
   ...shaHashPipes,
+  ...blakePipes,
+  ...md5Pipes,
+  ...crc32Pipes,
+  ...xxhashPipes,
   ...unicodeEscapePipes,
   ...unicodeNormalizePipes,
   ...punycodePipes,
