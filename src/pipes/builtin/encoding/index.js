@@ -12,6 +12,7 @@ import { builtinPipes as charsetPipes } from './charset.js';
 import { builtinPipes as binaryPipes } from './binary.js';
 import { builtinPipes as slashEscapePipes } from './slash-escape.js';
 import { builtinPipes as cssEscapePipes } from './css-escape.js';
+import { builtinPipes as javascriptEscapePipes } from './javascript-escape.js';
 import { builtinPipes as urlEncodePipes } from './url-encode.js';
 import { builtinPipes as rotPipes } from './rot.js';
 import { builtinPipes as morsePipes } from './morse.js';
@@ -48,6 +49,7 @@ export const builtinEncodingPipes = [
   ...binaryPipes,
   ...slashEscapePipes,
   ...cssEscapePipes,
+  ...javascriptEscapePipes,
   ...urlEncodePipes,
   ...rotPipes,
   ...morsePipes,

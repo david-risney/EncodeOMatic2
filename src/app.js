@@ -26,6 +26,8 @@ import { getInstallPrompt, clearInstallPrompt, isInstalledPWA } from './services
 import './ui/graph-editor.js';
 import './ui/data-viewer.js';
 import { cloneTemplate } from './ui/templates.js';
+import { showToast } from './ui/toast.js';
+import { wireMoveButton, initDragSort } from './ui/drag-sort.js';
 
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
@@ -619,49 +621,7 @@ function refreshDataViewErrors(view, errors) {
 }
 
 function initPaneViewReordering() {
-  dataViewStack.addEventListener('dragover', (event) => {
-    event.preventDefault();
-    const dragging = dataViewStack.querySelector('.data-view.dragging');
-    if (!dragging) return;
-    const after = getPaneDropTarget(event.clientY);
-    if (!after) dataViewStack.appendChild(dragging);
-    else if (after !== dragging) dataViewStack.insertBefore(dragging, after);
-  });
-}
-
-function getPaneDropTarget(clientY) {
-  const views = [...dataViewStack.querySelectorAll('.data-view:not(.dragging)')];
-  let best = null;
-  let bestOffset = Number.NEGATIVE_INFINITY;
-  for (const view of views) {
-    const rect = view.getBoundingClientRect();
-    const offset = clientY - (rect.top + rect.height / 2);
-    if (offset < 0 && offset > bestOffset) {
-      bestOffset = offset;
-      best = view;
-    }
-  }
-  return best;
-}
-
-function wireMoveButton(element, button) {
-  element.draggable = false;
-  button.addEventListener('pointerdown', () => {
-    element.draggable = true;
-  });
-  button.addEventListener('pointerup', () => {
-    element.draggable = false;
-  });
-  button.addEventListener('pointercancel', () => {
-    element.draggable = false;
-  });
-  element.addEventListener('dragstart', () => {
-    element.classList.add('dragging');
-  });
-  element.addEventListener('dragend', () => {
-    element.classList.remove('dragging');
-    element.draggable = false;
-  });
+  initDragSort(dataViewStack, '.data-view');
 }
 
 function createDataView(pipeId, portName, portType) {
@@ -709,7 +669,7 @@ function createDataView(pipeId, portName, portType) {
   });
   modeButton.addEventListener('click', () =>
     setViewMode(view, view.mode === 'text' ? 'hex' : 'text'));
-  pinButton.addEventListener('click', () => togglePinned(view));
+  pinButton.addEventListener('click', () => togglePinned(view, selectedPipeId, removeDataView));
   minimizeButton.addEventListener('click', () => toggleMinimized(view));
   dataViews.set(pipeId, view);
   updateDataPanelVisibility();
@@ -748,10 +708,10 @@ function updateDataPanelVisibility() {
   dataPanel.hidden = !hasViews || layoutMode === 'graph';
 }
 
-function togglePinned(view) {
+function togglePinned(view, selectedId, removeFn) {
   const wasPinned = view.pinned;
-  if (wasPinned && view.pipeId !== selectedPipeId) {
-    removeDataView(view.pipeId);
+  if (wasPinned && view.pipeId !== selectedId) {
+    removeFn(view.pipeId);
     return;
   }
   if (wasPinned && view.minimized) toggleMinimized(view);
@@ -945,11 +905,11 @@ function showConfigView(pipeId) {
     dataViewStack.appendChild(element);
     wireMoveButton(element, moveButton);
     view = { pipeId, element, title, fields, moveButton, pinButton, minimizeButton, pinned: false, minimized: false };
-    pinButton.addEventListener('click', () => toggleConfigPinned(view));
-    minimizeButton.addEventListener('click', () => toggleConfigMinimized(view));
+    pinButton.addEventListener('click', () => togglePinned(view, selectedConfigPipeId, removeConfigView));
+    minimizeButton.addEventListener('click', () => toggleMinimized(view));
     configViews.set(pipeId, view);
   } else if (view.minimized) {
-    toggleConfigMinimized(view);
+    toggleMinimized(view);
   }
 
   view.title.textContent = `Configure: ${pipe.displayName}`;
@@ -965,32 +925,6 @@ function removeConfigView(pipeId) {
   configViews.delete(pipeId);
   if (selectedConfigPipeId === pipeId) selectedConfigPipeId = null;
   updateDataPanelVisibility();
-}
-
-function toggleConfigPinned(view) {
-  const wasPinned = view.pinned;
-  if (wasPinned && view.pipeId !== selectedConfigPipeId) {
-    removeConfigView(view.pipeId);
-    return;
-  }
-  if (wasPinned && view.minimized) toggleConfigMinimized(view);
-  view.pinned = !wasPinned;
-  view.pinButton.classList.toggle('active', view.pinned);
-  view.pinButton.textContent = view.pinned ? '📌' : '📍';
-  view.pinButton.setAttribute('aria-pressed', String(view.pinned));
-  view.pinButton.title = view.pinned ? 'Allow this view to close' : 'Keep this view open';
-  view.pinButton.setAttribute('aria-label', view.pinButton.title);
-  view.minimizeButton.hidden = !view.pinned;
-}
-
-function toggleConfigMinimized(view) {
-  view.minimized = !view.minimized;
-  view.element.classList.toggle('minimized', view.minimized);
-  view.minimizeButton.classList.toggle('active', view.minimized);
-  view.minimizeButton.setAttribute('aria-pressed', String(view.minimized));
-  view.minimizeButton.textContent = view.minimized ? '□' : '_';
-  view.minimizeButton.title = view.minimized ? 'Restore this view' : 'Minimize this view';
-  view.minimizeButton.setAttribute('aria-label', view.minimizeButton.title);
 }
 
 function renderConfigFields(pipe, fields) {
@@ -1436,21 +1370,6 @@ function clearGraphWithoutConfirmation() {
   editor.updateConnections();
   for (const id of Array.from(dataViews.keys())) removeDataView(id);
   for (const id of Array.from(configViews.keys())) removeConfigView(id);
-}
-
-// ── Toast ────────────────────────────────────────────────────────
-
-function showToast(msg, type = '') {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-  const toast = cloneTemplate('toast-template');
-  if (type) toast.classList.add(type);
-  toast.textContent = msg;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.classList.add('leaving');
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
 }
 
 // ── Bootstrap ────────────────────────────────────────────────────
