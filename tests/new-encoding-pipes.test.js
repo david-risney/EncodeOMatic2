@@ -30,6 +30,16 @@ import { StringReversePipe } from '../src/pipes/builtin/encoding/reverse.js';
 import { PercentEncodePipe } from '../src/pipes/builtin/encoding/percent.js';
 import { decode, encode, processBytes, processText } from './helpers.js';
 
+function makePseudoRandomBytes(length, seed = 0x1234abcd) {
+  let state = seed >>> 0;
+  const bytes = new Uint8Array(length);
+  for (let i = 0; i < bytes.length; i += 1) {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    bytes[i] = state & 0xff;
+  }
+  return bytes;
+}
+
 describe('Base64url encoding', () => {
   it('exposes expected default configuration', () => {
     expect(new Base64urlEncodePipe().configs.size).toBe(0);
@@ -117,6 +127,14 @@ describe('Compression (gzip and deflate)', () => {
     const bytes = [0, 1, 127, 128, 255];
     const compressed = await processBytes(new GzipCompressPipe(), bytes);
     expect([...await processBytes(new GzipDecompressPipe(), compressed)]).toEqual(bytes);
+  });
+
+  it('round trips larger high-entropy bytes through gzip and deflate', async () => {
+    const bytes = makePseudoRandomBytes(64 * 1024);
+    const gzipCompressed = await processBytes(new GzipCompressPipe(), bytes);
+    const deflateCompressed = await processBytes(new DeflateCompressPipe(), bytes);
+    expect([...await processBytes(new GzipDecompressPipe(), gzipCompressed)]).toEqual([...bytes]);
+    expect([...await processBytes(new DeflateDecompressPipe(), deflateCompressed)]).toEqual([...bytes]);
   });
 
   it('throws PipeError for corrupt gzip data', async () => {

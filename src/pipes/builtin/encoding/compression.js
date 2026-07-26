@@ -5,27 +5,15 @@
 import { Pipe, PipeError } from '../../pipe.js';
 
 async function transformBytes(StreamClass, format, data) {
-  const stream = new StreamClass(format);
-  const writer = stream.writable.getWriter();
-  await writer.write(data);
-  await writer.close();
-
-  const reader = stream.readable.getReader();
-  const chunks = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-  }
-
-  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return result;
+  const input = new ReadableStream({
+    start(controller) {
+      controller.enqueue(data);
+      controller.close();
+    },
+  });
+  const transformed = input.pipeThrough(new StreamClass(format));
+  const output = await new Response(transformed).arrayBuffer();
+  return new Uint8Array(output);
 }
 
 class CompressionPipe extends Pipe {
