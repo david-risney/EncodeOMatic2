@@ -35,12 +35,19 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 - **CSS Escape / Unescape**
 - **URL Encode / Decode** (`encodeURI` / `decodeURI`)
 - **ROT** (Caesar cipher, configurable rotation)
+- **Morse Code Encode / Decode** (International Morse code; words separated by `/`)
 - **Gzip Compress / Decompress**
 - **Deflate Compress / Decompress**
 - **Form URL-encoded Encode / Decode** (application/x-www-form-urlencoded)
 - **HMAC** (SHA-1/SHA-256/SHA-512)
 - **MIME Header Decode / Encode** (RFC 2047 encoded words via emailjs-mime-codec)
-- **SHA Hash** (SHA-1/SHA-256/SHA-384/SHA-512)
+- **SHA Hash** (SHA-1/SHA-224/SHA-256/SHA-384/SHA-512)
+- **SHA-3 Hash** (SHA3-224/SHA3-256/SHA3-384/SHA3-512)
+- **Keccak Hash** (Keccak-224/Keccak-256/Keccak-384/Keccak-512)
+- **BLAKE2b Hash / BLAKE2s Hash / BLAKE3 Hash**
+- **MD4 Hash / MD5 Hash / RIPEMD-160 Hash / SM3 Hash / Whirlpool Hash**
+- **CRC-32 / CRC-32C / CRC-64 / Adler-32**
+- **xxHash32 / xxHash64 / xxHash3 / xxHash128**
 - **Unicode Escape Encode / Decode** (\\uXXXX / \\u{XXXXX})
 - **Unicode Normalize** (NFC/NFD/NFKC/NFKD)
 - **Punycode Encode / Decode** (internationalized domain names, xn--)
@@ -111,6 +118,7 @@ Regenerate all vendor bundles after updating any of these dependencies:
 | `vendor/mime-codec.js` | emailjs-mime-codec | MIME RFC 2047 encoded-word encode/decode |
 | `vendor/rfc4648.js` | rfc4648 | Base32 encoding/decoding |
 | `vendor/bs58.js` | bs58 | Base58 encoding/decoding |
+| `vendor/hash-wasm.js` | hash-wasm | Hashing, checksums, and HMAC |
 | `vendor/ascii85.js` | ascii85 | Ascii85/Base85 encoding/decoding |
 | `vendor/punycode.js` | punycode | Internationalized domain name (IDN) encode/decode |
 

@@ -1,0 +1,27 @@
+// Rollup bundles this into vendor/hash-wasm.js as an ESM module.
+
+export {
+  createAdler32,
+  createBLAKE2b,
+  createBLAKE2s,
+  createBLAKE3,
+  createCRC32,
+  createCRC64,
+  createHMAC,
+  createKeccak,
+  createMD4,
+  createMD5,
+  createRIPEMD160,
+  createSHA1,
+  createSHA224,
+  createSHA256,
+  createSHA3,
+  createSHA384,
+  createSHA512,
+  createSM3,
+  createWhirlpool,
+  createXXHash32,
+  createXXHash64,
+  createXXHash3,
+  createXXHash128,
+} from 'hash-wasm';

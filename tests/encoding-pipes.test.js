@@ -15,6 +15,7 @@ import { ALL_ENCODINGS } from '../src/pipes/builtin/encoding/charset.js';
 import { SlashEscapePipe, SlashUnescapePipe } from '../src/pipes/builtin/encoding/slash-escape.js';
 import { UrlEncodePipe, UrlDecodePipe } from '../src/pipes/builtin/encoding/url-encode.js';
 import { RotPipe } from '../src/pipes/builtin/encoding/rot.js';
+import { MorseEncodePipe, MorseDecodePipe } from '../src/pipes/builtin/encoding/morse.js';
 import { decode, encode, processBytes, processText } from './helpers.js';
 
 describe('source and byte encodings', () => {
@@ -41,6 +42,8 @@ describe('source and byte encodings', () => {
     [SlashEscapePipe, { encoding: 'utf-8', escapeNonAscii: false }],
     [SlashUnescapePipe, { encoding: 'utf-8' }],
     [RotPipe, { encoding: 'utf-8', rotation: 13 }],
+    [MorseEncodePipe, { encoding: 'utf-8' }],
+    [MorseDecodePipe, { encoding: 'utf-8' }],
   ])('%s exposes its expected default configuration', (PipeClass, expected) => {
     const pipe = new PipeClass();
     expect(Object.fromEntries([...pipe.configs].map(([name, config]) => [name, config.value])))
@@ -386,5 +389,33 @@ describe('ROT cipher', () => {
     pipe.setConfig('rotation', 26);
     await expect(processText(pipe, 'test')).rejects
       .toMatchObject({ message: 'Rotation must be an integer between 0 and 25' });
+  });
+});
+
+describe('Morse code', () => {
+  it('encodes and decodes letters, digits, punctuation, and words', async () => {
+    const encoded = await processText(new MorseEncodePipe(), 'SOS, 123');
+    expect(encoded).toBe('... --- ... --..-- / .---- ..--- ...--');
+    expect(await processText(new MorseDecodePipe(), encoded)).toBe('SOS, 123');
+  });
+
+  it('accepts slash and pipe separators while decoding', async () => {
+    expect(await processText(new MorseDecodePipe(), '.... . .-.. .-.. --- / .-- --- .-. .-.. -..'))
+      .toBe('HELLO WORLD');
+    expect(await processText(new MorseDecodePipe(), '.... . .-.. .-.. --- | .-- --- .-. .-.. -..'))
+      .toBe('HELLO WORLD');
+  });
+
+  it('scores decode appropriateness and rejects malformed input', async () => {
+    expect(MorseDecodePipe.getInputAppropriateness(encode('... --- ...'))).toBe(7);
+    expect(MorseDecodePipe.getInputAppropriateness(encode('... --- ... / .----'))).toBe(8);
+    expect(MorseDecodePipe.getInputAppropriateness(encode('--'))).toBe(5);
+    expect(MorseDecodePipe.getInputAppropriateness(encode('.'))).toBe(0);
+    expect(MorseDecodePipe.getInputAppropriateness(encode('... _ ...'))).toBe(-10);
+
+    await expect(processText(new MorseEncodePipe(), 'hello 😀')).rejects
+      .toMatchObject({ message: 'Unsupported character for Morse code: "😀"' });
+    await expect(processText(new MorseDecodePipe(), '..-.-')).rejects
+      .toMatchObject({ message: 'Invalid Morse token: "..-.-"' });
   });
 });
