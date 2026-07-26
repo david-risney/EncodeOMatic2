@@ -92,6 +92,8 @@ const PRECACHE_URLS = [
   './vendor/punycode.js',
   './vendor/apg-js.js',
   './vendor/nearley.js',
+  './src/pipes/builtin/encoding/tar.js',
+  './vendor/nanotar.js',
   './vendor/peggy.js',
 ];
 
