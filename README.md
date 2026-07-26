@@ -35,6 +35,7 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 - **CSS Escape / Unescape**
 - **URL Encode / Decode** (`encodeURI` / `decodeURI`)
 - **ROT** (Caesar cipher, configurable rotation)
+- **Morse Code Encode / Decode** (International Morse code; words separated by `/`)
 - **Gzip Compress / Decompress**
 - **Deflate Compress / Decompress**
 - **Form URL-encoded Encode / Decode** (application/x-www-form-urlencoded)

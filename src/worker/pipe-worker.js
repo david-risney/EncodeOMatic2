@@ -29,6 +29,7 @@ import { BinaryEncodePipe, BinaryDecodePipe }   from '../pipes/builtin/encoding/
 import { SlashEscapePipe, SlashUnescapePipe }   from '../pipes/builtin/encoding/slash-escape.js';
 import { UrlEncodePipe, UrlDecodePipe }    from '../pipes/builtin/encoding/url-encode.js';
 import { RotPipe }                         from '../pipes/builtin/encoding/rot.js';
+import { MorseEncodePipe, MorseDecodePipe } from '../pipes/builtin/encoding/morse.js';
 import { Base64urlEncodePipe, Base64urlDecodePipe } from '../pipes/builtin/encoding/base64url.js';
 import { Base32EncodePipe, Base32DecodePipe }   from '../pipes/builtin/encoding/base32.js';
 import { Base58EncodePipe, Base58DecodePipe }   from '../pipes/builtin/encoding/base58.js';
@@ -100,6 +101,8 @@ const REGISTRY = new Map([
   ['UrlEncode',       UrlEncodePipe],
   ['UrlDecode',       UrlDecodePipe],
   ['Rot',             RotPipe],
+  ['MorseEncode',     MorseEncodePipe],
+  ['MorseDecode',     MorseDecodePipe],
   ['GzipCompress',    GzipCompressPipe],
   ['GzipDecompress',  GzipDecompressPipe],
   ['DeflateCompress', DeflateCompressPipe],

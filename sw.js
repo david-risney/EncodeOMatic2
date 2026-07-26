@@ -51,6 +51,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/punycode.js',
   './src/pipes/builtin/encoding/reverse.js',
   './src/pipes/builtin/encoding/rot.js',
+  './src/pipes/builtin/encoding/morse.js',
   './src/pipes/builtin/encoding/slash-escape.js',
   './src/pipes/builtin/encoding/url-encode.js',
   './src/pipes/builtin/encoding/xml-encode.js',

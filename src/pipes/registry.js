@@ -19,6 +19,7 @@ import { BinaryEncodePipe, BinaryDecodePipe }   from './builtin/encoding/binary.
 import { SlashEscapePipe, SlashUnescapePipe }   from './builtin/encoding/slash-escape.js';
 import { UrlEncodePipe, UrlDecodePipe }     from './builtin/encoding/url-encode.js';
 import { RotPipe }                          from './builtin/encoding/rot.js';
+import { MorseEncodePipe, MorseDecodePipe } from './builtin/encoding/morse.js';
 import { Base64urlEncodePipe, Base64urlDecodePipe } from './builtin/encoding/base64url.js';
 import { Base32EncodePipe, Base32DecodePipe }   from './builtin/encoding/base32.js';
 import { Base58EncodePipe, Base58DecodePipe }   from './builtin/encoding/base58.js';
@@ -93,6 +94,8 @@ const ALL_PIPES = [
   UrlEncodePipe,
   UrlDecodePipe,
   RotPipe,
+  MorseEncodePipe,
+  MorseDecodePipe,
   GzipCompressPipe,
   GzipDecompressPipe,
   DeflateCompressPipe,
