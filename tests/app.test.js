@@ -229,7 +229,7 @@ describe('application integration', () => {
     await vi.waitFor(() => {
       expect(node.querySelector('.pipe-node-error-indicator').hidden).toBe(false);
     });
-    await vi.waitFor(() => expect(window.location.search).toContain('g='));
+    await vi.waitFor(() => expect(window.location.search).toMatch(/[?&]g[c]?=/));
     node.click();
     const dataView = document.querySelector('.data-view');
     expect(dataView.querySelector('.data-panel-title').textContent)
@@ -297,7 +297,7 @@ describe('application integration', () => {
     document.getElementById('btn-session-share').click();
     await vi.waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-        expect.stringContaining('?g=')
+        expect.stringMatching(/[?&]g[c]?=/)
       );
     });
     expect(document.querySelector('.toast.success')?.textContent)
@@ -305,7 +305,7 @@ describe('application integration', () => {
 
     vi.stubGlobal('confirm', vi.fn(() => true));
     document.getElementById('btn-clear').click();
-    await vi.waitFor(() => expect(window.location.search).toContain('g='));
+    await vi.waitFor(() => expect(window.location.search).toMatch(/[?&]g[c]?=/));
     expect(document.querySelector('.pipe-node')).toBeNull();
     expect(document.getElementById('data-panel').hidden).toBe(true);
     expect(document.getElementById('session-name').value).toMatch(/^[a-z]+-[a-z]+$/);

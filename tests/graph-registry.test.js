@@ -136,6 +136,41 @@ describe('PipeGraph mutation and traversal', () => {
     expect(graph.connections).toEqual([]);
   });
 
+  it('updates downstream output when processFrom is called after removing a middle pipe', async () => {
+    const graph = new PipeGraph();
+    const source = new InputPipe();
+    const middle = new PassPipe();
+    const sink = new PassPipe();
+    source.setConfig('text', 'hello');
+    graph.addPipe(source);
+    graph.addPipe(middle);
+    graph.addPipe(sink);
+    graph.connect(source.id, 'output', middle.id, 'input');
+    graph.connect(middle.id, 'output', sink.id, 'input');
+    await graph.processAll();
+    expect(decode(sink.getOutputData())).toBe('hello');
+
+    // Remove the middle pipe — this creates a bypass connection: source → sink.
+    const upstreamIds = [...new Set(
+      graph.connections.filter(c => c.toPipeId === middle.id).map(c => c.fromPipeId)
+    )];
+    graph.removePipe(middle.id);
+    expect(graph.connections.map(c => ({ from: c.fromPipeId, to: c.toPipeId }))).toEqual([
+      { from: source.id, to: sink.id },
+    ]);
+
+    // Simulate the fix: caller re-processes from each upstream pipe.
+    for (const id of upstreamIds) {
+      await graph.processFrom(id);
+    }
+    expect(decode(sink.getOutputData())).toBe('hello');
+
+    // Confirm sink still updates when source changes.
+    source.setConfig('text', 'world');
+    await graph.processFrom(source.id);
+    expect(decode(sink.getOutputData())).toBe('world');
+  });
+
   it('processes connected pipes and emits processing events', async () => {
     const graph = new PipeGraph();
     const source = new InputPipe();

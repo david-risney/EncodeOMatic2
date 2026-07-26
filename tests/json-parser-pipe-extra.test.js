@@ -130,4 +130,112 @@ describe('JsonParserPipe extra coverage', () => {
     expect(JsonParserPipe.getInputAppropriateness(encode('{"ok":true}'))).toBe(10);
     expect(JsonParserPipe.getInputAppropriateness(encode('not json'))).toBe(-10);
   });
+
+  describe('paths config', () => {
+    const json = JSON.stringify({
+      user: { name: 'Alice', age: 30 },
+      tags: ['a', 'b', 'c'],
+      count: 42,
+    });
+
+    it('exposes configured dot-notation paths as path: ports', async () => {
+      const pipe = new JsonParserPipe();
+      pipe.setConfig('paths', 'user.name,count');
+      const result = await pipe.process(new Map([['input', encode(json)]]));
+
+      expect(decode(result.get('path:user.name'))).toBe('Alice');
+      expect(decode(result.get('path:count'))).toBe('42');
+      expect(pipe.defineOutputs().map(({ name }) => name)).toContain('path:user.name');
+      expect(pipe.defineOutputs().map(({ name }) => name)).toContain('path:count');
+    });
+
+    it('exposes array-bracket paths', async () => {
+      const pipe = new JsonParserPipe();
+      pipe.setConfig('paths', 'tags[0],tags[2]');
+      const result = await pipe.process(new Map([['input', encode(json)]]));
+
+      expect(decode(result.get('path:tags[0]'))).toBe('a');
+      expect(decode(result.get('path:tags[2]'))).toBe('c');
+    });
+
+    it('exposes mixed dot and bracket paths', async () => {
+      const pipe = new JsonParserPipe();
+      pipe.setConfig('paths', 'user.age,tags[1]');
+      const result = await pipe.process(new Map([['input', encode(json)]]));
+
+      expect(decode(result.get('path:user.age'))).toBe('30');
+      expect(decode(result.get('path:tags[1]'))).toBe('b');
+    });
+
+    it('returns empty string for missing paths', async () => {
+      const pipe = new JsonParserPipe();
+      pipe.setConfig('paths', 'does.not.exist,tags[99]');
+      const result = await pipe.process(new Map([['input', encode(json)]]));
+
+      expect(decode(result.get('path:does.not.exist'))).toBe('');
+      expect(decode(result.get('path:tags[99]'))).toBe('');
+    });
+
+    it('suppresses top-level key: ports when paths is set', async () => {
+      const pipe = new JsonParserPipe();
+      pipe.setConfig('paths', 'count');
+      await pipe.process(new Map([['input', encode(json)]]));
+      const names = pipe.defineOutputs().map(({ name }) => name);
+
+      expect(names).not.toContain('key:user');
+      expect(names).not.toContain('key:count');
+      expect(names).toContain('path:count');
+    });
+
+    it('still exposes top-level key: ports when paths is empty', async () => {
+      const pipe = new JsonParserPipe();
+      pipe.setConfig('paths', '');
+      await pipe.process(new Map([['input', encode(json)]]));
+      const names = pipe.defineOutputs().map(({ name }) => name);
+
+      expect(names).toContain('key:user');
+      expect(names).toContain('key:tags');
+      expect(names).toContain('key:count');
+    });
+
+    it('ignores blank segments in comma-delimited paths', async () => {
+      const pipe = new JsonParserPipe();
+      pipe.setConfig('paths', ' , count , ');
+      const result = await pipe.process(new Map([['input', encode(json)]]));
+      const names = pipe.defineOutputs().map(({ name }) => name);
+
+      expect(names).toEqual(['json', 'path:count']);
+      expect(decode(result.get('path:count'))).toBe('42');
+    });
+
+    it('serialises non-string path values as JSON', async () => {
+      const pipe = new JsonParserPipe();
+      pipe.setConfig('paths', 'user,tags');
+      const result = await pipe.process(new Map([['input', encode(json)]]));
+
+      expect(decode(result.get('path:user'))).toBe('{"name":"Alice","age":30}');
+      expect(decode(result.get('path:tags'))).toBe('["a","b","c"]');
+    });
+
+    it('rebuilds path: ports across successive runs', async () => {
+      const pipe = new JsonParserPipe();
+      pipe.setConfig('paths', 'count');
+
+      await pipe.process(new Map([['input', encode(json)]]));
+      expect(pipe.defineOutputs().map(({ name }) => name)).toEqual(['json', 'path:count']);
+
+      pipe.setConfig('paths', 'user.name');
+      await pipe.process(new Map([['input', encode(json)]]));
+      expect(pipe.defineOutputs().map(({ name }) => name)).toEqual(['json', 'path:user.name']);
+    });
+
+    it('works on array root values', async () => {
+      const pipe = new JsonParserPipe();
+      pipe.setConfig('paths', '[0],[2]');
+      const result = await pipe.process(new Map([['input', encode('["x","y","z"]')]]));
+
+      expect(decode(result.get('path:[0]'))).toBe('x');
+      expect(decode(result.get('path:[2]'))).toBe('z');
+    });
+  });
 });

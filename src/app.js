@@ -828,10 +828,16 @@ function initConfigDialog() {
   const deleteBtn = document.getElementById('config-delete-btn');
   deleteBtn.addEventListener('click', () => {
     if (_configPipeId) {
+      const upstreamIds = [...new Set(
+        graph.connections.filter(c => c.toPipeId === _configPipeId).map(c => c.fromPipeId)
+      )];
       graph.removePipe(_configPipeId);
       editor.removePipeElement(_configPipeId);
       _configPipeId = null;
       dialog.close();
+      for (const id of upstreamIds) {
+        graph.processFrom(id).catch(console.error);
+      }
     }
   });
 }
