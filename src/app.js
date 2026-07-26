@@ -69,12 +69,15 @@ const dataViewStack = document.getElementById('data-view-stack');
  *   viewer: import('./ui/data-viewer.js').DataViewer,
  *   pinButton: HTMLButtonElement,
  *   minimizeButton: HTMLButtonElement,
- *   modeButton: HTMLButtonElement
+ *   modeButton: HTMLButtonElement,
+ *   moveButton: HTMLButtonElement
  * }>} */
 const dataViews = new Map();
 let activeSelections = new Map();
 let selectionRefreshFrame = null;
 let selectedPipeId = null;
+let deletePipeMode = false;
+let configView = null;
 
 /** Current layout mode: 'both' | 'graph' | 'data' */
 let layoutMode = 'both';
@@ -137,10 +140,11 @@ async function init() {
   editor.addEventListener('connection-click',   onConnectionClick);
   editor.addEventListener('graph-change', scheduleUrlUpdate);
   editor.addEventListener('add-pipe-request',   onAddPipeRequest);
+  editor.addEventListener('delete-pipe-mode-toggle', onDeletePipeModeToggle);
 
   // Add Pipe dialog setup
   initAddPipeDialog();
-  initConfigDialog();
+  initPaneViewReordering();
   initConnActionPopover();
   initGuessDialog();
 
@@ -432,6 +436,7 @@ function initDataPanelResizer() {
 function onGraphEvent(event) {
   scheduleUrlUpdate();
   if (event.type === 'pipe-removed') {
+    if (configView?.pipeId === event.pipeId) removeConfigView();
     removeDataView(event.pipeId);
     return;
   }
@@ -601,16 +606,64 @@ function refreshDataViewErrors(view, errors) {
   }
 }
 
+function initPaneViewReordering() {
+  dataViewStack.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    const dragging = dataViewStack.querySelector('.data-view.dragging');
+    if (!dragging) return;
+    const after = getPaneDropTarget(event.clientY);
+    if (!after) dataViewStack.appendChild(dragging);
+    else if (after !== dragging) dataViewStack.insertBefore(dragging, after);
+  });
+}
+
+function getPaneDropTarget(clientY) {
+  const views = [...dataViewStack.querySelectorAll('.data-view:not(.dragging)')];
+  let best = null;
+  let bestOffset = Number.NEGATIVE_INFINITY;
+  for (const view of views) {
+    const rect = view.getBoundingClientRect();
+    const offset = clientY - (rect.top + rect.height / 2);
+    if (offset < 0 && offset > bestOffset) {
+      bestOffset = offset;
+      best = view;
+    }
+  }
+  return best;
+}
+
+function wireMoveButton(element, button) {
+  element.draggable = false;
+  button.addEventListener('pointerdown', () => {
+    element.draggable = true;
+  });
+  button.addEventListener('pointerup', () => {
+    element.draggable = false;
+  });
+  button.addEventListener('pointercancel', () => {
+    element.draggable = false;
+  });
+  element.addEventListener('dragstart', () => {
+    element.classList.add('dragging');
+  });
+  element.addEventListener('dragend', () => {
+    element.classList.remove('dragging');
+    element.draggable = false;
+  });
+}
+
 function createDataView(pipeId, portName, portType) {
   const element = cloneTemplate('data-view-template');
   const title = element.querySelector('.data-panel-title');
   const errors = element.querySelector('.data-view-errors');
   const viewer = element.querySelector('data-viewer');
   const copyButton = element.querySelector('[data-action="copy"]');
+  const moveButton = element.querySelector('[data-action="move"]');
   const modeButton = element.querySelector('[data-action="mode"]');
   const pinButton = element.querySelector('[data-action="pin"]');
   const minimizeButton = element.querySelector('[data-action="minimize"]');
   dataViewStack.appendChild(element);
+  wireMoveButton(element, moveButton);
 
   const view = {
     pipeId, portName, portType,
@@ -618,7 +671,7 @@ function createDataView(pipeId, portName, portType) {
     minimized: false,
     mode: 'text',
     element, title, errors, viewer,
-    copyButton, pinButton, minimizeButton, modeButton,
+    copyButton, pinButton, minimizeButton, modeButton, moveButton,
   };
   viewer.addEventListener('selection-change', event => {
     activeSelections = graph.translateSelections(
@@ -679,7 +732,8 @@ function removeDataView(pipeId) {
 }
 
 function updateDataPanelVisibility() {
-  dataPanel.hidden = dataViews.size === 0 || layoutMode === 'graph';
+  const hasViews = dataViews.size > 0 || configView !== null;
+  dataPanel.hidden = !hasViews || layoutMode === 'graph';
 }
 
 function togglePinned(view) {
@@ -719,6 +773,18 @@ function onPortClick(e) {
 
 function onPipeSelect(e) {
   const { pipeId } = e.detail;
+  if (deletePipeMode) {
+    const pipeToDelete = graph.pipes.get(pipeId);
+    if (!pipeToDelete) return;
+    const confirmed = window.confirm(`Delete "${pipeToDelete.displayName}"?`);
+    if (confirmed) {
+      graph.removePipe(pipeId);
+      editor.removePipeElement(pipeId);
+      if (configView?.pipeId === pipeId) removeConfigView();
+      setDeletePipeMode(false);
+    }
+    return;
+  }
   // Auto-show output data when selecting a pipe
   const pipe = graph.pipes.get(pipeId);
   if (!pipe) return;
@@ -733,6 +799,15 @@ function onGraphBackgroundClick() {
   const selected = dataViews.get(selectedPipeId);
   selectedPipeId = null;
   if (selected && !selected.pinned) removeDataView(selected.pipeId);
+}
+
+function onDeletePipeModeToggle(e) {
+  setDeletePipeMode(e.detail.enabled);
+}
+
+function setDeletePipeMode(enabled) {
+  deletePipeMode = Boolean(enabled);
+  editor.setDeletePipeMode(deletePipeMode);
 }
 
 // ── Connection action popover ────────────────────────────────────
@@ -819,43 +894,48 @@ function onConnectionClick(e) {
   showDataView(connection.fromPipeId, connection.fromOutput, 'output');
 }
 
-// ── Config dialog ─────────────────────────────────────────────────
-
-let _configPipeId = null;
-
-function initConfigDialog() {
-  const dialog = document.getElementById('config-dialog');
-  const deleteBtn = document.getElementById('config-delete-btn');
-  deleteBtn.addEventListener('click', () => {
-    if (_configPipeId) {
-      graph.removePipe(_configPipeId);
-      editor.removePipeElement(_configPipeId);
-      _configPipeId = null;
-      dialog.close();
-    }
-  });
-}
+// ── Config pane ────────────────────────────────────────────────────
 
 function onConfigClick(e) {
   const { pipeId } = e.detail;
+  showConfigView(pipeId);
+}
+
+function showConfigView(pipeId) {
   const pipe = graph.pipes.get(pipeId);
   if (!pipe) return;
 
-  _configPipeId = pipeId;
-  const dialog = document.getElementById('config-dialog');
-  const title = document.getElementById('config-dialog-title');
-  const fields = document.getElementById('config-fields');
+  if (!configView) {
+    const element = cloneTemplate('config-view-template');
+    const title = element.querySelector('.data-panel-title');
+    const fields = element.querySelector('.config-fields');
+    const moveButton = element.querySelector('[data-action="move"]');
+    dataViewStack.appendChild(element);
+    wireMoveButton(element, moveButton);
+    configView = { pipeId, element, title, fields, moveButton };
+  } else {
+    configView.pipeId = pipeId;
+  }
 
-  title.textContent = `Configure: ${pipe.displayName}`;
-  fields.replaceChildren();
+  configView.title.textContent = `Configure: ${pipe.displayName}`;
+  configView.fields.replaceChildren();
+  renderConfigFields(pipe, configView.fields);
+  updateDataPanelVisibility();
+}
 
+function removeConfigView() {
+  if (!configView) return;
+  configView.element.remove();
+  configView = null;
+  updateDataPanelVisibility();
+}
+
+function renderConfigFields(pipe, fields) {
   const configEntries = [...pipe.configs.values()].filter(cfg => cfg.type !== 'hidden');
   if (configEntries.length === 0) {
     fields.appendChild(cloneTemplate('config-empty-template'));
+    return;
   }
-
-  // Keep references to inputs for saving
-  const inputs = new Map();
 
   for (const cfg of configEntries) {
     const field = cloneTemplate('config-field-template');
@@ -866,34 +946,35 @@ function onConfigClick(e) {
     desc.textContent = cfg.description;
     const control = field.querySelector('.config-control');
 
-    let input;
     if (cfg.type === 'bytes') {
-      // Show a file picker for binary data configs
       const wrapper = cloneTemplate('config-file-picker-template');
       const fileNameDisplay = wrapper.querySelector('.config-file-name');
       const currentName = pipe.getConfig('fileName')?.value;
       fileNameDisplay.textContent = currentName || 'No file selected';
       const fileBtn = wrapper.querySelector('button');
-      // state tracks file data changes made within this dialog session
-      const state = { base64: cfg.value || '', fileName: currentName || '' };
       fileBtn.addEventListener('click', () => {
         const fileInput = cloneTemplate('file-input-template');
         fileInput.onchange = async () => {
           const file = fileInput.files[0];
           if (!file) return;
           const buffer = await file.arrayBuffer();
-          state.base64 = FileInputPipe.bytesToBase64(new Uint8Array(buffer));
-          state.fileName = file.name;
+          const base64 = FileInputPipe.bytesToBase64(new Uint8Array(buffer));
           fileNameDisplay.textContent = file.name;
+          applyPipeConfig(pipe, cfg.name, base64, false);
+          if (cfg.name === 'fileData' && pipe.getConfig('fileName') !== undefined) {
+            applyPipeConfig(pipe, 'fileName', file.name, false);
+          }
+          processPipeAfterConfigChange(pipe.id, pipe);
         };
         fileInput.click();
       });
-      input = wrapper;
-      inputs.set(cfg.name, { input, type: cfg.type, state });
-      control.appendChild(input);
+      control.appendChild(wrapper);
       fields.appendChild(field);
       continue;
-    } else if (cfg.type === 'select' && cfg.options) {
+    }
+
+    let input;
+    if (cfg.type === 'select' && cfg.options) {
       input = document.createElement('select');
       for (const opt of cfg.options) {
         const o = document.createElement('option');
@@ -916,42 +997,33 @@ function onConfigClick(e) {
       input.value = String(cfg.value);
     }
 
-    inputs.set(cfg.name, { input, type: cfg.type, state: null });
+    const eventName = cfg.type === 'text' ? 'input' : 'change';
+    input.addEventListener(eventName, () => {
+      const value = cfg.type === 'boolean'
+        ? input.checked
+        : cfg.type === 'number'
+          ? Number(input.value)
+          : input.value;
+      applyPipeConfig(pipe, cfg.name, value);
+    });
+
     control.appendChild(input);
     fields.appendChild(field);
   }
+}
 
-  dialog.showModal();
+function applyPipeConfig(pipe, name, value, processAfter = true) {
+  pipe.setConfig(name, value);
+  if (pipe.constructor.typeName === 'InputPipe') {
+    pipe.setConfig('rawBytes', null);
+    editor.setInputText(pipe.id, pipe.getConfig('text').value);
+  }
+  if (processAfter) processPipeAfterConfigChange(pipe.id, pipe);
+}
 
-  // On OK
-  dialog.addEventListener('close', function handler() {
-    dialog.removeEventListener('close', handler);
-    if (dialog.returnValue === 'ok') {
-      for (const [name, { input, type, state }] of inputs) {
-        let value;
-        if (type === 'boolean') value = input.checked;
-        else if (type === 'number') value = Number(input.value);
-        else if (type === 'bytes') {
-          pipe.setConfig(name, state.base64);
-          // FileInputPipe convention: the 'fileData' bytes config is paired with
-          // a 'fileName' string config that tracks the human-readable file name.
-          if (name === 'fileData' && pipe.getConfig('fileName') !== undefined) {
-            pipe.setConfig('fileName', state.fileName);
-          }
-          continue;
-        } else value = input.value;
-        pipe.setConfig(name, value);
-      }
-      if (pipe.constructor.typeName === 'InputPipe') {
-        pipe.setConfig('rawBytes', null);
-        editor.setInputText(pipe.id, pipe.getConfig('text').value);
-      }
-      // Re-run from this pipe
-      graph.processFrom(pipeId).catch(console.error);
-      editor.updatePipeElement(pipe);
-    }
-    _configPipeId = null;
-  }, { once: true });
+function processPipeAfterConfigChange(pipeId, pipe = graph.pipes.get(pipeId)) {
+  graph.processFrom(pipeId).catch(console.error);
+  if (pipe) editor.updatePipeElement(pipe);
 }
 
 // ── View mode ────────────────────────────────────────────────────
@@ -1292,6 +1364,7 @@ function onClear() {
 }
 
 function clearGraphWithoutConfirmation() {
+  setDeletePipeMode(false);
   const ids = [...graph.pipes.keys()];
   for (const id of ids) {
     graph.removePipe(id);
@@ -1299,6 +1372,7 @@ function clearGraphWithoutConfirmation() {
   }
   editor.updateConnections();
   for (const id of Array.from(dataViews.keys())) removeDataView(id);
+  removeConfigView();
 }
 
 // ── Toast ────────────────────────────────────────────────────────

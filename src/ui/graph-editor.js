@@ -76,6 +76,8 @@ class GraphEditor extends HTMLElement {
     this._draftInputTargets = [];
     this._draftValidTargetPipeIds = null;
     this._addPipeControl = null;
+    this._deletePipeControl = null;
+    this._deletePipeMode = false;
 
     // Drag state
     this._dragging = null; // {pipeId, startX, startY, elemStartX, elemStartY}
@@ -102,9 +104,18 @@ class GraphEditor extends HTMLElement {
     this._inner = this.querySelector('.graph-canvas-inner');
     this._svg = this.querySelector('.connections-layer');
     this._addPipeControl = this.querySelector('.add-pipe-control');
+    this._deletePipeControl = this.querySelector('.delete-pipe-control');
     this._addPipeControl.addEventListener('pointerdown', e => e.stopPropagation());
     this._addPipeControl.addEventListener('click', () => this._requestAddPipe());
+    this._deletePipeControl.addEventListener('pointerdown', e => e.stopPropagation());
+    this._deletePipeControl.addEventListener('click', () => {
+      this.dispatchEvent(new CustomEvent('delete-pipe-mode-toggle', {
+        detail: { enabled: !this._deletePipeMode },
+        bubbles: true,
+      }));
+    });
     this._inner.appendChild(this._addPipeControl);
+    this._inner.appendChild(this._deletePipeControl);
 
     // Events
     this._canvas.addEventListener('pointerdown', this._onCanvasPointerDown.bind(this));
@@ -874,6 +885,13 @@ class GraphEditor extends HTMLElement {
         this._canvas.appendChild(this._addPipeControl);
       }
       this._addPipeControl.classList.add('corner');
+      if (this._deletePipeControl) {
+        if (this._deletePipeControl.parentElement !== this._canvas) {
+          this._canvas.appendChild(this._deletePipeControl);
+        }
+        this._deletePipeControl.hidden = false;
+        this._deletePipeControl.classList.add('corner');
+      }
     } else {
       // Keep in the inner container, centered.
       if (this._addPipeControl.parentElement !== this._inner) {
@@ -881,7 +899,18 @@ class GraphEditor extends HTMLElement {
       }
       this._addPipeControl.classList.remove('corner');
       this._positionAddPipeControlAtViewportCenter();
+      if (this._deletePipeControl) {
+        this._deletePipeControl.hidden = true;
+        this._deletePipeControl.classList.remove('corner');
+      }
     }
+  }
+
+  setDeletePipeMode(enabled) {
+    this._deletePipeMode = Boolean(enabled);
+    if (!this._deletePipeControl) return;
+    this._deletePipeControl.classList.toggle('active', this._deletePipeMode);
+    this._deletePipeControl.setAttribute('aria-pressed', String(this._deletePipeMode));
   }
 
   _requestAddPipe() {

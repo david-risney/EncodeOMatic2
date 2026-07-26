@@ -69,8 +69,10 @@ function appMarkup() {
       </button>
       <button id="btn-about" data-about-trigger>About</button>
     </header>
-    <graph-editor id="graph-editor"></graph-editor>
     <div class="app-body">
+      <div class="graph-panel">
+        <graph-editor id="graph-editor"></graph-editor>
+      </div>
     <aside id="data-panel" style="width: 380px" hidden>
       <div id="data-panel-resizer"></div>
       <div id="data-view-stack"></div>
@@ -79,11 +81,6 @@ function appMarkup() {
     <dialog id="add-pipe-dialog">
       <input id="pipe-search-input">
       <div id="pipe-list"></div>
-    </dialog>
-    <dialog id="config-dialog">
-      <span id="config-dialog-title"></span>
-      <div id="config-fields"></div>
-      <button id="config-delete-btn">Delete</button>
     </dialog>
     <dialog id="guess-dialog">
       <form id="guess-form">
@@ -286,13 +283,28 @@ describe('application integration', () => {
     expect(document.getElementById('data-panel').style.getPropertyValue('--data-panel-width')).toBe('512px');
 
     node.querySelector('.pipe-node-config-btn').click();
-    const configDialog = document.getElementById('config-dialog');
-    expect(configDialog.open).toBe(true);
-    expect(document.getElementById('config-dialog-title').textContent)
+    const configView = document.querySelector('.config-view');
+    expect(configView).not.toBeNull();
+    expect(configView.querySelector('.data-panel-title').textContent)
       .toBe('Configure: Input Buffer');
-    document.getElementById('config-delete-btn').click();
+    const configTextarea = configView.querySelector('.config-fields textarea');
+    configTextarea.value = 'updated from config';
+    configTextarea.dispatchEvent(new Event('input'));
+    expect(node.querySelector('textarea').value).toBe('updated from config');
+    const moveButton = reopenedDataView.querySelector('[data-action="move"]');
+    moveButton.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    reopenedDataView.dispatchEvent(new Event('dragstart', { bubbles: true }));
+    expect(reopenedDataView.classList.contains('dragging')).toBe(true);
+    reopenedDataView.dispatchEvent(new Event('dragend', { bubbles: true }));
+    expect(reopenedDataView.classList.contains('dragging')).toBe(false);
+
+    vi.stubGlobal('confirm', vi.fn(() => true));
+    document.querySelector('.delete-pipe-control').click();
+    expect(document.querySelector('.delete-pipe-control').getAttribute('aria-pressed')).toBe('true');
+    node.click();
     expect(node.isConnected).toBe(false);
     expect(reopenedDataView.isConnected).toBe(false);
+    expect(document.querySelector('.delete-pipe-control').getAttribute('aria-pressed')).toBe('false');
 
     document.getElementById('btn-session-share').click();
     await vi.waitFor(() => {
@@ -303,7 +315,6 @@ describe('application integration', () => {
     expect(document.querySelector('.toast.success')?.textContent)
       .toBe('URL copied to clipboard!');
 
-    vi.stubGlobal('confirm', vi.fn(() => true));
     document.getElementById('btn-clear').click();
     await vi.waitFor(() => expect(window.location.search).toContain('g='));
     expect(document.querySelector('.pipe-node')).toBeNull();
