@@ -58,39 +58,21 @@ const dataPanel = document.getElementById('data-panel');
 const dataPanelResizer = document.getElementById('data-panel-resizer');
 const dataViewStack = document.getElementById('data-view-stack');
 
-/** @type {Map<string, {
- *   pipeId: string,
- *   portName: string,
- *   portType: string,
- *   pinned: boolean,
- *   minimized: boolean,
- *   mode: 'text'|'hex',
- *   element: HTMLElement,
- *   title: HTMLElement,
- *   errors: HTMLElement,
- *   viewer: import('./ui/data-viewer.js').DataViewer,
- *   pinButton: HTMLButtonElement,
- *   minimizeButton: HTMLButtonElement,
- *   modeButton: HTMLButtonElement,
- *   moveButton: HTMLButtonElement
- * }>} */
-const dataViews = new Map();
+/**
+ * Unified sidebar view registry.
+ * Keyed by `${pipeId}:data` or `${pipeId}:config`.
+ * All views share: pipeId, type, pinned, minimized, element, title,
+ * pinButton, minimizeButton, moveButton.
+ * Data views additionally carry: portName, portType, mode, errors, viewer,
+ * copyButton, modeButton.
+ * Config views additionally carry: fields.
+ * @type {Map<string, object>}
+ */
+const sidebarViews = new Map();
 let activeSelections = new Map();
 let selectionRefreshFrame = null;
 let selectedPipeId = null;
 let deletePipeMode = false;
-/** @type {Map<string, {
- *   pipeId: string,
- *   pinned: boolean,
- *   minimized: boolean,
- *   element: HTMLElement,
- *   title: HTMLElement,
- *   fields: HTMLElement,
- *   pinButton: HTMLButtonElement,
- *   minimizeButton: HTMLButtonElement,
- *   moveButton: HTMLButtonElement
- * }>} */
-const configViews = new Map();
 let selectedConfigPipeId = null;
 
 /** Current layout mode: 'both' | 'graph' | 'data' */
@@ -450,7 +432,7 @@ function initDataPanelResizer() {
 function onGraphEvent(event) {
   scheduleUrlUpdate();
   if (event.type === 'pipe-removed') {
-    if (configViews.has(event.pipeId)) removeConfigView(event.pipeId);
+    if (sidebarViews.has(sidebarKey(event.pipeId, 'config'))) removeConfigView(event.pipeId);
     removeDataView(event.pipeId);
     return;
   }
@@ -554,8 +536,8 @@ function initZoomControl() {
 }
 
 function refreshDataViews() {
-  for (const view of dataViews.values()) {
-    refreshDataView(view);
+  for (const view of sidebarViews.values()) {
+    if (view.type === 'data') refreshDataView(view);
   }
 }
 
@@ -638,7 +620,7 @@ function createDataView(pipeId, portName, portType) {
   wireMoveButton(element, moveButton);
 
   const view = {
-    pipeId, portName, portType,
+    pipeId, type: 'data', portName, portType,
     pinned: false,
     minimized: false,
     mode: 'text',
@@ -669,26 +651,21 @@ function createDataView(pipeId, portName, portType) {
   });
   modeButton.addEventListener('click', () =>
     setViewMode(view, view.mode === 'text' ? 'hex' : 'text'));
-  pinButton.addEventListener('click', () => togglePinned(view, selectedPipeId, removeDataView));
+  pinButton.addEventListener('click', () => togglePinned(view));
   minimizeButton.addEventListener('click', () => toggleMinimized(view));
-  dataViews.set(pipeId, view);
+  sidebarViews.set(sidebarKey(pipeId, 'data'), view);
   updateDataPanelVisibility();
   return view;
 }
 
 function showDataView(pipeId, portName, portType) {
-  if (selectedPipeId && selectedPipeId !== pipeId) {
-    const previous = dataViews.get(selectedPipeId);
-    if (previous && !previous.pinned) removeDataView(selectedPipeId);
+  if (selectedPipeId !== pipeId) {
+    dismissUnpinned(sidebarViews.get(sidebarKey(selectedPipeId, 'data')));
   }
-
-  if (selectedConfigPipeId) {
-    const prevConfig = configViews.get(selectedConfigPipeId);
-    if (prevConfig && !prevConfig.pinned) removeConfigView(selectedConfigPipeId);
-  }
+  dismissUnpinned(sidebarViews.get(sidebarKey(selectedConfigPipeId, 'config')));
 
   selectedPipeId = pipeId;
-  let view = dataViews.get(pipeId);
+  let view = sidebarViews.get(sidebarKey(pipeId, 'data'));
   if (!view) {
     view = createDataView(pipeId, portName, portType);
   } else {
@@ -700,23 +677,49 @@ function showDataView(pipeId, portName, portType) {
 }
 
 function removeDataView(pipeId) {
-  const view = dataViews.get(pipeId);
+  const view = sidebarViews.get(sidebarKey(pipeId, 'data'));
   if (!view) return;
   view.element.remove();
-  dataViews.delete(pipeId);
+  sidebarViews.delete(sidebarKey(pipeId, 'data'));
   if (selectedPipeId === pipeId) selectedPipeId = null;
   updateDataPanelVisibility();
 }
 
 function updateDataPanelVisibility() {
-  const hasViews = dataViews.size > 0 || configViews.size > 0;
-  dataPanel.hidden = !hasViews || layoutMode === 'graph';
+  dataPanel.hidden = sidebarViews.size === 0 || layoutMode === 'graph';
 }
 
-function togglePinned(view, selectedId, removeFn) {
+/**
+ * Returns the Map key for a sidebar view.
+ * @param {string|null} pipeId
+ * @param {'data'|'config'} type
+ * @returns {string}
+ */
+function sidebarKey(pipeId, type) { return `${pipeId}:${type}`; }
+
+/**
+ * Unconditionally removes a sidebar view.
+ * @param {{ type: 'data'|'config', pipeId: string }} view
+ */
+function dismissView(view) {
+  if (view.type === 'data') removeDataView(view.pipeId);
+  else removeConfigView(view.pipeId);
+}
+
+/**
+ * Removes a sidebar view only if it is not pinned. Safe to call with undefined.
+ * @param {{ type: 'data'|'config', pipeId: string, pinned: boolean }|undefined} view
+ */
+function dismissUnpinned(view) {
+  if (!view || view.pinned) return;
+  dismissView(view);
+}
+
+function togglePinned(view) {
   const wasPinned = view.pinned;
-  if (wasPinned && view.pipeId !== selectedId) {
-    removeFn(view.pipeId);
+  const activeId = view.type === 'data' ? selectedPipeId : selectedConfigPipeId;
+  if (wasPinned && view.pipeId !== activeId) {
+    dismissView(view);
     return;
   }
   if (wasPinned && view.minimized) toggleMinimized(view);
@@ -763,7 +766,7 @@ function onPipeSelect(e) {
         .map(c => c.toPipeId);
       graph.removePipe(pipeId);
       editor.removePipeElement(pipeId);
-      if (configViews.has(pipeId)) removeConfigView(pipeId);
+      if (sidebarViews.has(sidebarKey(pipeId, 'config'))) removeConfigView(pipeId);
       setDeletePipeMode(false);
       const reprocessIds = upstreamPipeIds.length > 0 ? upstreamPipeIds : downstreamPipeIds;
       for (const id of reprocessIds) {
@@ -782,13 +785,13 @@ function onPipeSelect(e) {
 }
 
 function onGraphBackgroundClick() {
-  const selected = dataViews.get(selectedPipeId);
+  const dataView = sidebarViews.get(sidebarKey(selectedPipeId, 'data'));
   selectedPipeId = null;
-  if (selected && !selected.pinned) removeDataView(selected.pipeId);
+  dismissUnpinned(dataView);
 
-  const selectedConfig = configViews.get(selectedConfigPipeId);
+  const configView = sidebarViews.get(sidebarKey(selectedConfigPipeId, 'config'));
   selectedConfigPipeId = null;
-  if (selectedConfig && !selectedConfig.pinned) removeConfigView(selectedConfig.pipeId);
+  dismissUnpinned(configView);
 }
 
 function onDeletePipeModeToggle(e) {
@@ -895,14 +898,12 @@ function showConfigView(pipeId) {
   const pipe = graph.pipes.get(pipeId);
   if (!pipe) return;
 
-  // Remove the unpin config view for the previously selected config pipe
-  if (selectedConfigPipeId && selectedConfigPipeId !== pipeId) {
-    const prev = configViews.get(selectedConfigPipeId);
-    if (prev && !prev.pinned) removeConfigView(selectedConfigPipeId);
+  if (selectedConfigPipeId !== pipeId) {
+    dismissUnpinned(sidebarViews.get(sidebarKey(selectedConfigPipeId, 'config')));
   }
 
   selectedConfigPipeId = pipeId;
-  let view = configViews.get(pipeId);
+  let view = sidebarViews.get(sidebarKey(pipeId, 'config'));
   if (!view) {
     const element = cloneTemplate('config-view-template');
     const title = element.querySelector('.data-panel-title');
@@ -912,10 +913,10 @@ function showConfigView(pipeId) {
     const minimizeButton = element.querySelector('[data-action="minimize"]');
     dataViewStack.appendChild(element);
     wireMoveButton(element, moveButton);
-    view = { pipeId, element, title, fields, moveButton, pinButton, minimizeButton, pinned: false, minimized: false };
-    pinButton.addEventListener('click', () => togglePinned(view, selectedConfigPipeId, removeConfigView));
+    view = { pipeId, type: 'config', element, title, fields, moveButton, pinButton, minimizeButton, pinned: false, minimized: false };
+    pinButton.addEventListener('click', () => togglePinned(view));
     minimizeButton.addEventListener('click', () => toggleMinimized(view));
-    configViews.set(pipeId, view);
+    sidebarViews.set(sidebarKey(pipeId, 'config'), view);
   } else if (view.minimized) {
     toggleMinimized(view);
   }
@@ -927,10 +928,10 @@ function showConfigView(pipeId) {
 }
 
 function removeConfigView(pipeId) {
-  const view = configViews.get(pipeId);
+  const view = sidebarViews.get(sidebarKey(pipeId, 'config'));
   if (!view) return;
   view.element.remove();
-  configViews.delete(pipeId);
+  sidebarViews.delete(sidebarKey(pipeId, 'config'));
   if (selectedConfigPipeId === pipeId) selectedConfigPipeId = null;
   updateDataPanelVisibility();
 }
@@ -1376,8 +1377,7 @@ function clearGraphWithoutConfirmation() {
     editor.removePipeElement(id);
   }
   editor.updateConnections();
-  for (const id of Array.from(dataViews.keys())) removeDataView(id);
-  for (const id of Array.from(configViews.keys())) removeConfigView(id);
+  for (const view of [...sidebarViews.values()]) dismissView(view);
 }
 
 // ── Bootstrap ────────────────────────────────────────────────────
