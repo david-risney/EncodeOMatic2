@@ -1116,7 +1116,7 @@ function renderPipeList(query) {
       }
     }
 
-    // Grouped by category, each group sorted by appropriateness
+    // Grouped by category, each group sorted by base name
     for (const [category, pipes] of getPipesByCategory()) {
       const header = document.createElement('h3');
       header.className = 'pipe-list-category';
@@ -1125,7 +1125,10 @@ function renderPipeList(query) {
 
       const sorted = pipes
         .map((pipe, index) => ({ ...withAppropriateness(pipe), index }))
-        .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
+        .sort((a, b) =>
+          a.baseName.localeCompare(b.baseName)
+          || a.index - b.index
+        );
 
       for (const pipe of sorted) {
         list.appendChild(makePipeListItem(pipe));

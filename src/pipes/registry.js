@@ -15,7 +15,7 @@ export const registry = new Map(
 
 /**
  * Get pipe entries grouped by category.
- * @returns {Map<string, {typeName, typeDescription, categoryDescription, cls}[]>}
+ * @returns {Map<string, {typeName, typeDescription, baseName, categoryDescription, cls}[]>}
  */
 export function getPipesByCategory() {
   const groups = new Map();
@@ -25,6 +25,7 @@ export function getPipesByCategory() {
     groups.get(cat).push({
       typeName: cls.typeName,
       typeDescription: cls.typeDescription ?? cls.typeName,
+      baseName: cls.baseName ?? cls.typeDescription ?? cls.typeName,
       categoryDescription: cls.categoryDescription ?? '',
       cls,
     });

@@ -14,6 +14,10 @@ A pipe subclass normally supplies stable static metadata (`typeName`,
 `process(inputs)`. It may also override `defineInputs()`, `defineOutputs()`,
 `defineConfigs()`, and static `getInputAppropriateness(input)`.
 
+`Pipe` also exposes `static baseName` (and instance `baseName`) for grouped UI
+sorting. By default it is derived from the display label with trailing
+`Encode`/`Decode` removed, so inverse pairs share a grouping key.
+
 `process()` receives a `Map` of port names to bytes and returns a `Map` of
 output names to bytes. `run()` clears stale outputs and errors first, accepts
 only declared outputs in main-thread execution, and turns thrown values into

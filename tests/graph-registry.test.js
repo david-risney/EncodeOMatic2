@@ -285,5 +285,17 @@ describe('registry', () => {
       .toContain('QuotedPrintableEncode');
     expect(groups.get('Grammar').map(({ typeName }) => typeName))
       .toContain('PegParser');
+
+    const allEntries = [...groups.values()].flat();
+    expect(allEntries.every(({ baseName }) => typeof baseName === 'string' && baseName.length > 0))
+      .toBe(true);
+    const base64Encode = groups
+      .get('Base Encoding')
+      .find(({ typeName }) => typeName === 'Base64Encode');
+    const base64Decode = groups
+      .get('Base Encoding')
+      .find(({ typeName }) => typeName === 'Base64Decode');
+    expect(base64Encode.baseName).toBe('Base64');
+    expect(base64Decode.baseName).toBe('Base64');
   });
 });
