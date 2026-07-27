@@ -154,3 +154,5 @@ export class JavaScriptEscapeDecodePipe extends Pipe {
     return new Map([['output', UTF8_ENCODER.encode(decodeJavaScriptEscapes(text))]]);
   }
 }
+
+export const builtinPipes = [JavaScriptEscapeEncodePipe, JavaScriptEscapeDecodePipe];
