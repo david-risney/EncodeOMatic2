@@ -682,6 +682,11 @@ function showDataView(pipeId, portName, portType) {
     if (previous && !previous.pinned) removeDataView(selectedPipeId);
   }
 
+  if (selectedConfigPipeId) {
+    const prevConfig = configViews.get(selectedConfigPipeId);
+    if (prevConfig && !prevConfig.pinned) removeConfigView(selectedConfigPipeId);
+  }
+
   selectedPipeId = pipeId;
   let view = dataViews.get(pipeId);
   if (!view) {
@@ -777,10 +782,13 @@ function onPipeSelect(e) {
 }
 
 function onGraphBackgroundClick() {
-  if (!selectedPipeId) return;
   const selected = dataViews.get(selectedPipeId);
   selectedPipeId = null;
   if (selected && !selected.pinned) removeDataView(selected.pipeId);
+
+  const selectedConfig = configViews.get(selectedConfigPipeId);
+  selectedConfigPipeId = null;
+  if (selectedConfig && !selectedConfig.pinned) removeConfigView(selectedConfig.pipeId);
 }
 
 function onDeletePipeModeToggle(e) {
