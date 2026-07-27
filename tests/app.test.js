@@ -129,6 +129,20 @@ describe('application integration', () => {
   it('initializes and supports the primary user interactions', async () => {
     expect(document.getElementById('pipe-list').textContent).toContain('Base64 Encode');
     expect(document.querySelector('.pipe-list-item').tagName).toBe('BUTTON');
+    const categoryHeaders = [...document.querySelectorAll('.pipe-list-category')];
+    const baseEncodingHeader = categoryHeaders.find((header) => header.textContent === 'Base Encoding');
+    const baseEncodingNames = [];
+    for (
+      let el = baseEncodingHeader?.nextElementSibling;
+      el && !el.classList.contains('pipe-list-category');
+      el = el.nextElementSibling
+    ) {
+      baseEncodingNames.push(el.querySelector('.pipe-list-item-name')?.textContent ?? '');
+    }
+    const base64EncodeIndex = baseEncodingNames.indexOf('Base64 Encode');
+    const base64DecodeIndex = baseEncodingNames.indexOf('Base64 Decode');
+    expect(base64EncodeIndex).toBeGreaterThanOrEqual(0);
+    expect(base64DecodeIndex).toBe(base64EncodeIndex + 1);
     expect(document.getElementById('toast-container')).not.toBeNull();
     expect(document.getElementById('session-name').value).toMatch(/^[a-z]+-[a-z]+$/);
 

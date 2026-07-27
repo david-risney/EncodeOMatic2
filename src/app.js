@@ -1081,10 +1081,11 @@ function renderPipeList(query) {
     ),
   });
 
+  const allPipes = [...getPipesByCategory().values()].flat();
+
   if (q) {
     // Flat search results sorted by appropriateness
-    const pipes = [...getPipesByCategory().values()]
-      .flat()
+    const pipes = allPipes
       .filter(pipe =>
         pipe.typeDescription.toLowerCase().includes(q) ||
         pipe.typeName.toLowerCase().includes(q) ||
@@ -1096,7 +1097,26 @@ function renderPipeList(query) {
       list.appendChild(makePipeListItem(pipe));
     }
   } else {
-    // Grouped by category, each group sorted by appropriateness
+    // Show Recommended category first when there is contextual input data
+    if (inputData !== null) {
+      const recommended = allPipes
+        .map((pipe, index) => ({ ...withAppropriateness(pipe), index }))
+        .filter(pipe => pipe.appropriateness > 0)
+        .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
+
+      if (recommended.length > 0) {
+        const header = document.createElement('h3');
+        header.className = 'pipe-list-category';
+        header.textContent = 'Recommended';
+        list.appendChild(header);
+
+        for (const pipe of recommended) {
+          list.appendChild(makePipeListItem(pipe));
+        }
+      }
+    }
+
+    // Grouped by category, each group sorted by base name
     for (const [category, pipes] of getPipesByCategory()) {
       const header = document.createElement('h3');
       header.className = 'pipe-list-category';
@@ -1105,7 +1125,10 @@ function renderPipeList(query) {
 
       const sorted = pipes
         .map((pipe, index) => ({ ...withAppropriateness(pipe), index }))
-        .sort((a, b) => b.appropriateness - a.appropriateness || a.index - b.index);
+        .sort((a, b) =>
+          a.baseName.localeCompare(b.baseName)
+          || a.index - b.index
+        );
 
       for (const pipe of sorted) {
         list.appendChild(makePipeListItem(pipe));
@@ -1132,10 +1155,11 @@ function openAddPipeDialog(context = null) {
 
   context.sourceData = context.input
     ? graph.pipes.get(context.input.pipeId)?.getOutputData(context.input.portName) ?? null
-    : null;
+    : graph.getLastPipe()?.getOutputData() ?? null;
   _addPipeContext = context;
   searchInput.value = '';
   renderPipeList('');
+  document.getElementById('pipe-list').scrollTop = 0;
   dialog.showModal();
   searchInput.focus();
 }

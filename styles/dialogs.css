@@ -8,15 +8,18 @@
   background: var(--color-surface);
   box-shadow: var(--shadow);
   color: var(--color-text);
+  overflow: hidden;
 
   &::backdrop { background: rgba(0, 0, 0, 0.6); }
 
   & .dialog-form {
     display: flex;
-    height: 100%;
+    max-height: inherit;
     flex-direction: column;
+    overflow: hidden;
 
     & h2 {
+      flex-shrink: 0;
       margin: 0;
       padding: 16px 20px 12px;
       border-bottom: 1px solid var(--color-border);
@@ -71,8 +74,7 @@
 
 .pipe-list {
   display: flex;
-  min-height: 200px;
-  max-height: 400px;
+  min-height: 0;
   flex: 1;
   flex-direction: column;
   gap: 4px;
