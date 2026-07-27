@@ -951,7 +951,10 @@ function renderConfigFields(pipe, fields) {
       const fileBtn = wrapper.querySelector('button');
       fileBtn.addEventListener('click', () => {
         const fileInput = cloneTemplate('file-input-template');
+        document.body.appendChild(fileInput);
+        fileInput.addEventListener('cancel', () => fileInput.remove());
         fileInput.onchange = async () => {
+          fileInput.remove();
           const file = fileInput.files[0];
           if (!file) return;
           const buffer = await file.arrayBuffer();
