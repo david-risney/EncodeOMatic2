@@ -15,4 +15,4 @@
 
 ## Screenshots
 
-<!-- Include screenshots for renderable changes. Otherwise, state why they are not applicable. -->
+<!-- Include successful screenshots for renderable changes when available. If screenshot capture/display fails, state that briefly and continue. For non-renderable changes, state why screenshots are not applicable. -->
