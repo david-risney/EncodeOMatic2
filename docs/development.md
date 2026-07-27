@@ -43,8 +43,10 @@ npm test
 development.
 
 Documentation-only changes have no rendered application result, so screenshots
-are not applicable. For a renderable application change, capture at least one
-screenshot and include it in progress and review material.
+are not applicable. For a renderable application change, attempt to capture at
+least one screenshot and include successful screenshots in progress and review
+material. Screenshot capture or attachment failures are non-blocking; if a
+screenshot cannot be produced or displayed, note that explicitly and continue.
 
 ## Test organization
 

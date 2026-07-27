@@ -29,7 +29,8 @@ report formatting or stylistic preferences unless they affect correctness.
 
 ## Screenshots
 
-- Always capture at least one screenshot after implementing a change that can be demonstrated in the rendered application.
-- Include the screenshots in the agent session's progress updates and final response so they are visible while reviewing the work.
-- Include the same screenshots in the pull request description.
+- For a change that can be demonstrated in the rendered application, attempt to capture at least one screenshot.
+- Include successful screenshots in the agent session's progress updates, final response, and pull request description.
+- Screenshot capture or attachment failures are non-blocking; do not fail an otherwise successful task solely because screenshots could not be produced or displayed.
+- If screenshots are unavailable for a renderable change, explicitly state that capture/display failed and continue with the rest of the deliverable.
 - For changes with no visual or renderable result, explicitly state that screenshots are not applicable instead of omitting them without explanation.
