@@ -26,3 +26,33 @@ test('about dialog opens and page loads without JS errors', async ({ page }) => 
 
   expect(jsErrors, `Unexpected JS errors: ${jsErrors.join('\n')}`).toEqual([]);
 });
+
+test('updates URL session state while editing an Input Buffer', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(
+    () => document.getElementById('session-name')?.value !== '',
+    { timeout: 15000 },
+  );
+
+  await page.click('.add-pipe-control');
+  await page.getByRole('button', { name: /Input Buffer/i }).click();
+
+  const input = page.locator('.pipe-node textarea');
+  await expect(input).toBeVisible();
+  await input.fill('hello');
+
+  await expect.poll(() => {
+    const params = new URL(page.url()).searchParams;
+    return params.get('gc') ?? params.get('g');
+  }).toBeTruthy();
+
+  const firstState = (new URL(page.url()).searchParams.get('gc')
+    ?? new URL(page.url()).searchParams.get('g'));
+
+  await input.fill('hello world');
+
+  await expect.poll(() => {
+    const params = new URL(page.url()).searchParams;
+    return params.get('gc') ?? params.get('g');
+  }).not.toBe(firstState);
+});
