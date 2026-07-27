@@ -75,6 +75,16 @@ let _nextId = 1;
  */
 export class Pipe {
   /**
+   * Shared display grouping name for inverse transform pairs.
+   * Defaults to typeDescription/typeName with trailing "Encode"/"Decode" removed.
+   * @returns {string}
+   */
+  static get baseName() {
+    const displayName = this.typeDescription || this.typeName || this.name;
+    return displayName.replace(/\s+(?:Encode|Decode)\s*$/i, '');
+  }
+
+  /**
    * Rate how appropriate the supplied bytes are as input for this pipe.
    * Subclasses may return a score from -10 (definitely inappropriate) to
    * 10 (definitely appropriate); 0 means indeterminate.
@@ -112,6 +122,11 @@ export class Pipe {
   /** @returns {string} */
   get displayName() {
     return this.constructor.typeDescription || this.constructor.typeName || this.constructor.name;
+  }
+
+  /** @returns {string} */
+  get baseName() {
+    return this.constructor.baseName;
   }
 
   /** @returns {string} */
