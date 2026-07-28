@@ -18,6 +18,9 @@ import { builtinPipes as rotPipes } from './rot.js';
 import { builtinPipes as morsePipes } from './morse.js';
 import { builtinPipes as compressionPipes } from './compression.js';
 import { builtinPipes as zipPipes } from './zip.js';
+import { builtinPipes as lz4Pipes } from './lz4.js';
+import { builtinPipes as brotliPipes } from './brotli.js';
+import { builtinPipes as zstdPipes } from './zstd.js';
 import { builtinPipes as formUrlencodedPipes } from './form-urlencoded.js';
 import { builtinPipes as hmacPipes } from './hmac.js';
 import { builtinPipes as mimeHeaderPipes } from './mime-header.js';
@@ -55,6 +58,9 @@ export const builtinEncodingPipes = [
   ...morsePipes,
   ...compressionPipes,
   ...zipPipes,
+  ...lz4Pipes,
+  ...brotliPipes,
+  ...zstdPipes,
   ...formUrlencodedPipes,
   ...hmacPipes,
   ...mimeHeaderPipes,

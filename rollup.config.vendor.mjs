@@ -1,6 +1,7 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
+import wasm from '@rollup/plugin-wasm';
 
 const browserBuiltinShims = {
   name: 'browser-builtin-shims',
@@ -31,6 +32,7 @@ export default unsupported;
 };
 
 const plugins = [
+  wasm({ targetEnv: 'auto-inline' }),
   json(),
   nodeResolve({ browser: true, preferBuiltins: false }),
   commonjs(),
@@ -51,6 +53,9 @@ const vendors = [
   ['scripts/nanotar-entry.js',           'vendor/nanotar.js'],
   ['scripts/fflate-entry.js',            'vendor/fflate.js'],
   ['scripts/protobufjs-entry.js',        'vendor/protobufjs.js'],
+  ['scripts/lz4-entry.js',              'vendor/lz4.js'],
+  ['scripts/brotli-entry.js',           'vendor/brotli.js'],
+  ['scripts/zstd-entry.js',             'vendor/zstd.js'],
 ];
 
 export default vendors.map(([input, file]) => ({
