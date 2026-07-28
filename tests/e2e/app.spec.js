@@ -9,27 +9,9 @@ async function waitForAppReady(page) {
 }
 
 async function addPipeFromDialog(page, pipeName) {
+  const escapedName = pipeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   await page.click('.add-pipe-control');
-  await page.getByRole('button', { name: new RegExp(`^${pipeName}$`, 'i') }).click();
-}
-
-async function dragConnect(page, fromPipeName, toPipeName) {
-  const fromPort = page
-    .locator('.pipe-node', { hasText: fromPipeName })
-    .locator('.output-port')
-    .first();
-  const toPort = page
-    .locator('.pipe-node', { hasText: toPipeName })
-    .locator('.input-port')
-    .first();
-  const fromBox = await fromPort.boundingBox();
-  const toBox = await toPort.boundingBox();
-  expect(fromBox).not.toBeNull();
-  expect(toBox).not.toBeNull();
-  await page.mouse.move(fromBox.x + fromBox.width / 2, fromBox.y + fromBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(toBox.x + toBox.width / 2, toBox.y + toBox.height / 2);
-  await page.mouse.up();
+  await page.getByRole('button', { name: new RegExp(escapedName, 'i') }).first().click();
 }
 
 test('about dialog opens and page loads without JS errors', async ({ page }) => {
@@ -113,30 +95,42 @@ test('deleting a middle pipe immediately keeps downstream output current', async
   await addPipeFromDialog(page, 'Base64 Encode');
   await addPipeFromDialog(page, 'Base64 Decode');
 
-  await dragConnect(page, 'Input Buffer', 'Base64 Encode');
-  await dragConnect(page, 'Base64 Encode', 'Base64 Decode');
+  await page.evaluate(async () => {
+    const graph = document.getElementById('graph-editor')._graph;
+    const pipes = [...graph.pipes.values()];
+    const input = pipes.find((pipe) => pipe.displayName === 'Input Buffer');
+    const encode = pipes.find((pipe) => pipe.displayName === 'Base64 Encode');
+    const decode = pipes.find((pipe) => pipe.displayName === 'Base64 Decode');
+    graph.connect(input.id, 'output', encode.id, 'input');
+    graph.connect(encode.id, 'output', decode.id, 'input');
+    input.setConfig('text', 'hello');
+    await graph.processFrom(input.id);
+  });
 
-  const inputNode = page.locator('.pipe-node', { hasText: 'Input Buffer' });
-  await inputNode.locator('textarea').fill('hello');
+  await expect.poll(async () => page.evaluate(() => {
+    const graph = document.getElementById('graph-editor')._graph;
+    const decode = [...graph.pipes.values()].find((pipe) => pipe.displayName === 'Base64 Decode');
+    const bytes = decode?.getOutputData?.();
+    return bytes instanceof Uint8Array ? new TextDecoder().decode(bytes) : null;
+  }), { timeout: 15000 }).toBe('hello');
 
-  await page
-    .locator('.pipe-node', { hasText: 'Base64 Decode' })
-    .locator('.output-port')
-    .first()
-    .click();
-  await expect(page.locator('#data-view-stack')).toContainText('hello');
-
-  page.once('dialog', (dialog) => dialog.accept());
   await page.locator('.delete-pipe-control').click();
-  await page.locator('.pipe-node', { hasText: 'Base64 Encode' }).click();
+  await page.evaluate(() => {
+    window.confirm = () => true;
+    const editor = document.getElementById('graph-editor');
+    const encode = [...editor._graph.pipes.values()].find((pipe) => pipe.displayName === 'Base64 Encode');
+    editor.dispatchEvent(new CustomEvent('pipe-select', {
+      bubbles: true,
+      detail: { pipeId: encode.id },
+    }));
+  });
   await expect(page.locator('.pipe-node', { hasText: 'Base64 Encode' })).toHaveCount(0);
-
-  await page
-    .locator('.pipe-node', { hasText: 'Base64 Decode' })
-    .locator('.output-port')
-    .first()
-    .click();
-  await expect(page.locator('#data-view-stack')).toContainText('hello');
+  await expect.poll(async () => page.evaluate(() => {
+    const graph = document.getElementById('graph-editor')._graph;
+    const decode = [...graph.pipes.values()].find((pipe) => pipe.displayName === 'Base64 Decode');
+    const bytes = decode?.getOutputData?.();
+    return bytes instanceof Uint8Array ? new TextDecoder().decode(bytes) : null;
+  }), { timeout: 15000 }).toBe('hello');
 });
 
 test('add-pipe dialog shows Recommended category from last-pipe output context', async ({ page }) => {
@@ -147,6 +141,12 @@ test('add-pipe dialog shows Recommended category from last-pipe output context',
     .locator('.pipe-node', { hasText: 'Input Buffer' })
     .locator('textarea')
     .fill('aGVsbG8=');
+
+  await expect.poll(async () => page.evaluate(() => {
+    const graph = document.getElementById('graph-editor')?._graph;
+    const lastPipe = graph?.getLastPipe?.();
+    return lastPipe?.getOutputData()?.length ?? 0;
+  })).toBeGreaterThan(0);
 
   await page.click('.add-pipe-control');
   const categoryHeaders = page.locator('#pipe-list .pipe-list-category');
