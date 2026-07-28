@@ -63,6 +63,9 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/encoding/xml-encode.js',
   './src/pipes/builtin/encoding/compression.js',
   './src/pipes/builtin/encoding/zip.js',
+  './src/pipes/builtin/encoding/lz4.js',
+  './src/pipes/builtin/encoding/brotli.js',
+  './src/pipes/builtin/encoding/zstd.js',
   './src/pipes/builtin/encoding/form-urlencoded.js',
   './src/pipes/builtin/encoding/hash-wasm.js',
   './src/pipes/builtin/encoding/hmac.js',
@@ -102,6 +105,10 @@ const PRECACHE_URLS = [
   './vendor/peggy.js',
   './vendor/fflate.js',
   './vendor/protobufjs.js',
+  './vendor/lz4.js',
+  './vendor/brotli.js',
+  './vendor/brotli_wasm_bg.wasm',
+  './vendor/zstd.js',
 ];
 
 self.addEventListener('install', (event) => {

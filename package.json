@@ -25,6 +25,7 @@
     "@rollup/plugin-commonjs": "^29.0.3",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-wasm": "^6.2.2",
     "buffer": "^6.0.3",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
@@ -36,18 +37,21 @@
   "dependencies": {
     "apg-js": "^4.4.0",
     "ascii85": "^1.0.2",
+    "brotli-wasm": "^3.0.1",
     "bs58": "^6.0.0",
     "emailjs-mime-codec": "^2.0.9",
     "fflate": "^0.8.3",
     "hash-wasm": "^4.12.0",
     "he": "^1.2.0",
     "iconv-lite": "^0.7.3",
+    "lz4js": "^0.2.0",
     "nanotar": "^0.3.0",
     "nearley": "^2.20.1",
     "peggy": "^5.1.0",
     "protobufjs": "^8.7.1",
     "punycode": "^2.3.1",
     "quoted-printable": "^1.0.1",
-    "rfc4648": "^1.5.4"
+    "rfc4648": "^1.5.4",
+    "zstd-wasm": "^0.0.9"
   }
 }

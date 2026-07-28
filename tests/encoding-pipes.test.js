@@ -22,6 +22,8 @@ import {
   GzipDecompressPipe,
   DeflateCompressPipe,
   DeflateDecompressPipe,
+  DeflateRawCompressPipe,
+  DeflateRawDecompressPipe,
 } from '../src/pipes/builtin/encoding/compression.js';
 import {
   FormUrlencodedEncodePipe,
@@ -49,6 +51,9 @@ import {
   UnicodeCaseFoldUpperPipe,
 } from '../src/pipes/builtin/encoding/unicode-ops.js';
 import { ZipPipe, UnzipPipe } from '../src/pipes/builtin/encoding/zip.js';
+import { Lz4CompressPipe, Lz4DecompressPipe } from '../src/pipes/builtin/encoding/lz4.js';
+import { BrotliCompressPipe, BrotliDecompressPipe } from '../src/pipes/builtin/encoding/brotli.js';
+import { ZstdDecompressPipe } from '../src/pipes/builtin/encoding/zstd.js';
 import { decode, encode, processBytes, processText } from './helpers.js';
 
 describe('source and byte encodings', () => {
@@ -576,6 +581,95 @@ describe('Compression (gzip and deflate)', () => {
     expect(GzipDecompressPipe.getInputAppropriateness(new Uint8Array([0, 1]))).toBe(0);
     expect(GzipDecompressPipe.getInputAppropriateness(new Uint8Array([0x1f]))).toBe(0);
     expect(GzipDecompressPipe.getInputAppropriateness(null)).toBe(0);
+  });
+});
+
+describe('Deflate Raw compression', () => {
+  it('compresses and decompresses text round trip', async () => {
+    const compressed = await processBytes(new DeflateRawCompressPipe(), encode('Hello, deflate-raw!'));
+    const decompressed = await processBytes(new DeflateRawDecompressPipe(), compressed);
+    expect(decode(decompressed)).toBe('Hello, deflate-raw!');
+  });
+
+  it('handles empty input', async () => {
+    const compressed = await processBytes(new DeflateRawCompressPipe(), []);
+    const decompressed = await processBytes(new DeflateRawDecompressPipe(), compressed);
+    expect([...decompressed]).toEqual([]);
+  });
+
+  it('round trips arbitrary bytes', async () => {
+    const bytes = [0, 1, 127, 128, 255];
+    const compressed = await processBytes(new DeflateRawCompressPipe(), bytes);
+    expect([...await processBytes(new DeflateRawDecompressPipe(), compressed)]).toEqual(bytes);
+  });
+
+  it('throws PipeError for corrupt data', async () => {
+    await expect(processBytes(new DeflateRawDecompressPipe(), [0, 1, 2, 3, 4])).rejects
+      .toMatchObject({ message: 'Decompression failed: corrupt or invalid data' });
+  });
+});
+
+describe('LZ4 compression', () => {
+  it('compresses and decompresses text round trip', async () => {
+    const compressed = await processBytes(new Lz4CompressPipe(), encode('Hello, LZ4!'));
+    expect(compressed[0]).toBe(0x04);
+    expect(compressed[1]).toBe(0x22);
+    expect(compressed[2]).toBe(0x4d);
+    expect(compressed[3]).toBe(0x18);
+    const decompressed = await processBytes(new Lz4DecompressPipe(), compressed);
+    expect(decode(decompressed)).toBe('Hello, LZ4!');
+  });
+
+  it('handles empty input', async () => {
+    const compressed = await processBytes(new Lz4CompressPipe(), []);
+    const decompressed = await processBytes(new Lz4DecompressPipe(), compressed);
+    expect([...decompressed]).toEqual([]);
+  });
+
+  it('round trips arbitrary bytes', async () => {
+    const bytes = [0, 1, 127, 128, 255];
+    const compressed = await processBytes(new Lz4CompressPipe(), bytes);
+    expect([...await processBytes(new Lz4DecompressPipe(), compressed)]).toEqual(bytes);
+  });
+
+  it('throws PipeError for corrupt data', async () => {
+    await expect(processBytes(new Lz4DecompressPipe(), [0, 1, 2, 3, 4])).rejects
+      .toMatchObject({ message: 'LZ4 decompression failed: corrupt or invalid data' });
+  });
+
+  it('LZ4 decompressor scores input appropriateness by magic bytes', () => {
+    const lz4Magic = new Uint8Array([0x04, 0x22, 0x4d, 0x18, 0, 0]);
+    expect(Lz4DecompressPipe.getInputAppropriateness(lz4Magic)).toBe(8);
+    expect(Lz4DecompressPipe.getInputAppropriateness(new Uint8Array([0, 1, 2, 3]))).toBe(0);
+    expect(Lz4DecompressPipe.getInputAppropriateness(null)).toBe(0);
+  });
+});
+
+describe('Zstd decompression', () => {
+  it('decompresses known zstd data (empty)', async () => {
+    // Valid zstd frame for empty content, generated with zstandard Python library
+    const zstdEmpty = new Uint8Array([40, 181, 47, 253, 32, 0, 1, 0, 0]);
+    const output = await processBytes(new ZstdDecompressPipe(), zstdEmpty);
+    expect([...output]).toEqual([]);
+  });
+
+  it('decompresses known zstd data', async () => {
+    // Valid zstd frame for "Hello, Zstd!", generated with zstandard Python library
+    const zstdHello = new Uint8Array([40, 181, 47, 253, 32, 12, 97, 0, 0, 72, 101, 108, 108, 111, 44, 32, 90, 115, 116, 100, 33]);
+    const output = await processBytes(new ZstdDecompressPipe(), zstdHello);
+    expect(decode(output)).toBe('Hello, Zstd!');
+  });
+
+  it('throws PipeError for corrupt data', async () => {
+    await expect(processBytes(new ZstdDecompressPipe(), [0, 1, 2, 3, 4])).rejects
+      .toMatchObject({ message: 'Zstd decompression failed: corrupt or invalid data' });
+  });
+
+  it('scores input appropriateness by magic bytes', () => {
+    const zstdMagic = new Uint8Array([0x28, 0xb5, 0x2f, 0xfd, 0, 0]);
+    expect(ZstdDecompressPipe.getInputAppropriateness(zstdMagic)).toBe(8);
+    expect(ZstdDecompressPipe.getInputAppropriateness(new Uint8Array([0, 1, 2, 3]))).toBe(0);
+    expect(ZstdDecompressPipe.getInputAppropriateness(null)).toBe(0);
   });
 });
 

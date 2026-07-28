@@ -85,4 +85,24 @@ export class DeflateDecompressPipe extends DecompressionPipe {
   static format = 'deflate';
 }
 
-export const builtinPipes = [GzipCompressPipe, GzipDecompressPipe, DeflateCompressPipe, DeflateDecompressPipe];
+export class DeflateRawCompressPipe extends CompressionPipe {
+  static typeName = 'DeflateRawCompress';
+  static typeDescription = 'Deflate Raw Compress';
+  static category = 'Compression';
+  static categoryDescription = 'Compress bytes using raw deflate (no zlib wrapper).';
+  static format = 'deflate-raw';
+}
+
+export class DeflateRawDecompressPipe extends DecompressionPipe {
+  static typeName = 'DeflateRawDecompress';
+  static typeDescription = 'Deflate Raw Decompress';
+  static category = 'Compression';
+  static categoryDescription = 'Decompress raw deflate-compressed bytes (no zlib wrapper).';
+  static format = 'deflate-raw';
+}
+
+export const builtinPipes = [
+  GzipCompressPipe, GzipDecompressPipe,
+  DeflateCompressPipe, DeflateDecompressPipe,
+  DeflateRawCompressPipe, DeflateRawDecompressPipe,
+];
