@@ -43,36 +43,27 @@ function fromBase64UrlBytes(b64) {
   return bytes;
 }
 
-async function collectStream(readable) {
-  const reader = readable.getReader();
-  const chunks = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-  }
-  const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.length; }
-  return result;
-}
-
 async function compressString(str) {
   const bytes = new TextEncoder().encode(str);
-  const stream = new CompressionStream('deflate-raw');
-  const writer = stream.writable.getWriter();
-  await writer.write(bytes);
-  await writer.close();
-  return collectStream(stream.readable);
+  const input = new ReadableStream({
+    start(controller) {
+      controller.enqueue(bytes);
+      controller.close();
+    },
+  });
+  const compressed = input.pipeThrough(new CompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(compressed).arrayBuffer());
 }
 
 async function decompressString(bytes) {
-  const stream = new DecompressionStream('deflate-raw');
-  const writer = stream.writable.getWriter();
-  await writer.write(bytes);
-  await writer.close();
-  return new TextDecoder().decode(await collectStream(stream.readable));
+  const input = new ReadableStream({
+    start(controller) {
+      controller.enqueue(bytes);
+      controller.close();
+    },
+  });
+  const decompressed = input.pipeThrough(new DecompressionStream('deflate-raw'));
+  return new TextDecoder().decode(await new Response(decompressed).arrayBuffer());
 }
 
 // ── IndexedDB helpers ────────────────────────────────────────────
