@@ -92,6 +92,8 @@ body {
 
   & .brand-about-btn {
     display: none;
+    align-items: center;
+    justify-content: center;
     min-width: 28px;
     min-height: 28px;
     padding: 0;
