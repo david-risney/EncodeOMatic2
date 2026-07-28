@@ -529,6 +529,31 @@ describe('GraphEditor', () => {
     expect(editor._isPanning).toBe(false);
   });
 
+  it('captures only touch pointers so mouse clicks keep their original targets', () => {
+    const setPointerCapture = vi.fn();
+    editor._canvas.setPointerCapture = setPointerCapture;
+
+    editor._onCanvasPointerDown({
+      pointerId: 1,
+      pointerType: 'mouse',
+      button: 0,
+      clientX: 20,
+      clientY: 20,
+      target: editor._canvas,
+    });
+    expect(setPointerCapture).not.toHaveBeenCalled();
+
+    editor._onCanvasPointerDown({
+      pointerId: 2,
+      pointerType: 'touch',
+      button: 0,
+      clientX: 24,
+      clientY: 24,
+      target: editor._canvas,
+    });
+    expect(setPointerCapture).toHaveBeenCalledWith(2);
+  });
+
   it('displays processing errors and removes pipe elements', () => {
     source._errors = [{ message: 'failed' }];
     editor.updatePipeElement(source);
