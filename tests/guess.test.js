@@ -88,4 +88,20 @@ describe('encoding chain guessing', () => {
     // GzipDecompress must come before Base64Decode in the chain.
     expect(names.indexOf('GzipDecompress')).toBeLessThan(names.indexOf('Base64Decode'));
   });
+
+  it('guesses Base64urlDecode → DeflateRawDecompress → JsonParser for the given input', async () => {
+    // "q1YqyCxILVayio7VUUrOz8tLTS7JzM8DC9QCAA" is base64url-encoded raw-deflate-compressed JSON.
+    // The string contains only alphanumeric characters, so it is also valid base64, and the
+    // guesser may return either variant — both decode to the same bytes.  The important
+    // assertions are that DeflateRawDecompress and JsonParser are chained after the decode step.
+    const input = new TextEncoder().encode('q1YqyCxILVayio7VUUrOz8tLTS7JzM8DC9QCAA');
+    const result = await guessPipeChain(input, registry.values());
+    const names = result.map(s => s.typeName);
+    const base64Step = names.findIndex(n => n === 'Base64urlDecode' || n === 'Base64Decode');
+    expect(base64Step, 'expected a Base64 or Base64url decode step').toBeGreaterThanOrEqual(0);
+    expect(names).toContain('DeflateRawDecompress');
+    expect(names).toContain('JsonParser');
+    expect(names.indexOf('DeflateRawDecompress')).toBeGreaterThan(base64Step);
+    expect(names.indexOf('JsonParser')).toBeGreaterThan(names.indexOf('DeflateRawDecompress'));
+  });
 });
