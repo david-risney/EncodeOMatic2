@@ -5,6 +5,8 @@ import {
   loadFromUrl,
   saveToIdb,
   saveToUrl,
+  saveAutosession,
+  loadAutosession,
 } from '../src/state.js';
 
 describe('state persistence', () => {
@@ -120,5 +122,24 @@ describe('state persistence', () => {
     expect(error).toHaveBeenCalledWith(
       'Failed to decode graph from URL:', expect.anything()
     );
+  });
+
+  it('loadAutosession returns null when nothing has been saved', async () => {
+    expect(await loadAutosession()).toBeNull();
+  });
+
+  it('saves and loads the autosave session', async () => {
+    const graph = { pipes: [{ id: 'auto1' }], connections: [] };
+    await saveAutosession(graph);
+    expect(await loadAutosession()).toEqual(graph);
+  });
+
+  it('listIdbSessions excludes the autosave entry', async () => {
+    await saveAutosession({ pipes: [], connections: [] });
+    await saveToIdb('visible-session', { pipes: [], connections: [] });
+    const sessions = await listIdbSessions();
+    const names = sessions.map(s => s.name);
+    expect(names).toContain('visible-session');
+    expect(names.some(n => n.startsWith('__'))).toBe(false);
   });
 });
