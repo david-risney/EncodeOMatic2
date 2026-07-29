@@ -1,6 +1,8 @@
 /**
- * Find the best sequence of pipes that repeatedly shortens the supplied data.
+ * Find the best sequence of pipes that transforms the supplied data.
  * Longer sequences win; applicability scores break ties from left to right.
+ * Pipes that expand the data (e.g. decompression, archive extraction, JSON
+ * parsing) are allowed as long as they produce bytes different from the input.
  *
  * @param {Uint8Array} input
  * @param {Iterable<typeof import('./pipes/pipe.js').Pipe>} pipeClasses
@@ -12,10 +14,18 @@ export async function guessPipeChain(input, pipeClasses) {
     PipeClass.typeName !== 'FileInputPipe'
   );
   const memo = new Map();
+  // Sentinel used to detect cycles: if find() is called recursively with the
+  // same key while it is already being computed, return an empty path instead
+  // of looping forever.
+  const COMPUTING = Symbol('computing');
 
   const find = async data => {
     const key = Array.from(data, byte => byte.toString(16).padStart(2, '0')).join('');
-    if (memo.has(key)) return memo.get(key);
+    if (memo.has(key)) {
+      const cached = memo.get(key);
+      return cached === COMPUTING ? [] : cached;
+    }
+    memo.set(key, COMPUTING);
 
     const applicable = candidates
       .map(PipeClass => ({
@@ -33,9 +43,12 @@ export async function guessPipeChain(input, pipeClasses) {
       try {
         const outputs = await pipe.process(new Map([[pipe.defaultInputName, data]]));
         const output = outputs.get(pipe.defaultOutputName);
-        if (!(output instanceof Uint8Array) || output.length === 0 || output.length >= data.length) {
-          continue;
-        }
+        if (!ArrayBuffer.isView(output) || output.length === 0) continue;
+        // Allow expanding output only for high-confidence pipes (magic-byte or
+        // format-confirmed, score ≥ 8).  Lower-confidence pipes must shorten data.
+        if (score < 8 && output.length >= data.length) continue;
+        // Skip no-op pipes whose output is byte-for-byte identical to the input.
+        if (output.length === data.length && output.every((b, i) => b === data[i])) continue;
 
         const path = [
           { typeName: PipeClass.typeName, score },
