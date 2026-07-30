@@ -83,6 +83,15 @@ export class DeflateDecompressPipe extends DecompressionPipe {
   static category = 'Compression';
   static categoryDescription = 'Decompress deflate-compressed bytes.';
   static format = 'deflate';
+
+  static getInputAppropriateness(input) {
+    if (!input || input.length < 2) return 0;
+    // Zlib header: CM=8 (deflate), CINFO≤7, and (CMF*256+FLG) % 31 === 0
+    const cm = input[0] & 0x0F;
+    const cinfo = input[0] >> 4;
+    if (cm === 8 && cinfo <= 7 && (input[0] * 256 + input[1]) % 31 === 0) return 8;
+    return 0;
+  }
 }
 
 export class DeflateRawCompressPipe extends CompressionPipe {
@@ -99,6 +108,19 @@ export class DeflateRawDecompressPipe extends DecompressionPipe {
   static category = 'Compression';
   static categoryDescription = 'Decompress raw deflate-compressed bytes (no zlib wrapper).';
   static format = 'deflate-raw';
+
+  static getInputAppropriateness(input) {
+    if (!input || input.length < 2) return 0;
+    // Exclude gzip magic bytes (handled by GzipDecompressPipe)
+    if (input[0] === 0x1f && input[1] === 0x8b) return 0;
+    // Exclude valid zlib header (handled by DeflateDecompressPipe)
+    const cm = input[0] & 0x0F;
+    const cinfo = input[0] >> 4;
+    if (cm === 8 && cinfo <= 7 && (input[0] * 256 + input[1]) % 31 === 0) return 0;
+    // Valid raw deflate: BTYPE bits (1-2) must not be 11 (reserved/invalid)
+    const btype = (input[0] >> 1) & 0x3;
+    return btype !== 3 ? 8 : 0;
+  }
 }
 
 export const builtinPipes = [
