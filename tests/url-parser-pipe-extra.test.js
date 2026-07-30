@@ -113,4 +113,50 @@ describe('UrlParserPipe extra coverage', () => {
     expect(UrlParserPipe.getInputAppropriateness(encode('   '))).toBe(0);
     expect(UrlParserPipe.getInputAppropriateness(null)).toBe(0);
   });
+
+  it('scores absolute URL with unknown scheme lower than well-known scheme', () => {
+    // Well-known schemes score 10
+    for (const scheme of ['http', 'https', 'ftp', 'ws', 'wss', 'mailto', 'file', 'data', 'blob', 'tel', 'urn', 'about']) {
+      expect(
+        UrlParserPipe.getInputAppropriateness(encode(`${scheme}:example`)),
+        `scheme ${scheme}:`
+      ).toBe(10);
+    }
+    // Unknown scheme scores 7
+    expect(UrlParserPipe.getInputAppropriateness(encode('myapp://example.com'))).toBe(7);
+    expect(UrlParserPipe.getInputAppropriateness(encode('custom:opaque'))).toBe(7);
+  });
+
+  it('scores relative URLs with lower confidence', () => {
+    expect(UrlParserPipe.getInputAppropriateness(encode('/path/to/resource'))).toBe(3);
+    expect(UrlParserPipe.getInputAppropriateness(encode('?key=value'))).toBe(3);
+    expect(UrlParserPipe.getInputAppropriateness(encode('#fragment'))).toBe(3);
+    expect(UrlParserPipe.getInputAppropriateness(encode('//example.com/path'))).toBe(3);
+  });
+
+  it('defaultOutputName before process() is href', () => {
+    const pipe = new UrlParserPipe();
+    expect(pipe.defaultOutputName).toBe('href');
+  });
+
+  it('defaultOutputName picks the longest non-empty query param after process()', async () => {
+    const pipe = new UrlParserPipe();
+    await pipe.process(new Map([['input', encode('https://example.com/?short=ab&long=averylongvalue&flag')]]));
+    expect(pipe.defaultOutputName).toBe('query:long');
+  });
+
+  it('defaultOutputName falls back to longest static output when no valued query params', async () => {
+    const pipe = new UrlParserPipe();
+    // URL with only flag params (empty values)
+    await pipe.process(new Map([['input', encode('https://example.com/?flag')]]));
+    // href is the full URL and is longest
+    expect(pipe.defaultOutputName).toBe('href');
+  });
+
+  it('defaultOutputName falls back to longest static output when no query params', async () => {
+    const pipe = new UrlParserPipe();
+    await pipe.process(new Map([['input', encode('https://example.com/path')]]));
+    // href = "https://example.com/path" is the longest output
+    expect(pipe.defaultOutputName).toBe('href');
+  });
 });
