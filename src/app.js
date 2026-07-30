@@ -17,6 +17,8 @@ import {
   saveToIdb,
   loadFromIdb,
   listIdbSessions,
+  saveAutosession,
+  loadAutosession,
 } from './state.js';
 import { guessPipeChain } from './guess.js';
 import { randomSessionName } from './session-name.js';
@@ -106,7 +108,7 @@ async function init() {
 
   graph.addListener(onGraphEvent);
 
-  // Load from URL if available
+  // Load from URL if available, otherwise restore the last autosaved session
   const loaded = await loadFromUrl();
   if (loaded) {
     graph.fromJSON(loaded, registry);
@@ -117,6 +119,17 @@ async function init() {
     editor.updateConnections();
     await graph.processAll();
     editor.fitView();
+  } else {
+    const autosaved = await loadAutosession().catch(() => null);
+    if (autosaved) {
+      graph.fromJSON(autosaved, registry);
+      for (const pipe of graph.pipes.values()) {
+        editor.addPipeElement(pipe);
+      }
+      editor.updateConnections();
+      await graph.processAll();
+      editor.fitView();
+    }
   }
 
   // Wire toolbar controls
@@ -445,9 +458,13 @@ function scheduleUrlUpdate() {
   if (_suspendUrlUpdates) return;
   clearTimeout(_urlUpdateTimer);
   _urlUpdateTimer = setTimeout(() => {
-    saveToUrl(graph.toJSON()).catch(error => {
+    const json = graph.toJSON();
+    saveToUrl(json).catch(error => {
       console.error('URL update failed:', error);
       showToast('Could not update the URL', 'error');
+    });
+    saveAutosession(json).catch(error => {
+      console.error('Autosave failed:', error);
     });
   }, 100);
 }

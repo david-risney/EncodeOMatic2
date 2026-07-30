@@ -13,6 +13,9 @@
 
 const DB_NAME = 'encode-o-matic';
 const STORE = 'graphs';
+
+/** Reserved IDB key used for automatic session persistence. */
+const AUTOSAVE_ID = '__autosave__';
 // ── Base64URL ────────────────────────────────────────────────────
 
 function toBase64Url(str) {
@@ -191,6 +194,7 @@ export async function loadFromIdb(id) {
 
 /**
  * List saved sessions, newest first.
+ * Reserved internal entries (IDs starting with "__") are excluded.
  * @returns {Promise<{name: string, savedAt: number}[]>}
  */
 export async function listIdbSessions() {
@@ -202,6 +206,25 @@ export async function listIdbSessions() {
     req.onerror = () => reject(req.error);
   });
   return records
+    .filter(record => !record.id.startsWith('__'))
     .map(record => ({ name: record.id, savedAt: record.savedAt }))
     .sort((a, b) => b.savedAt - a.savedAt || a.name.localeCompare(b.name));
+}
+
+/**
+ * Save the current graph as the autosave session.
+ * Called automatically on every graph change so the last state can be
+ * restored when the app is opened without URL session parameters.
+ * @param {object} graphJSON
+ */
+export async function saveAutosession(graphJSON) {
+  return saveToIdb(AUTOSAVE_ID, graphJSON);
+}
+
+/**
+ * Load the autosave session.
+ * @returns {Promise<object|null>} plain JSON object or null
+ */
+export async function loadAutosession() {
+  return loadFromIdb(AUTOSAVE_ID);
 }

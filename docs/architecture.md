@@ -73,12 +73,16 @@ be updated together when importing, adding, or removing nodes.
 
 ## Persistence
 
-`src/state.js` supports two forms:
+`src/state.js` supports three forms:
 
 - Shareable state: graph JSON is base64url encoded in the `g` query parameter.
   Changes are written with `history.replaceState`, debounced by `app.js`.
 - Named local sessions: records are stored in IndexedDB database
   `encode-o-matic`, object store `graphs`, keyed by session name.
+- Autosave session: on every graph change the current state is written to a
+  reserved IDB entry (`__autosave__`). On startup, if the URL carries no session
+  parameters, `app.js` restores this entry silently. Reserved entries (IDs
+  starting with `__`) are excluded from the session load menu.
 
 Serialized pipes contain IDs, stable type names, configuration values, and
 positions. Connections contain their four endpoint fields. Changing that
