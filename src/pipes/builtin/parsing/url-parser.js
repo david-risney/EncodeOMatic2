@@ -150,14 +150,18 @@ export class UrlParserPipe extends Pipe {
 
     // Choose the default output for downstream chaining:
     //   1. Among query params that have a non-empty value, pick the longest.
-    //   2. Otherwise, pick the output (including href) with the longest value.
+    //   2. Otherwise, pick the longest value among the meaningful URL parts:
+    //      protocol, hostname, pathname, search, hash (href is excluded because
+    //      it is always the longest as it includes all other parts).
+    const FALLBACK_OUTPUTS = ['protocol', 'hostname', 'pathname', 'search', 'hash'];
     const queryWithValues = [...result.entries()]
       .filter(([k, v]) => k.startsWith('query:') && v.length > 0);
     if (queryWithValues.length > 0) {
       this._defaultOutputName = queryWithValues
         .reduce((a, b) => b[1].length > a[1].length ? b : a)[0];
     } else {
-      this._defaultOutputName = [...result.entries()]
+      this._defaultOutputName = FALLBACK_OUTPUTS
+        .map(k => [k, result.get(k) ?? new Uint8Array(0)])
         .reduce((a, b) => b[1].length > a[1].length ? b : a)[0];
     }
 

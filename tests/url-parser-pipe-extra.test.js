@@ -147,16 +147,25 @@ describe('UrlParserPipe extra coverage', () => {
 
   it('defaultOutputName falls back to longest static output when no valued query params', async () => {
     const pipe = new UrlParserPipe();
-    // URL with only flag params (empty values)
+    // URL with only flag params (empty values); pathname="/", origin and href excluded.
+    // Among protocol("https:"), hostname("example.com"), pathname("/"), search("?flag"), hash(""):
+    //   search "?flag" (5 chars) < hostname "example.com" (11 chars) → hostname wins.
     await pipe.process(new Map([['input', encode('https://example.com/?flag')]]));
-    // href is the full URL and is longest
-    expect(pipe.defaultOutputName).toBe('href');
+    expect(pipe.defaultOutputName).toBe('hostname');
   });
 
   it('defaultOutputName falls back to longest static output when no query params', async () => {
     const pipe = new UrlParserPipe();
+    // Among protocol("https:"), hostname("example.com"), pathname("/path"), search(""), hash(""):
+    //   hostname "example.com" (11) vs pathname "/path" (5) → hostname wins.
     await pipe.process(new Map([['input', encode('https://example.com/path')]]));
-    // href = "https://example.com/path" is the longest output
-    expect(pipe.defaultOutputName).toBe('href');
+    expect(pipe.defaultOutputName).toBe('hostname');
+  });
+
+  it('defaultOutputName falls back to pathname when it is longer than hostname', async () => {
+    const pipe = new UrlParserPipe();
+    // pathname "/a/very/long/path/here" (21) > hostname "x.co" (4)
+    await pipe.process(new Map([['input', encode('https://x.co/a/very/long/path/here')]]));
+    expect(pipe.defaultOutputName).toBe('pathname');
   });
 });
