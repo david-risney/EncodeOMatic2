@@ -116,4 +116,24 @@ describe('encoding chain guessing', () => {
     expect(names).toContain('Base64Decode');
     expect(names.indexOf('Base64Decode')).toBeGreaterThan(names.indexOf('UrlParser'));
   });
+
+  it('guesses UrlParser(query:gc) → Base64urlDecode → DeflateRawDecompress → JsonParser for the EncodeOMatic2 share URL', async () => {
+    // The URL contains a single "gc" query param whose value is base64url-encoded
+    // raw-deflate-compressed JSON (the EncodeOMatic2 graph-config share format).
+    // UrlParser picks query:gc as the default output (it is the longest query value),
+    // then the guesser should chain Base64urlDecode → DeflateRawDecompress → JsonParser.
+    const input = new TextEncoder().encode(
+      'https://david-risney.github.io/EncodeOMatic2/?gc=jdJbb4IwGAbg__JdM5UWtDZZFg-70Gh0B02WxYsOqjZRWtsyRcN_X4oXTsXoFVDg-d7CewAlFDdAvw8gYqDF5RPywQObKQ4UeolK7VgoDh5EMpmLhQF6AMt3FigsrVWGVqsx-xXxkxYm4VllIewy_akIWX1NIhnz0ZBZEaHqyyJ63vhfm6yz6w2mLBOyMZ1M9GhP7ODzo9HfD0m303zrtFrggWbbdmZdtCRdrXIPlDTCCpm46Tug9ZoHGVBSy3PvLDs6ZZ_o1Zhpw_VZ9mvLx7iCMcY-ahKCiI_CwkYkLJYDHNZCEjaDy1H4NKrNDK8HXe72e2dacDN6cPK6fL5ilr-zrTPXSnNj7rj1m254cvtGJiXfBBSzSwMU4Nol_9xZ8VLCI3f_WJu5lmvXj955fdzyKLUqdTWRxxMPrLx4tPhbsigZUBDF0aUvUfHjavC4Gjyuho-r6FLdpFxndBGVubjMneV_'
+    );
+    const result = await guessPipeChain(input, registry.values());
+    const names = result.map(s => s.typeName);
+    expect(names).toContain('UrlParser');
+    const urlParserIdx = names.indexOf('UrlParser');
+    const base64Step = names.findIndex(n => n === 'Base64urlDecode' || n === 'Base64Decode');
+    expect(base64Step, 'expected a Base64url or Base64 decode step after UrlParser').toBeGreaterThan(urlParserIdx);
+    expect(names).toContain('DeflateRawDecompress');
+    expect(names).toContain('JsonParser');
+    expect(names.indexOf('DeflateRawDecompress')).toBeGreaterThan(base64Step);
+    expect(names.indexOf('JsonParser')).toBeGreaterThan(names.indexOf('DeflateRawDecompress'));
+  });
 });
