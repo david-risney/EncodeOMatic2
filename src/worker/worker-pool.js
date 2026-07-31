@@ -35,12 +35,20 @@ export class WorkerPool {
   run(pipeType, configs, inputs) {
     return new Promise((resolve, reject) => {
       const id = ++this._msgId;
-      // Serialize inputs
+      // Serialize inputs as transferable ArrayBuffers to avoid O(n) spread and
+      // structured clone on the main thread.
       const serializedInputs = {};
+      const transferList = [];
       for (const [k, v] of Object.entries(inputs)) {
-        serializedInputs[k] = v instanceof Uint8Array ? [...v] : v;
+        if (v instanceof Uint8Array) {
+          const buf = v.buffer.slice(v.byteOffset, v.byteOffset + v.byteLength);
+          serializedInputs[k] = buf;
+          transferList.push(buf);
+        } else {
+          serializedInputs[k] = v;
+        }
       }
-      const task = { id, pipeType, configs, inputs: serializedInputs, resolve, reject };
+      const task = { id, pipeType, configs, inputs: serializedInputs, transferList, resolve, reject };
       this._enqueue(task);
     });
   }
@@ -78,7 +86,7 @@ export class WorkerPool {
       pipeType: task.pipeType,
       configs: task.configs,
       inputs: task.inputs,
-    });
+    }, task.transferList ?? []);
   }
 
   _onMessage(worker, data) {
