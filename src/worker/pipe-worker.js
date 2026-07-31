@@ -3,11 +3,11 @@
  *
  * Messages received from main thread:
  *   { type: 'process', id, pipeType, configs, inputs }
- *   inputs: { portName: ArrayBuffer|null }  (transferred, no copy)
+ *   inputs: { portName: ArrayBuffer|null }  (copied into dedicated ArrayBuffer, then transferred)
  *
  * Messages sent back to main thread:
  *   { type: 'result', id, outputs, errors }
- *   outputs: { portName: ArrayBuffer|null }  (transferred, no copy)
+ *   outputs: { portName: ArrayBuffer|null }  (copied into dedicated ArrayBuffer, then transferred)
  *   errors: { message, selections }[]
  */
 

@@ -42,8 +42,9 @@ message IDs, queues work when every worker is busy, and replaces failed
 workers.
 
 Messages use plain objects. Inputs are transferred as `ArrayBuffer`s (the
-`Uint8Array` backing buffer is sliced and transferred to the worker without
-copying). Outputs are returned the same way, using `postMessage`'s transferable
+`Uint8Array` backing buffer is sliced into a dedicated `ArrayBuffer` and then
+transferred to the worker, avoiding O(n) JavaScript iteration and structured
+clone). Outputs are returned the same way, using `postMessage`'s transferable
 list so the main thread receives an `ArrayBuffer` it wraps in a `Uint8Array`
 without any O(n) iteration. The worker:
 

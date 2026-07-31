@@ -46,7 +46,7 @@ describe('pipe worker message handler', () => {
         id: 2,
         pipeType: 'HexEncode',
         configs: { separator: ':', uppercase: false },
-        inputs: { input: [10, 255], optional: null },
+        inputs: { input: new Uint8Array([10, 255]).buffer, optional: null },
       },
     });
     const [msg, transferList] = self.postMessage.mock.calls.at(-1);
@@ -69,7 +69,7 @@ describe('pipe worker message handler', () => {
         id: 3,
         pipeType: 'UrlParser',
         configs: {},
-        inputs: { input: [...new TextEncoder().encode('https://x.test/?a=1')] },
+        inputs: { input: new TextEncoder().encode('https://x.test/?a=1').buffer },
       },
     });
     expect(self.postMessage).toHaveBeenCalledWith(
@@ -86,7 +86,7 @@ describe('pipe worker message handler', () => {
         type: 'process',
         id: 4,
         pipeType: 'HexDecode',
-        inputs: { input: [...new TextEncoder().encode('abc')] },
+        inputs: { input: new TextEncoder().encode('abc').buffer },
       },
     });
     expect(self.postMessage).toHaveBeenLastCalledWith(
