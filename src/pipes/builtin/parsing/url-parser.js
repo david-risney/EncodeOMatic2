@@ -14,6 +14,18 @@
  *   - hash               e.g. "#section"
  *   - origin             e.g. "https://example.com"
  *   - query:NAME         individual query parameter values (one per param)
+ *
+ * Input-appropriateness scoring:
+ *   - Valid absolute URL with a well-known scheme (http, https, …): 10
+ *   - Valid absolute URL with any other scheme:                       7
+ *   - Parses only as a relative URL (no whitespace):                  3
+ *   - Otherwise (invalid, whitespace, binary):                       -10
+ *
+ * Default output selection (computed after each process() call):
+ *   - If the URL has query parameters with non-empty values, the output
+ *     whose value is longest among those parameters is the default.
+ *   - Otherwise, the output property whose encoded value is longest is
+ *     the default.
  */
 
 import { Pipe, PortDef, PipeError } from '../../pipe.js';
@@ -33,6 +45,15 @@ const STATIC_OUTPUTS = [
 
 const STATIC_OUTPUT_NAMES = new Set(STATIC_OUTPUTS.map(p => p.name));
 
+// Schemes that are universally recognized; input with one of these scores 10.
+const WELL_KNOWN_SCHEMES = new Set([
+  'http:', 'https:', 'ftp:', 'ftps:', 'ws:', 'wss:',
+  'mailto:', 'file:', 'data:', 'blob:', 'tel:', 'urn:', 'about:',
+]);
+
+// Sentinel base used only to test whether a string parses as a relative URL.
+const RELATIVE_URL_BASE = 'https://example.com/';
+
 export class UrlParserPipe extends Pipe {
   static typeName = 'UrlParser';
   static typeDescription = 'URL Parser';
@@ -48,9 +69,19 @@ export class UrlParserPipe extends Pipe {
       return -10;
     }
     if (url.length === 0) return 0;
+    // Whitespace anywhere in the (trimmed) string rules out a valid URL.
+    if (/\s/.test(url)) return -10;
+    // Try as an absolute URL first.
     try {
-      new URL(url);
-      return 10;
+      const parsed = new URL(url);
+      return WELL_KNOWN_SCHEMES.has(parsed.protocol) ? 10 : 7;
+    } catch {
+      // Fall through to relative-URL test.
+    }
+    // Try as a relative URL (requires a base to resolve against).
+    try {
+      new URL(url, RELATIVE_URL_BASE);
+      return 3;
     } catch {
       return -10;
     }
@@ -60,6 +91,13 @@ export class UrlParserPipe extends Pipe {
     super();
     // Dynamic query parameter ports; rebuilt on each run
     this._dynamicOutputs = [];
+    // Best default output name; updated by process()
+    this._defaultOutputName = 'href';
+  }
+
+  /** @override */
+  get defaultOutputName() {
+    return this._defaultOutputName;
   }
 
   defineOutputs() {
@@ -108,6 +146,23 @@ export class UrlParserPipe extends Pipe {
       if (!this._outputData.has(port.name)) {
         this._outputData.set(port.name, null);
       }
+    }
+
+    // Choose the default output for downstream chaining:
+    //   1. Among query params that have a non-empty value, pick the longest.
+    //   2. Otherwise, pick the longest value among the meaningful URL parts:
+    //      protocol, hostname, pathname, search, hash (href is excluded because
+    //      it is always the longest as it includes all other parts).
+    const FALLBACK_OUTPUTS = ['protocol', 'hostname', 'pathname', 'search', 'hash'];
+    const queryWithValues = [...result.entries()]
+      .filter(([k, v]) => k.startsWith('query:') && v.length > 0);
+    if (queryWithValues.length > 0) {
+      this._defaultOutputName = queryWithValues
+        .reduce((a, b) => b[1].length > a[1].length ? b : a)[0];
+    } else {
+      this._defaultOutputName = FALLBACK_OUTPUTS
+        .map(k => [k, result.get(k) ?? new Uint8Array(0)])
+        .reduce((a, b) => b[1].length > a[1].length ? b : a)[0];
     }
 
     return result;

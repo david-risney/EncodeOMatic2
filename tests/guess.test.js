@@ -104,4 +104,16 @@ describe('encoding chain guessing', () => {
     expect(names.indexOf('DeflateRawDecompress')).toBeGreaterThan(base64Step);
     expect(names.indexOf('JsonParser')).toBeGreaterThan(names.indexOf('DeflateRawDecompress'));
   });
+
+  it('guesses UrlParser → Base64Decode for a URL with a base64-encoded query param', async () => {
+    // The query param value "SGVsbG8gV29ybGQ=" is base64 for "Hello World".
+    // The URL parser should expose that value as the default output, allowing
+    // the guesser to chain Base64Decode after UrlParser.
+    const input = new TextEncoder().encode('https://example.com/?data=SGVsbG8gV29ybGQ=');
+    const result = await guessPipeChain(input, registry.values());
+    const names = result.map(s => s.typeName);
+    expect(names).toContain('UrlParser');
+    expect(names).toContain('Base64Decode');
+    expect(names.indexOf('Base64Decode')).toBeGreaterThan(names.indexOf('UrlParser'));
+  });
 });
