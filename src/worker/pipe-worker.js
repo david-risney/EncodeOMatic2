@@ -3,11 +3,11 @@
  *
  * Messages received from main thread:
  *   { type: 'process', id, pipeType, configs, inputs }
- *   inputs: { portName: number[] }   (Uint8Array serialized as plain arrays)
+ *   inputs: { portName: ArrayBuffer|null }  (copied into dedicated ArrayBuffer, then transferred)
  *
  * Messages sent back to main thread:
  *   { type: 'result', id, outputs, errors }
- *   outputs: { portName: number[] }
+ *   outputs: { portName: ArrayBuffer|null }  (copied into dedicated ArrayBuffer, then transferred)
  *   errors: { message, selections }[]
  */
 
@@ -34,7 +34,7 @@ self.onmessage = async ({ data }) => {
       id,
       outputs: {},
       errors: [{ message: `Unknown pipe type: ${String(pipeType).slice(0, 64)}`, selections: [] }],
-    });
+    }, []);
     return;
   }
 
@@ -45,7 +45,7 @@ self.onmessage = async ({ data }) => {
     pipe.setConfig(name, value);
   }
 
-  // Restore inputs (plain arrays → Uint8Array)
+  // Restore inputs (ArrayBuffer or plain array → Uint8Array)
   const inputMap = new Map();
   for (const [portName, arr] of Object.entries(inputs ?? {})) {
     inputMap.set(portName, arr === null ? null : new Uint8Array(arr));
@@ -54,10 +54,18 @@ self.onmessage = async ({ data }) => {
   pipe._inputData = inputMap;
   await pipe.run();
 
-  // Serialize outputs (Uint8Array → plain array for structured clone)
+  // Serialize outputs as transferable ArrayBuffers to avoid O(n) structured
+  // clone of plain arrays on the main thread.
   const outputs = {};
+  const transferList = [];
   for (const [portName, data] of pipe._outputData) {
-    outputs[portName] = data ? [...data] : null;
+    if (data) {
+      const buf = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      outputs[portName] = buf;
+      transferList.push(buf);
+    } else {
+      outputs[portName] = null;
+    }
   }
 
   const errors = pipe.errors.map(e => ({
@@ -70,5 +78,5 @@ self.onmessage = async ({ data }) => {
     ? pipe._dynamicOutputs.map(p => ({ name: p.name, description: p.description }))
     : null;
 
-  self.postMessage({ type: 'result', id, outputs, errors, dynamicOutputPorts });
+  self.postMessage({ type: 'result', id, outputs, errors, dynamicOutputPorts }, transferList);
 };

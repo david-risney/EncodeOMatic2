@@ -41,8 +41,12 @@ workers or `navigator.hardwareConcurrency`, whichever is larger. It assigns
 message IDs, queues work when every worker is busy, and replaces failed
 workers.
 
-Messages use plain objects. Inputs and outputs are converted between
-`Uint8Array` and number arrays at the boundary. The worker:
+Messages use plain objects. Inputs are transferred as `ArrayBuffer`s (the
+`Uint8Array` backing buffer is sliced into a dedicated `ArrayBuffer` and then
+transferred to the worker, avoiding O(n) JavaScript iteration and structured
+clone). Outputs are returned the same way, using `postMessage`'s transferable
+list so the main thread receives an `ArrayBuffer` it wraps in a `Uint8Array`
+without any O(n) iteration. The worker:
 
 1. resolves the requested type from its fixed registry;
 2. restores configuration and inputs;

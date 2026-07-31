@@ -19,20 +19,25 @@ describe('WorkerPool', () => {
     vi.stubGlobal('Worker', FakeWorker);
   });
 
-  it('creates module workers, serializes inputs, and resolves results', async () => {
+  it('creates module workers, serializes inputs as transferable ArrayBuffers, and resolves results', async () => {
     const pool = new WorkerPool('/worker.js', 1);
     const resultPromise = pool.run('HexEncode', { uppercase: true }, {
       input: Uint8Array.of(1, 2), optional: null,
     });
     const worker = FakeWorker.instances[0];
     expect(worker.options).toEqual({ type: 'module' });
-    expect(worker.postMessage).toHaveBeenCalledWith({
+    // Inputs are now transferred as ArrayBuffers; null values are passed through
+    const [msg, transferList] = worker.postMessage.mock.calls[0];
+    expect(msg).toEqual({
       type: 'process',
       id: 1,
       pipeType: 'HexEncode',
       configs: { uppercase: true },
-      inputs: { input: [1, 2], optional: null },
+      inputs: { input: expect.any(ArrayBuffer), optional: null },
     });
+    expect([...new Uint8Array(msg.inputs.input)]).toEqual([1, 2]);
+    expect(transferList).toHaveLength(1);
+    expect(transferList[0]).toBe(msg.inputs.input);
     worker.onmessage({ data: {
       type: 'result',
       id: 1,
