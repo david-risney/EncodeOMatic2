@@ -335,6 +335,48 @@ describe('application integration', () => {
     expect(document.getElementById('data-panel').hidden).toBe(true);
     expect(document.getElementById('session-name').value).toMatch(/^[a-z]+-[a-z]+$/);
 
+    document.getElementById('btn-session-menu').click();
+    document.getElementById('btn-session-load').click();
+    const samlExample = await vi.waitFor(() => {
+      const item = document.querySelector('[data-session-name="Example: SAML Redirect Decode"]');
+      expect(item).not.toBeNull();
+      return item;
+    });
+    expect(document.querySelector('[data-session-name="Example: EncodeOMatic2 qc URL Decode"]'))
+      .not.toBeNull();
+    samlExample.click();
+    await vi.waitFor(() => {
+      expect(document.getElementById('session-name').value).toBe('Example: SAML Redirect Decode');
+    });
+    const samlNodeTexts = [...document.querySelectorAll('.pipe-node')].map(nodeEl => nodeEl.textContent ?? '');
+    expect(samlNodeTexts.some(text => text.includes('Input Buffer'))).toBe(true);
+    expect(samlNodeTexts.some(text => text.includes('URL Parser'))).toBe(true);
+    expect(samlNodeTexts.some(text => text.includes('Base64 Decode'))).toBe(true);
+    expect(samlNodeTexts.some(text => text.includes('Deflate Raw Decompress'))).toBe(true);
+    expect(document.querySelector('.pipe-node textarea')?.value).toContain('SAMLRequest=');
+
+    document.getElementById('btn-session-menu').click();
+    document.getElementById('btn-session-load').click();
+    const qcExample = await vi.waitFor(() => {
+      const item = document.querySelector('[data-session-name="Example: EncodeOMatic2 qc URL Decode"]');
+      expect(item).not.toBeNull();
+      return item;
+    });
+    qcExample.click();
+    await vi.waitFor(() => {
+      expect(document.getElementById('session-name').value).toBe('Example: EncodeOMatic2 qc URL Decode');
+    });
+    const qcNodeTexts = [...document.querySelectorAll('.pipe-node')].map(nodeEl => nodeEl.textContent ?? '');
+    expect(qcNodeTexts.some(text => text.includes('Input Buffer'))).toBe(true);
+    expect(qcNodeTexts.some(text => text.includes('URL Parser'))).toBe(true);
+    expect(qcNodeTexts.some(text => text.includes('Base64url Decode'))).toBe(true);
+    expect(qcNodeTexts.some(text => text.includes('Deflate Raw Decompress'))).toBe(true);
+    expect(qcNodeTexts.some(text => text.includes('JSON Parser'))).toBe(true);
+    expect(document.querySelector('.pipe-node textarea')?.value).toContain('?qc=');
+
+    document.getElementById('btn-clear').click();
+    await vi.waitFor(() => expect(document.querySelector('.pipe-node')).toBeNull());
+
     const prompt = vi.spyOn(window, 'prompt');
     const sessionName = document.getElementById('session-name');
     sessionName.value = 'favorite-session';

@@ -19,6 +19,8 @@ import {
   listIdbSessions,
   saveAutosession,
   loadAutosession,
+  listDefaultSessions,
+  loadDefaultSession,
 } from './state.js';
 import { guessPipeChain } from './guess.js';
 import { randomSessionName } from './session-name.js';
@@ -514,7 +516,8 @@ function initSessionMenu() {
 
 async function refreshSessionLoadMenu() {
   const loadMenu = document.getElementById('session-load-menu');
-  const sessions = await listIdbSessions();
+  const savedSessions = await listIdbSessions();
+  const sessions = savedSessions.length > 0 ? savedSessions : listDefaultSessions();
   loadMenu.replaceChildren();
 
   if (sessions.length === 0) {
@@ -1317,7 +1320,7 @@ async function onSaveSession() {
 
 async function onLoadSession(name) {
   try {
-    const data = await loadFromIdb(name);
+    const data = await loadFromIdb(name) ?? loadDefaultSession(name);
     if (!data) {
       showToast(`Session "${name}" was not found`, 'error');
       return;
