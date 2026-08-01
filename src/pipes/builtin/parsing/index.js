@@ -11,6 +11,7 @@ import { builtinPipes as abnfParserPipes } from './abnf-parser.js';
 import { builtinPipes as nearleyParserPipes } from './nearley-parser.js';
 import { builtinPipes as pegParserPipes } from './peg-parser.js';
 import { builtinPipes as protobufParserPipes } from './protobuf-parser.js';
+import { builtinPipes as asn1ParserPipes } from './asn1-parser.js';
 
 export const builtinParsingPipes = [
   ...urlParserPipes,
@@ -26,4 +27,5 @@ export const builtinParsingPipes = [
   ...nearleyParserPipes,
   ...pegParserPipes,
   ...protobufParserPipes,
+  ...asn1ParserPipes,
 ];

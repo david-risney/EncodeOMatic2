@@ -38,6 +38,7 @@
     "@noble/ciphers": "^2.2.0",
     "apg-js": "^4.4.0",
     "ascii85": "^1.0.2",
+    "asn1js": "^3.0.10",
     "brotli-wasm": "^3.0.1",
     "bs58": "^6.0.0",
     "emailjs-mime-codec": "^2.0.9",

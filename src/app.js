@@ -24,6 +24,7 @@ import {
 } from './state.js';
 import { guessPipeChain } from './guess.js';
 import { randomSessionName } from './session-name.js';
+import { DEFAULT_SESSION, DEFAULT_SESSION_NAME } from './default-session.js';
 import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
 import { APP_COMMIT } from './version.js';
 import { getInstallPrompt, clearInstallPrompt, isInstalledPWA } from './services/install.js';
@@ -131,6 +132,15 @@ async function init() {
       editor.updateConnections();
       await graph.processAll();
       editor.fitView();
+    } else {
+      graph.fromJSON(DEFAULT_SESSION, registry);
+      for (const pipe of graph.pipes.values()) {
+        editor.addPipeElement(pipe);
+      }
+      editor.updateConnections();
+      await graph.processAll();
+      editor.fitView();
+      document.getElementById('session-name').value = DEFAULT_SESSION_NAME;
     }
   }
 

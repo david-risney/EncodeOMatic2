@@ -144,7 +144,7 @@ describe('application integration', () => {
     expect(base64EncodeIndex).toBeGreaterThanOrEqual(0);
     expect(base64DecodeIndex).toBe(base64EncodeIndex + 1);
     expect(document.getElementById('toast-container')).not.toBeNull();
-    expect(document.getElementById('session-name').value).toMatch(/^[a-z]+-[a-z]+$/);
+    expect(document.getElementById('session-name').value).toBe('x509-certificate-inspection');
 
     const header = document.querySelector('.app-header');
     const gestureStart = new Event('gesturestart', { cancelable: true });

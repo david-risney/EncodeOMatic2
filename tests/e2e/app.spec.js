@@ -3,15 +3,27 @@ import { expect, test } from '@playwright/test';
 async function waitForAppReady(page) {
   await page.goto('/');
   await page.waitForFunction(
-    () => document.getElementById('session-name')?.value !== '',
+    () => document.getElementById('about-version')?.textContent !== '',
     { timeout: 15000 },
+  );
+}
+
+async function clearGraph(page) {
+  await page.evaluate(() => { window.confirm = () => true; });
+  await page.click('#btn-session-menu');
+  await page.click('#btn-clear');
+  await page.waitForFunction(
+    () => document.getElementById('graph-editor')._graph.pipes.size === 0,
   );
 }
 
 async function addPipeFromDialog(page, pipeName) {
   const escapedName = pipeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   await page.click('.add-pipe-control');
-  await page.getByRole('button', { name: new RegExp(escapedName, 'i') }).first().click();
+  await page.locator('#pipe-list')
+    .getByRole('button', { name: new RegExp(escapedName, 'i') })
+    .first()
+    .click();
 }
 
 test('about dialog opens and page loads without JS errors', async ({ page }) => {
@@ -36,6 +48,7 @@ test('about dialog opens and page loads without JS errors', async ({ page }) => 
 
 test('updates URL session state while editing an Input Buffer', async ({ page }) => {
   await waitForAppReady(page);
+  await clearGraph(page);
 
   await addPipeFromDialog(page, 'Input Buffer');
 
@@ -61,6 +74,7 @@ test('updates URL session state while editing an Input Buffer', async ({ page })
 
 test('mouse config click still works after touch-pointer activity', async ({ page }) => {
   await waitForAppReady(page);
+  await clearGraph(page);
   await addPipeFromDialog(page, 'Input Buffer');
 
   await page.locator('.graph-canvas').evaluate((canvas) => {
@@ -91,6 +105,7 @@ test('mouse config click still works after touch-pointer activity', async ({ pag
 
 test('deleting a middle pipe immediately keeps downstream output current', async ({ page }) => {
   await waitForAppReady(page);
+  await clearGraph(page);
   await addPipeFromDialog(page, 'Input Buffer');
   await addPipeFromDialog(page, 'Base64 Encode');
   await addPipeFromDialog(page, 'Base64 Decode');
@@ -135,6 +150,7 @@ test('deleting a middle pipe immediately keeps downstream output current', async
 
 test('add-pipe dialog shows Recommended category from last-pipe output context', async ({ page }) => {
   await waitForAppReady(page);
+  await clearGraph(page);
   await addPipeFromDialog(page, 'Input Buffer');
 
   await page
