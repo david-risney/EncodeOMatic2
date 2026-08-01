@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 async function waitForAppReady(page) {
   await page.goto('/');
   await page.waitForFunction(
-    () => document.getElementById('session-name')?.value !== '',
+    () => document.getElementById('about-version')?.textContent !== '',
     { timeout: 15000 },
   );
 }
