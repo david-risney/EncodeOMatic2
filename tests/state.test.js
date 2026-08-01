@@ -10,6 +10,8 @@ import {
   listDefaultSessions,
   loadDefaultSession,
 } from '../src/state.js';
+import { PipeGraph } from '../src/pipes/graph.js';
+import { registry } from '../src/pipes/registry.js';
 
 describe('state persistence', () => {
   beforeEach(() => {
@@ -149,6 +151,10 @@ describe('state persistence', () => {
     expect(listDefaultSessions()).toEqual([
       { name: 'Example: SAML Redirect Decode' },
       { name: 'Example: EncodeOMatic2 qc URL Decode' },
+      { name: 'Example: AES-GCM Decryption' },
+      { name: 'Example: ABNF HTTP Request Line' },
+      { name: 'Example: ASN.1 DER Inspection' },
+      { name: 'Example: Fix Mojibake' },
     ]);
   });
 
@@ -181,5 +187,29 @@ describe('state persistence', () => {
     expect(example.connections).toContainEqual(expect.objectContaining({
       fromPipeId: 'pipe-4', fromOutput: 'output', toPipeId: 'pipe-10', toInput: 'input',
     }));
+  });
+
+  it.each([
+    ['Example: AES-GCM Decryption', 'parse-plaintext', 'json', '{\n  "message": "Decryption successful"\n}'],
+    ['Example: ABNF HTTP Request Line', 'parse-request-line', 'valid', 'true'],
+    ['Example: ASN.1 DER Inspection', 'inspect-asn1-json', 'path:idBlock.tagNumber', '16'],
+    ['Example: Fix Mojibake', 'decode-original-text', 'output', 'It’s a café.'],
+  ])('processes %s without errors', async (name, outputPipeId, outputName, expected) => {
+    const graph = new PipeGraph();
+    graph.fromJSON(loadDefaultSession(name), registry);
+
+    await graph.processAll();
+
+    expect([...graph.pipes.values()].flatMap(pipe => pipe.errors)).toEqual([]);
+    expect(new TextDecoder().decode(graph.pipes.get(outputPipeId).getOutputData(outputName)))
+      .toBe(expected);
+  });
+
+  it('returns independent copies of built-in sessions', () => {
+    const first = loadDefaultSession('Example: Fix Mojibake');
+    first.pipes[0].configs.text = 'changed';
+
+    expect(loadDefaultSession('Example: Fix Mojibake').pipes[0].configs.text)
+      .toBe('Itâ€™s a cafÃ©.');
   });
 });
