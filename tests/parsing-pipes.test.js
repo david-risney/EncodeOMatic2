@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { UrlParserPipe } from '../src/pipes/builtin/parsing/url-parser.js';
 import { JsonParserPipe } from '../src/pipes/builtin/parsing/json-parser.js';
+import { XmlParserPipe } from '../src/pipes/builtin/parsing/xml-parser.js';
 import { RegexMatchPipe } from '../src/pipes/builtin/parsing/regex-match.js';
 import { JwtParserPipe } from '../src/pipes/builtin/parsing/jwt-parser.js';
 import { HttpRequestParserPipe } from '../src/pipes/builtin/parsing/http-request-parser.js';
@@ -65,6 +66,42 @@ describe('JsonParserPipe', () => {
     expect(decode(result.get('key:nested'))).toBe('{"ok":true}');
     expect(decode(result.get('key:empty'))).toBe('null');
     expect(pipe.defineOutputs()).toHaveLength(5);
+  });
+
+  describe('XmlParserPipe', () => {
+    it('exposes XML, root text, attributes, and direct child elements', async () => {
+      const pipe = new XmlParserPipe();
+      const result = await pipe.process(new Map([['input',
+        encode('<root id="42"><item>one</item><item>two</item><nested><value>three</value></nested></root>')
+      ]]));
+      expect(decode(result.get('xml'))).toContain('<root id="42">');
+      expect(decode(result.get('text'))).toBe('onetwothree');
+      expect(decode(result.get('attribute:id'))).toBe('42');
+      expect(decode(result.get('element:item'))).toBe('<item>one</item>\n<item>two</item>');
+      expect(decode(result.get('element:nested'))).toBe('<nested><value>three</value></nested>');
+    });
+
+    it('exposes configured XPath results instead of default dynamic outputs', async () => {
+      const pipe = new XmlParserPipe();
+      pipe.setConfig('xpaths', '//item/@id\nstring(//item[2])');
+      const result = await pipe.process(new Map([['input',
+        encode('<root><item id="one">first</item><item id="two">second</item></root>')
+      ]]));
+      expect(decode(result.get('xpath://item/@id'))).toBe('one\ntwo');
+      expect(decode(result.get('xpath:string(//item[2])'))).toBe('second');
+      expect(pipe.defineOutputs().map(({ name }) => name)).toEqual([
+        'xml', 'text', 'xpath://item/@id', 'xpath:string(//item[2])',
+      ]);
+    });
+
+    it('rejects malformed XML and clears dynamic outputs between runs', async () => {
+      const pipe = new XmlParserPipe();
+      await pipe.process(new Map([['input', encode('<root><old /></root>')]]));
+      await pipe.process(new Map([['input', encode('<root><new /></root>')]]));
+      expect(pipe.defineOutputs().map(({ name }) => name)).toEqual(['xml', 'text', 'element:new']);
+      await expect(pipe.process(new Map([['input', encode('<root>')]]))).rejects
+        .toMatchObject({ message: expect.stringContaining('Invalid XML:') });
+    });
   });
 
   it('clears dynamic outputs for non-objects and reports invalid JSON', async () => {

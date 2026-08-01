@@ -85,6 +85,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/parsing/jwt-parser.js',
   './src/pipes/builtin/parsing/search-params-parser.js',
   './src/pipes/builtin/parsing/json-parser.js',
+  './src/pipes/builtin/parsing/xml-parser.js',
   './src/pipes/builtin/parsing/regex-match.js',
   './src/pipes/builtin/parsing/url-parser.js',
   './src/pipes/builtin/parsing/abnf-parser.js',

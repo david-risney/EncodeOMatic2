@@ -46,11 +46,13 @@ const DEFAULT_SESSION_RECORDS = [
         createPipeData('pipe-2', 'UrlParser', 280, 80),
         createPipeData('pipe-3', 'Base64Decode', 500, 80),
         createPipeData('pipe-4', 'DeflateRawDecompress', 720, 80),
+        createPipeData('pipe-10', 'XmlParser', 940, 80),
       ],
       connections: [
         createConnection('pipe-1', 'output', 'pipe-2', 'input'),
         createConnection('pipe-2', 'query:SAMLRequest', 'pipe-3', 'input'),
         createConnection('pipe-3', 'output', 'pipe-4', 'input'),
+        createConnection('pipe-4', 'output', 'pipe-10', 'input'),
       ],
     },
   },
