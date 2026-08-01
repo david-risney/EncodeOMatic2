@@ -19,6 +19,18 @@ const AUTOSAVE_ID = '__autosave__';
 
 const EXAMPLE_SAML_REDIRECT_URL = 'https://idp.example.com/sso?SAMLRequest=fZDNCoJQEIVfRe4%2BvRpEDCoIbYLaVLRoE5MOKHh%2FujNCj58ZgW6C2cycme8cJmc0vYdqkNae6DkQS%2FQyvWWYhEINwYJD7hgsGmKQGs7V8QBZrMEHJ652vYr2u0Ld8VGn2VpFVwrcOVuocWeUmAfaWxa0Mo50tlnp7UqnF61hqpuKdqNtZ1Gmq1bEMyRJ1%2FiYXmh8T3HtTMLsVJl%2FYsHEDLOg%2F3MiM4UPXJU%2FOC%2FZhgQbFMyTGb%2F8dsvvlG8%3D&RelayState=https%3A%2F%2Fsp.example.com%2Fwelcome';
 const EXAMPLE_QC_URL = 'https://david-risney.github.io/EncodeOMatic2/?qc=Lc69CsJQDAXgVwmZ1UHEoaPURRBFdBKHcBvpxfvX5EoF8d1NxSXDF05O3pgoMja4TS53fNhT9W4JHceMM3z41NlucHN-USyBzYovrNhc8SLhSKIshhtSXq-eElqezpi0fA9U-UTjRLEIqxrvNKd_6jbDlOvUfe69gv4KQPs8KtiAmsEnLewqEAwOCom9WlkW-PkC';
+const EXAMPLE_ABNF_GRAMMAR = [
+  'request-line = method SP request-target SP http-version CRLF',
+  'method = 1*tchar',
+  'request-target = 1*VCHAR',
+  'http-version = "HTTP/" DIGIT "." DIGIT',
+  'tchar = ALPHA / DIGIT / "!" / "#" / "$" / "%" / "&" / "\'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"',
+  'SP = %x20',
+  'CRLF = %x0D.0A',
+  'VCHAR = %x21-7E',
+  'ALPHA = %x41-5A / %x61-7A',
+  'DIGIT = %x30-39',
+].join('\n');
 
 function createPipeData(id, type, x, y, configs = {}) {
   return {
@@ -71,6 +83,107 @@ const DEFAULT_SESSION_RECORDS = [
         createConnection('pipe-6', 'query:qc', 'pipe-7', 'input'),
         createConnection('pipe-7', 'output', 'pipe-8', 'input'),
         createConnection('pipe-8', 'output', 'pipe-9', 'input'),
+      ],
+    },
+  },
+  {
+    name: 'Example: AES-GCM Decryption',
+    data: {
+      pipes: [
+        createPipeData('decrypt-ciphertext', 'InputPipe', 40, 60, {
+          text: 'a918cb151feb7b697f5e78ec857d978ba93998f5e8ee439d19950f773af9387c19ac98a4b7f2813e5c13d0feb3dbdac836b88b',
+          rawBytes: null,
+        }),
+        createPipeData('decode-ciphertext', 'HexDecode', 290, 60),
+        createPipeData('decrypt-key', 'InputPipe', 40, 240, {
+          text: '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f',
+          rawBytes: null,
+        }),
+        createPipeData('decode-key', 'HexDecode', 290, 240),
+        createPipeData('decrypt-nonce', 'InputPipe', 40, 420, {
+          text: '202122232425262728292a2b',
+          rawBytes: null,
+        }),
+        createPipeData('decode-nonce', 'HexDecode', 290, 420),
+        createPipeData('decrypt-aes-gcm', 'CipherDecrypt', 540, 220, { algorithm: 'AES-GCM' }),
+        createPipeData('parse-plaintext', 'JsonParser', 790, 220),
+      ],
+      connections: [
+        createConnection('decrypt-ciphertext', 'output', 'decode-ciphertext', 'input'),
+        createConnection('decode-ciphertext', 'output', 'decrypt-aes-gcm', 'input'),
+        createConnection('decrypt-key', 'output', 'decode-key', 'input'),
+        createConnection('decode-key', 'output', 'decrypt-aes-gcm', 'key'),
+        createConnection('decrypt-nonce', 'output', 'decode-nonce', 'input'),
+        createConnection('decode-nonce', 'output', 'decrypt-aes-gcm', 'nonce'),
+        createConnection('decrypt-aes-gcm', 'output', 'parse-plaintext', 'input'),
+      ],
+    },
+  },
+  {
+    name: 'Example: ABNF HTTP Request Line',
+    data: {
+      pipes: [
+        createPipeData('request-line-base64', 'InputPipe', 40, 80, {
+          text: 'R0VUIC9hcGkvaXRlbXM/aWQ9NDIgSFRUUC8xLjENCg==',
+          rawBytes: null,
+        }),
+        createPipeData('decode-request-line', 'Base64Decode', 290, 80),
+        createPipeData('request-line-grammar', 'InputPipe', 290, 300, {
+          text: EXAMPLE_ABNF_GRAMMAR,
+          rawBytes: null,
+        }),
+        createPipeData('parse-request-line', 'AbnfParser', 560, 150, {
+          startRule: 'request-line',
+          captureRules: 'method,request-target,http-version',
+        }),
+      ],
+      connections: [
+        createConnection('request-line-base64', 'output', 'decode-request-line', 'input'),
+        createConnection('decode-request-line', 'output', 'parse-request-line', 'input'),
+        createConnection('request-line-grammar', 'output', 'parse-request-line', 'grammar'),
+      ],
+    },
+  },
+  {
+    name: 'Example: ASN.1 DER Inspection',
+    data: {
+      pipes: [
+        createPipeData('asn1-base64', 'InputPipe', 60, 100, {
+          text: 'MAoCAQUWBWhlbGxv',
+          rawBytes: null,
+        }),
+        createPipeData('decode-asn1', 'Base64Decode', 310, 100),
+        createPipeData('parse-asn1', 'Asn1Parser', 560, 100),
+        createPipeData('inspect-asn1-json', 'JsonParser', 810, 100, {
+          paths: 'idBlock.tagNumber,valueBlock.value[0].valueBlock.valueDec',
+        }),
+      ],
+      connections: [
+        createConnection('asn1-base64', 'output', 'decode-asn1', 'input'),
+        createConnection('decode-asn1', 'output', 'parse-asn1', 'input'),
+        createConnection('parse-asn1', 'json', 'inspect-asn1-json', 'input'),
+      ],
+    },
+  },
+  {
+    name: 'Example: Fix Mojibake',
+    data: {
+      pipes: [
+        createPipeData('mojibake-text', 'InputPipe', 80, 120, {
+          text: 'Itâ€™s a cafÃ©.',
+          rawBytes: null,
+        }),
+        createPipeData('recover-original-bytes', 'CharsetEncode', 350, 120, {
+          toEncoding: 'windows-1252',
+        }),
+        createPipeData('decode-original-text', 'CharsetDecode', 620, 120, {
+          fromEncoding: 'utf-8',
+          fatal: true,
+        }),
+      ],
+      connections: [
+        createConnection('mojibake-text', 'output', 'recover-original-bytes', 'input'),
+        createConnection('recover-original-bytes', 'output', 'decode-original-text', 'input'),
       ],
     },
   },
