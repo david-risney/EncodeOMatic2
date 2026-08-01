@@ -53,6 +53,7 @@ const vendors = [
   ['scripts/nanotar-entry.js',           'vendor/nanotar.js'],
   ['scripts/fflate-entry.js',            'vendor/fflate.js'],
   ['scripts/protobufjs-entry.js',        'vendor/protobufjs.js'],
+  ['scripts/asn1js-entry.js',            'vendor/asn1js.js'],
   ['scripts/lz4-entry.js',              'vendor/lz4.js'],
   ['scripts/brotli-entry.js',           'vendor/brotli.js'],
   ['scripts/zstd-entry.js',             'vendor/zstd.js'],
