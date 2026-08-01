@@ -18,6 +18,7 @@ const PRECACHE_URLS = [
   './assets/icons/icon-maskable-512.png',
   './assets/screenshots/editor.png',
   './src/app.js',
+  './src/default-session.js',
   './src/version.js',
   './src/services/install.js',
   './src/guess.js',
