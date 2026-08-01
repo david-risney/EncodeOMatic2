@@ -36,6 +36,7 @@ import { builtinPipes as punycodePipes } from './punycode.js';
 import { builtinPipes as charWidthPipes } from './char-width.js';
 import { builtinPipes as reversePipes } from './reverse.js';
 import { builtinPipes as tarPipes } from './tar.js';
+import { builtinPipes as cipherPipes } from './cipher.js';
 
 export const builtinEncodingPipes = [
   ...base64Pipes,
@@ -76,4 +77,5 @@ export const builtinEncodingPipes = [
   ...charWidthPipes,
   ...reversePipes,
   ...tarPipes,
+  ...cipherPipes,
 ];
