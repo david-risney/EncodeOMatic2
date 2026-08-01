@@ -57,6 +57,7 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 ### Parsing
 - **URL Parser** — splits a URL into protocol, hostname, path, query params (one output per param), hash
 - **JSON Parser** — parses JSON and exposes top-level keys as separate outputs
+- **XML Parser** — parses XML and exposes root attributes, child elements, or configured XPath results
 - **Regex Match** — applies a regex and exposes capture groups as outputs
 - **Cookie Parser**
 - **CSV Parser**

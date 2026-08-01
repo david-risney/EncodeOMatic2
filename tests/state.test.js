@@ -174,4 +174,12 @@ describe('state persistence', () => {
     ]));
     expect(loadDefaultSession('missing-example')).toBeNull();
   });
+
+  it('adds XML parsing to the SAML redirect example', () => {
+    const example = loadDefaultSession('Example: SAML Redirect Decode');
+    expect(example.pipes).toContainEqual(expect.objectContaining({ type: 'XmlParser' }));
+    expect(example.connections).toContainEqual(expect.objectContaining({
+      fromPipeId: 'pipe-4', fromOutput: 'output', toPipeId: 'pipe-10', toInput: 'input',
+    }));
+  });
 });

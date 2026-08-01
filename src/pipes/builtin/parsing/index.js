@@ -1,5 +1,6 @@
 import { builtinPipes as urlParserPipes } from './url-parser.js';
 import { builtinPipes as jsonParserPipes } from './json-parser.js';
+import { builtinPipes as xmlParserPipes } from './xml-parser.js';
 import { builtinPipes as regexMatchPipes } from './regex-match.js';
 import { builtinPipes as cookieParserPipes } from './cookie-parser.js';
 import { builtinPipes as csvParserPipes } from './csv-parser.js';
@@ -16,6 +17,7 @@ import { builtinPipes as asn1ParserPipes } from './asn1-parser.js';
 export const builtinParsingPipes = [
   ...urlParserPipes,
   ...jsonParserPipes,
+  ...xmlParserPipes,
   ...regexMatchPipes,
   ...cookieParserPipes,
   ...csvParserPipes,
