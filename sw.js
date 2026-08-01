@@ -101,6 +101,7 @@ const PRECACHE_URLS = [
   './vendor/apg-js.js',
   './vendor/nearley.js',
   './src/pipes/builtin/encoding/tar.js',
+  './src/pipes/builtin/encoding/cipher.js',
   './vendor/nanotar.js',
   './vendor/peggy.js',
   './vendor/fflate.js',
@@ -109,6 +110,7 @@ const PRECACHE_URLS = [
   './vendor/brotli.js',
   './vendor/brotli_wasm_bg.wasm',
   './vendor/zstd.js',
+  './vendor/noble-ciphers.js',
 ];
 
 self.addEventListener('install', (event) => {

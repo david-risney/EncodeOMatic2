@@ -56,6 +56,7 @@ const vendors = [
   ['scripts/lz4-entry.js',              'vendor/lz4.js'],
   ['scripts/brotli-entry.js',           'vendor/brotli.js'],
   ['scripts/zstd-entry.js',             'vendor/zstd.js'],
+  ['scripts/noble-ciphers-entry.js',    'vendor/noble-ciphers.js'],
 ];
 
 export default vendors.map(([input, file]) => ({
