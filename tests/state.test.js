@@ -7,6 +7,8 @@ import {
   saveToUrl,
   saveAutosession,
   loadAutosession,
+  listDefaultSessions,
+  loadDefaultSession,
 } from '../src/state.js';
 
 describe('state persistence', () => {
@@ -141,5 +143,35 @@ describe('state persistence', () => {
     const names = sessions.map(s => s.name);
     expect(names).toContain('visible-session');
     expect(names.some(n => n.startsWith('__'))).toBe(false);
+  });
+
+  it('lists built-in example sessions', () => {
+    expect(listDefaultSessions()).toEqual([
+      { name: 'Example: SAML Redirect Decode' },
+      { name: 'Example: EncodeOMatic2 qc URL Decode' },
+    ]);
+  });
+
+  it('loads a built-in example session as graph JSON', () => {
+    const example = loadDefaultSession('Example: EncodeOMatic2 qc URL Decode');
+    expect(example.pipes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'InputPipe',
+        configs: expect.objectContaining({
+          text: expect.stringContaining('?qc='),
+        }),
+      }),
+      expect.objectContaining({ type: 'UrlParser' }),
+      expect.objectContaining({ type: 'Base64urlDecode' }),
+      expect.objectContaining({ type: 'DeflateRawDecompress' }),
+      expect.objectContaining({ type: 'JsonParser' }),
+    ]));
+    expect(example.connections).toEqual(expect.arrayContaining([
+      expect.objectContaining({ fromPipeId: 'pipe-5', toPipeId: 'pipe-6' }),
+      expect.objectContaining({ fromPipeId: 'pipe-6', fromOutput: 'query:qc', toPipeId: 'pipe-7' }),
+      expect.objectContaining({ fromPipeId: 'pipe-7', toPipeId: 'pipe-8' }),
+      expect.objectContaining({ fromPipeId: 'pipe-8', toPipeId: 'pipe-9' }),
+    ]));
+    expect(loadDefaultSession('missing-example')).toBeNull();
   });
 });

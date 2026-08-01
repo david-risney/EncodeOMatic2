@@ -16,6 +16,63 @@ const STORE = 'graphs';
 
 /** Reserved IDB key used for automatic session persistence. */
 const AUTOSAVE_ID = '__autosave__';
+
+const EXAMPLE_SAML_REDIRECT_URL = 'https://idp.example.com/sso?SAMLRequest=fZDNCoJQEIVfRe4%2BvRpEDCoIbYLaVLRoE5MOKHh%2FujNCj58ZgW6C2cycme8cJmc0vYdqkNae6DkQS%2FQyvWWYhEINwYJD7hgsGmKQGs7V8QBZrMEHJ652vYr2u0Ld8VGn2VpFVwrcOVuocWeUmAfaWxa0Mo50tlnp7UqnF61hqpuKdqNtZ1Gmq1bEMyRJ1%2FiYXmh8T3HtTMLsVJl%2FYsHEDLOg%2F3MiM4UPXJU%2FOC%2FZhgQbFMyTGb%2F8dsvvlG8%3D&RelayState=https%3A%2F%2Fsp.example.com%2Fwelcome';
+const EXAMPLE_QC_URL = 'https://david-risney.github.io/EncodeOMatic2/?qc=Lc69CsJQDAXgVwmZ1UHEoaPURRBFdBKHcBvpxfvX5EoF8d1NxSXDF05O3pgoMja4TS53fNhT9W4JHceMM3z41NlucHN-USyBzYovrNhc8SLhSKIshhtSXq-eElqezpi0fA9U-UTjRLEIqxrvNKd_6jbDlOvUfe69gv4KQPs8KtiAmsEnLewqEAwOCom9WlkW-PkC';
+
+function createPipeData(id, type, x, y, configs = {}) {
+  return {
+    id,
+    type,
+    configs,
+    position: { x, y },
+  };
+}
+
+function createConnection(fromPipeId, fromOutput, toPipeId, toInput) {
+  return { fromPipeId, fromOutput, toPipeId, toInput };
+}
+
+function cloneGraphJSON(graphJSON) {
+  return JSON.parse(JSON.stringify(graphJSON));
+}
+
+const DEFAULT_SESSION_RECORDS = [
+  {
+    name: 'Example: SAML Redirect Decode',
+    data: {
+      pipes: [
+        createPipeData('pipe-1', 'InputPipe', 60, 80, { text: EXAMPLE_SAML_REDIRECT_URL, rawBytes: null }),
+        createPipeData('pipe-2', 'UrlParser', 280, 80),
+        createPipeData('pipe-3', 'Base64Decode', 500, 80),
+        createPipeData('pipe-4', 'DeflateRawDecompress', 720, 80),
+      ],
+      connections: [
+        createConnection('pipe-1', 'output', 'pipe-2', 'input'),
+        createConnection('pipe-2', 'query:SAMLRequest', 'pipe-3', 'input'),
+        createConnection('pipe-3', 'output', 'pipe-4', 'input'),
+      ],
+    },
+  },
+  {
+    name: 'Example: EncodeOMatic2 qc URL Decode',
+    data: {
+      pipes: [
+        createPipeData('pipe-5', 'InputPipe', 60, 80, { text: EXAMPLE_QC_URL, rawBytes: null }),
+        createPipeData('pipe-6', 'UrlParser', 280, 80),
+        createPipeData('pipe-7', 'Base64urlDecode', 500, 80),
+        createPipeData('pipe-8', 'DeflateRawDecompress', 720, 80),
+        createPipeData('pipe-9', 'JsonParser', 940, 80),
+      ],
+      connections: [
+        createConnection('pipe-5', 'output', 'pipe-6', 'input'),
+        createConnection('pipe-6', 'query:qc', 'pipe-7', 'input'),
+        createConnection('pipe-7', 'output', 'pipe-8', 'input'),
+        createConnection('pipe-8', 'output', 'pipe-9', 'input'),
+      ],
+    },
+  },
+];
 // ── Base64URL ────────────────────────────────────────────────────
 
 function toBase64Url(str) {
@@ -227,4 +284,13 @@ export async function saveAutosession(graphJSON) {
  */
 export async function loadAutosession() {
   return loadFromIdb(AUTOSAVE_ID);
+}
+
+export function listDefaultSessions() {
+  return DEFAULT_SESSION_RECORDS.map(({ name }) => ({ name }));
+}
+
+export function loadDefaultSession(name) {
+  const record = DEFAULT_SESSION_RECORDS.find(session => session.name === name);
+  return record ? cloneGraphJSON(record.data) : null;
 }
