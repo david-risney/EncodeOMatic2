@@ -1382,7 +1382,7 @@ async function onGuessEncoding(input) {
       pipe.position = { x: 260 + index * 200, y: 80 };
       graph.addPipe(pipe);
       editor.addPipeElement(pipe);
-      graph.connect(previous.id, previous.defaultOutputName, pipe.id, pipe.defaultInputName);
+      graph.connect(previous.id, step.outputName ?? previous.defaultOutputName, pipe.id, pipe.defaultInputName);
       previous = pipe;
     }
 

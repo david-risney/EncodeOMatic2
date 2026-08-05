@@ -129,6 +129,7 @@ describe('encoding chain guessing', () => {
     const names = result.map(s => s.typeName);
     expect(names).toContain('UrlParser');
     const urlParserIdx = names.indexOf('UrlParser');
+    expect(result[urlParserIdx].outputName).toBe('query:gc');
     const base64Step = names.findIndex(n => n === 'Base64urlDecode' || n === 'Base64Decode');
     expect(base64Step, 'expected a Base64url or Base64 decode step after UrlParser').toBeGreaterThan(urlParserIdx);
     expect(names).toContain('DeflateRawDecompress');
