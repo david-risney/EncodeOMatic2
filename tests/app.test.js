@@ -402,6 +402,50 @@ describe('application integration', () => {
     document.getElementById('guess-cancel').click();
     expect(document.getElementById('guess-dialog').open).toBe(false);
 
+    // Regression test: guessing a multi-step chain must connect each guessed
+    // pipe to the *previous* pipe's output, not to its own output name.
+    // This URL contains a "gc" query param whose value is base64url-encoded
+    // raw-deflate-compressed JSON, so the guesser chains
+    // UrlParser(query:gc) → Base64urlDecode → DeflateRawDecompress → JsonParser.
+    // UrlParser's own default output name differs from "query:gc", so a bug
+    // that wires each connection using the *current* pipe's outputName
+    // (instead of the *previous* pipe's) breaks this chain.
+    document.getElementById('btn-guess').click();
+    const guessInput = document.getElementById('guess-input');
+    guessInput.value = 'https://david-risney.github.io/EncodeOMatic2/?gc=jdJbb4IwGAbg__JdM5UWtDZZFg-70Gh0B02WxYsOqjZRWtsyRcN_X4oXTsXoFVDg-d7CewAlFDdAvw8gYqDF5RPywQObKQ4UeolK7VgoDh5EMpmLhQF6AMt3FigsrVWGVqsx-xXxkxYm4VllIewy_akIWX1NIhnz0ZBZEaHqyyJ63vhfm6yz6w2mLBOyMZ1M9GhP7ODzo9HfD0m303zrtFrggWbbdmZdtCRdrXIPlDTCCpm46Tug9ZoHGVBSy3PvLDs6ZZ_o1Zhpw_VZ9mvLx7iCMcY-ahKCiI_CwkYkLJYDHNZCEjaDy1H4NKrNDK8HXe72e2dacDN6cPK6fL5ilr-zrTPXSnNj7rj1m254cvtGJiXfBBSzSwMU4Nol_9xZ8VLCI3f_WJu5lmvXj955fdzyKLUqdTWRxxMPrLx4tPhbsigZUBDF0aUvUfHjavC4Gjyuho-r6FLdpFxndBGVubjMneV_';
+    document.getElementById('guess-form').requestSubmit();
+    expect(document.getElementById('guess-dialog').open).toBe(false);
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll('.pipe-node').length).toBeGreaterThanOrEqual(4);
+    });
+    const guessedGraph = document.getElementById('graph-editor')._graph;
+    // Every pipe added by the guesser (all but the InputPipe) must have exactly
+    // one incoming connection, forming a single unbroken chain, and each
+    // connection's fromOutput must be the *actual* output port name produced
+    // by guessPipeChain for the *preceding* step (UrlParser's own default
+    // output name differs from "query:gc", so using the wrong pipe's output
+    // name here reproduces the regression).
+    const pipesByCreationOrder = [...guessedGraph.pipes.values()];
+    const inputPipeEntry = pipesByCreationOrder.find(pipe => pipe.constructor.typeName === 'InputPipe');
+    const nonInputPipes = pipesByCreationOrder.filter(pipe => pipe.constructor.typeName !== 'InputPipe');
+    expect(nonInputPipes.length).toBeGreaterThanOrEqual(4);
+    expect(nonInputPipes.slice(0, 4).map(p => p.constructor.typeName)).toEqual([
+      'UrlParser', 'Base64urlDecode', 'DeflateRawDecompress', 'JsonParser',
+    ]);
+
+    let expectedFromId = inputPipeEntry.id;
+    let expectedFromOutput = inputPipeEntry.defaultOutputName;
+    const expectedOutputsAfterEachStep = ['query:gc', 'output', 'output', 'json'];
+    nonInputPipes.slice(0, 4).forEach((pipe, index) => {
+      const incoming = guessedGraph.connections.filter(c => c.toPipeId === pipe.id);
+      expect(incoming, `pipe ${pipe.id} (${pipe.constructor.typeName}) should have exactly one incoming connection`)
+        .toHaveLength(1);
+      expect(incoming[0].fromPipeId).toBe(expectedFromId);
+      expect(incoming[0].fromOutput).toBe(expectedFromOutput);
+      expectedFromId = pipe.id;
+      expectedFromOutput = expectedOutputsAfterEachStep[index];
+    });
+
     const cycleLayout = document.getElementById('btn-layout-cycle');
     cycleLayout.click();
     expect(document.querySelector('.app-body').dataset.layout).toBe('data');
