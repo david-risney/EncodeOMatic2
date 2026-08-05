@@ -237,6 +237,23 @@ describe('GraphEditor', () => {
     expect(editor._connPathGroups.size).toBe(0);
   });
 
+  it('refreshes connection paths after applying a graph transform', () => {
+    graph.connect(source.id, 'output', target.id, 'input');
+    const updateConnections = vi.spyOn(editor, 'updateConnections');
+    let runFrame;
+    vi.stubGlobal('requestAnimationFrame', callback => {
+      runFrame = callback;
+      return 1;
+    });
+
+    editor._connectionUpdateFrame = null;
+    editor._applyTransform();
+    expect(runFrame).toBeTypeOf('function');
+    runFrame();
+
+    expect(updateConnections).toHaveBeenCalled();
+  });
+
   it('starts, completes, and cancels draft connections', () => {
     const process = vi.spyOn(graph, 'processFrom').mockResolvedValue();
     editor._onPortMouseDown({}, source.id, 'output', 'output');

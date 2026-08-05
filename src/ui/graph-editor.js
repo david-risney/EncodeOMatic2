@@ -97,6 +97,7 @@ class GraphEditor extends HTMLElement {
     this._canvas = null;
     this._inner = null;
     this._svg = null;
+    this._connectionUpdateFrame = null;
   }
 
   connectedCallback() {
@@ -1086,6 +1087,15 @@ class GraphEditor extends HTMLElement {
       this._inner.style.setProperty('--graph-scale', this._scale);
     }
     this._syncAddPipeControl();
+    this._scheduleConnectionUpdate();
+  }
+
+  _scheduleConnectionUpdate() {
+    if (this._connectionUpdateFrame !== null) return;
+    this._connectionUpdateFrame = requestAnimationFrame(() => {
+      this._connectionUpdateFrame = null;
+      this.updateConnections();
+    });
   }
 
   _positionElement(el, x, y) {
