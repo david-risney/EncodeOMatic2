@@ -6,7 +6,7 @@
  *
  * @param {Uint8Array} input
  * @param {Iterable<typeof import('./pipes/pipe.js').Pipe>} pipeClasses
- * @returns {Promise<{typeName: string, score: number}[]>}
+ * @returns {Promise<{typeName: string, score: number, outputName: string}[]>}
  */
 export async function guessPipeChain(input, pipeClasses) {
   const candidates = [...pipeClasses].filter(PipeClass =>
@@ -51,7 +51,7 @@ export async function guessPipeChain(input, pipeClasses) {
         if (output.length === data.length && output.every((b, i) => b === data[i])) continue;
 
         const path = [
-          { typeName: PipeClass.typeName, score },
+          { typeName: PipeClass.typeName, score, outputName: pipe.defaultOutputName },
           ...await find(output),
         ];
         if (isBetterPath(path, best)) best = path;
