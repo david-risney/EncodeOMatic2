@@ -102,6 +102,14 @@ describe('JsonParserPipe', () => {
       await expect(pipe.process(new Map([['input', encode('<root>')]]))).rejects
         .toMatchObject({ message: expect.stringContaining('Invalid XML:') });
     });
+
+    it('fails on JSON input instead of emitting a parser error document', async () => {
+      const json = '{\n  "text": "hello"\n}';
+      expect(XmlParserPipe.getInputAppropriateness(encode(json))).toBeLessThan(0);
+      const pipe = new XmlParserPipe();
+      await expect(pipe.process(new Map([['input', encode(json)]]))).rejects
+        .toMatchObject({ message: expect.stringContaining('Invalid XML:') });
+    });
   });
 
   it('clears dynamic outputs for non-objects and reports invalid JSON', async () => {

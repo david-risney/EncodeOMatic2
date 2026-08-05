@@ -8,6 +8,25 @@
 
 import { Pipe, PortDef, PipeConfig, PipeError } from '../../pipe.js';
 
+const PARSER_ERROR_NS = 'http://www.mozilla.org/newlayout/xml/parsererror.xml';
+
+/**
+ * Returns the parse error message when the parsed document represents a failure.
+ *
+ * Browsers report XML parse failures differently: some produce a `parsererror`
+ * root element while others wrap it inside an HTML document, so look for the
+ * element anywhere in the tree.
+ */
+function getParseError(document) {
+  const root = document.documentElement;
+  if (!root) return 'parse error';
+  const errorElement = document.getElementsByTagNameNS(PARSER_ERROR_NS, 'parsererror')[0]
+    ?? (root.localName === 'parsererror' ? root : null)
+    ?? document.querySelector('parsererror');
+  if (!errorElement) return null;
+  return errorElement.textContent?.trim() || 'parse error';
+}
+
 function serializeNode(serializer, node) {
   if (node.nodeType === Node.ATTRIBUTE_NODE) return node.value;
   if (
@@ -62,7 +81,7 @@ export class XmlParserPipe extends Pipe {
     }
     if (!text) return 0;
     const document = new DOMParser().parseFromString(text, 'application/xml');
-    return document.documentElement?.localName === 'parsererror' ? -10 : 10;
+    return getParseError(document) === null ? 10 : -10;
   }
 
   constructor() {
@@ -99,10 +118,9 @@ export class XmlParserPipe extends Pipe {
     }
 
     const document = new DOMParser().parseFromString(text, 'application/xml');
+    const parseError = getParseError(document);
+    if (parseError !== null) throw new PipeError(`Invalid XML: ${parseError}`);
     const root = document.documentElement;
-    if (!root || root.localName === 'parsererror') {
-      throw new PipeError(`Invalid XML: ${root?.textContent?.trim() || 'parse error'}`);
-    }
 
     const serializer = new XMLSerializer();
     const enc = new TextEncoder();
