@@ -43,6 +43,7 @@ const vendors = [
   ['scripts/iconv-lite-entry.js',        'vendor/iconv-lite.js'],
   ['scripts/he-entry.js',                'vendor/he.js'],
   ['scripts/mime-codec-entry.js',        'vendor/mime-codec.js'],
+  ['scripts/mime-parser-entry.js',       'vendor/mime-parser.js'],
   ['scripts/rfc4648-entry.js',           'vendor/rfc4648.js'],
   ['scripts/bs58-entry.js',              'vendor/bs58.js'],
   ['scripts/hash-wasm-entry.js',         'vendor/hash-wasm.js'],
