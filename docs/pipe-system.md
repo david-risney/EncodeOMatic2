@@ -34,6 +34,7 @@ only declared outputs in main-thread execution, and turns thrown values into
   - `query:${name}` for URL query parameters
   - `key:${name}` for JSON object keys
   - `group:${index}` for regex capture groups
+  - `header:${name}` and `part:${path}` for MIME message headers and parts
 - Treat port names as stable API. Renaming breaks saved graphs, connections,
   and worker/main-thread output synchronization.
 
@@ -105,7 +106,7 @@ Built-ins are grouped under `src/pipes/builtin/`:
   entities, charset, binary, slash escapes, and whole-URL encoding, generally
   in encode/decode pairs.
 - Parsing: URL, JSON, regex match, cookie, CSV, HTTP request/response, JWT,
-  and search-params pipes.
+  search-params, and MIME message/multipart pipes.
 
 URL, JSON, and regex parsing can create dynamic outputs from query parameters,
 top-level keys, or capture groups. These pipes rebuild `_dynamicOutputs` while

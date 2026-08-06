@@ -24,6 +24,8 @@ import { builtinPipes as zstdPipes } from './zstd.js';
 import { builtinPipes as formUrlencodedPipes } from './form-urlencoded.js';
 import { builtinPipes as hmacPipes } from './hmac.js';
 import { builtinPipes as mimeHeaderPipes } from './mime-header.js';
+import { builtinPipes as multipartPipes } from './multipart.js';
+import { builtinPipes as dataUrlPipes } from './data-url.js';
 import { builtinPipes as shaHashPipes } from './sha-hash.js';
 import { builtinPipes as blakePipes } from './blake.js';
 import { builtinPipes as md5Pipes } from './md5.js';
@@ -65,6 +67,8 @@ export const builtinEncodingPipes = [
   ...formUrlencodedPipes,
   ...hmacPipes,
   ...mimeHeaderPipes,
+  ...multipartPipes,
+  ...dataUrlPipes,
   ...shaHashPipes,
   ...blakePipes,
   ...md5Pipes,

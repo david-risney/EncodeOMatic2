@@ -41,6 +41,8 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 - **Form URL-encoded Encode / Decode** (application/x-www-form-urlencoded)
 - **HMAC** (SHA-1/SHA-256/SHA-512)
 - **MIME Header Decode / Encode** (RFC 2047 encoded words via emailjs-mime-codec)
+- **MIME Multipart Encode** (build multipart/mixed, form-data, related, … bodies from multiple part inputs)
+- **Data URL Encode / Decode** (RFC 2397 `data:` URLs, Base64 or percent-encoded)
 - **SHA Hash** (SHA-1/SHA-224/SHA-256/SHA-384/SHA-512)
 - **SHA-3 Hash** (SHA3-224/SHA3-256/SHA3-384/SHA3-512)
 - **Keccak Hash** (Keccak-224/Keccak-256/Keccak-384/Keccak-512)
@@ -64,6 +66,7 @@ A client-side visual encoding/decoding pipeline tool, hosted on [GitHub Pages](h
 - **HTTP Request / Response Parser**
 - **JWT Parser**
 - **Search Params Parser**
+- **MIME Parse** — parses a MIME message or multipart body (via emailjs-mime-parser) into headers and decoded parts
 
 ## Usage
 
@@ -117,6 +120,7 @@ Regenerate all vendor bundles after updating any of these dependencies:
 | `vendor/iconv-lite.js` | iconv-lite | Charset encode/decode |
 | `vendor/he.js` | he | HTML entity encoding/decoding (all 2099 HTML5 named refs) |
 | `vendor/mime-codec.js` | emailjs-mime-codec | MIME RFC 2047 encoded-word encode/decode |
+| `vendor/mime-parser.js` | emailjs-mime-parser | MIME message and multipart parsing |
 | `vendor/rfc4648.js` | rfc4648 | Base32 encoding/decoding |
 | `vendor/bs58.js` | bs58 | Base58 encoding/decoding |
 | `vendor/hash-wasm.js` | hash-wasm | Hashing, checksums, and HMAC |

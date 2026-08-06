@@ -12,7 +12,7 @@ function isHexDigit(char) {
   return /[0-9A-Fa-f]/u.test(char);
 }
 
-function encodeQuotedPrintable(data) {
+export function encodeQuotedPrintable(data) {
   let output = '';
   let lineLength = 0;
 
