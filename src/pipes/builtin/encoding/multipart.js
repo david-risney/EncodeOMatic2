@@ -52,9 +52,13 @@ function concatBytes(chunks) {
   return out;
 }
 
-/** Quote a Content-Disposition parameter value. */
+/**
+ * Quote a Content-Disposition parameter value. Quotes and backslashes are
+ * backslash-escaped per RFC 2616 quoted-string rules; CR/LF are removed
+ * because they would otherwise split the header.
+ */
 function quoteParam(value) {
-  return `"${value.replace(/["\\\r\n]/g, '')}"`;
+  return `"${value.replace(/[\r\n]/g, '').replace(/(["\\])/g, '\\$1')}"`;
 }
 
 export class MimeMultipartEncodePipe extends Pipe {
