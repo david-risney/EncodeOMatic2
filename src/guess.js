@@ -67,6 +67,30 @@ export async function guessPipeChain(input, pipeClasses) {
   return find(input);
 }
 
+/**
+ * Compute the connection wiring for a guessed pipe chain: pairs of
+ * (fromOutput, toInput-index) describing how each step's *input* should be
+ * connected to the *previous* step's output. The previous step's own
+ * `outputName` (not the current step's) determines which output port is
+ * used, since `outputName` on a chain entry always refers to the output of
+ * that same pipe.
+ *
+ * @param {{typeName: string, score: number, outputName: string}[]} chain
+ * @param {string} rootOutputName - default output name of the root/input pipe
+ * @returns {{fromOutput: string}[]} one entry per chain step, in order,
+ *   giving the output port name of the *preceding* pipe (or the root) that
+ *   step's input should be connected to.
+ */
+export function computeChainConnections(chain, rootOutputName) {
+  const fromOutputs = [];
+  let previousOutputName = rootOutputName;
+  for (const step of chain) {
+    fromOutputs.push({ fromOutput: previousOutputName });
+    previousOutputName = step.outputName;
+  }
+  return fromOutputs;
+}
+
 function isBetterPath(candidate, current) {
   if (candidate.length !== current.length) return candidate.length > current.length;
   for (let i = 0; i < candidate.length; i++) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { guessPipeChain } from '../src/guess.js';
+import { guessPipeChain, computeChainConnections } from '../src/guess.js';
 import { registry } from '../src/pipes/registry.js';
 import { GzipCompressPipe } from '../src/pipes/builtin/encoding/compression.js';
 import { Base64EncodePipe } from '../src/pipes/builtin/encoding/base64.js';
@@ -136,5 +136,36 @@ describe('encoding chain guessing', () => {
     expect(names).toContain('JsonParser');
     expect(names.indexOf('DeflateRawDecompress')).toBeGreaterThan(base64Step);
     expect(names.indexOf('JsonParser')).toBeGreaterThan(names.indexOf('DeflateRawDecompress'));
+  });
+});
+
+describe('computeChainConnections', () => {
+  it('wires each step to connect from the *previous* step\'s output, not its own', () => {
+    // Regression test: a previous bug wired connections using the current
+    // step's own outputName instead of the preceding step's outputName,
+    // which produced valid-looking but disconnected/misrouted graphs
+    // whenever a step's outputName differed from its own default ('output').
+    const chain = [
+      { typeName: 'UrlParser', score: 10, outputName: 'query:gc' },
+      { typeName: 'Base64urlDecode', score: 10, outputName: 'output' },
+      { typeName: 'DeflateRawDecompress', score: 8, outputName: 'output' },
+      { typeName: 'JsonParser', score: 10, outputName: 'json' },
+    ];
+    const connections = computeChainConnections(chain, 'href');
+    expect(connections).toEqual([
+      { fromOutput: 'href' },        // UrlParser reads from the InputPipe's default output
+      { fromOutput: 'query:gc' },    // Base64urlDecode reads from UrlParser's chosen output
+      { fromOutput: 'output' },      // DeflateRawDecompress reads from Base64urlDecode's output
+      { fromOutput: 'output' },      // JsonParser reads from DeflateRawDecompress's output
+    ]);
+  });
+
+  it('returns an empty array for an empty chain', () => {
+    expect(computeChainConnections([], 'output')).toEqual([]);
+  });
+
+  it('handles a single-step chain using only the root output name', () => {
+    const chain = [{ typeName: 'Base64Decode', score: 10, outputName: 'output' }];
+    expect(computeChainConnections(chain, 'text')).toEqual([{ fromOutput: 'text' }]);
   });
 });

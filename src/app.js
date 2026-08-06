@@ -22,7 +22,7 @@ import {
   listDefaultSessions,
   loadDefaultSession,
 } from './state.js';
-import { guessPipeChain } from './guess.js';
+import { guessPipeChain, computeChainConnections } from './guess.js';
 import { randomSessionName } from './session-name.js';
 import { DEFAULT_SESSION, DEFAULT_SESSION_NAME } from './default-session.js';
 import { FileInputPipe } from './pipes/builtin/file-input-pipe.js';
@@ -1377,12 +1377,13 @@ async function onGuessEncoding(input) {
     editor.addPipeElement(inputPipe);
 
     let previous = inputPipe;
+    const chainConnections = computeChainConnections(chain, inputPipe.defaultOutputName);
     for (const [index, step] of chain.entries()) {
       const pipe = createPipe(step.typeName);
       pipe.position = { x: 260 + index * 200, y: 80 };
       graph.addPipe(pipe);
       editor.addPipeElement(pipe);
-      graph.connect(previous.id, step.outputName ?? previous.defaultOutputName, pipe.id, pipe.defaultInputName);
+      graph.connect(previous.id, chainConnections[index].fromOutput, pipe.id, pipe.defaultInputName);
       previous = pipe;
     }
 
