@@ -32,6 +32,25 @@ const EXAMPLE_ABNF_GRAMMAR = [
   'DIGIT = %x30-39',
 ].join('\n');
 
+const EXAMPLE_MULTIPART_BOUNDARY = 'EncodeOMaticBoundary';
+const EXAMPLE_MULTIPART_BODY = [
+  `--${EXAMPLE_MULTIPART_BOUNDARY}`,
+  'Content-Disposition: form-data; name="profile"',
+  'Content-Type: application/json',
+  '',
+  '{"user":"ada","role":"admin"}',
+  `--${EXAMPLE_MULTIPART_BOUNDARY}`,
+  'Content-Disposition: form-data; name="avatar"; filename="avatar.txt"',
+  'Content-Type: text/plain',
+  'Content-Transfer-Encoding: base64',
+  '',
+  'aGVsbG8gYXZhdGFy',
+  `--${EXAMPLE_MULTIPART_BOUNDARY}--`,
+  '',
+].join('\r\n');
+
+const EXAMPLE_DATA_URL = 'data:application/json;base64,eyJtZXNzYWdlIjoiSGVsbG8sIGRhdGEgVVJMISIsIml0ZW1zIjpbMSwyLDNdfQ==';
+
 function createPipeData(id, type, x, y, configs = {}) {
   return {
     id,
@@ -184,6 +203,48 @@ const DEFAULT_SESSION_RECORDS = [
       connections: [
         createConnection('mojibake-text', 'output', 'recover-original-bytes', 'input'),
         createConnection('recover-original-bytes', 'output', 'decode-original-text', 'input'),
+      ],
+    },
+  },
+  {
+    name: 'Example: MIME Multipart Form Data',
+    data: {
+      pipes: [
+        createPipeData('multipart-body', 'InputPipe', 40, 100, {
+          text: EXAMPLE_MULTIPART_BODY,
+          rawBytes: null,
+        }),
+        createPipeData('parse-multipart', 'MimeParser', 320, 100, {
+          contentType: `multipart/form-data; boundary=${EXAMPLE_MULTIPART_BOUNDARY}`,
+        }),
+        createPipeData('inspect-profile-part', 'JsonParser', 600, 100, {
+          paths: 'user,role',
+        }),
+        createPipeData('inspect-multipart-structure', 'JsonParser', 320, 340),
+      ],
+      connections: [
+        createConnection('multipart-body', 'output', 'parse-multipart', 'input'),
+        createConnection('parse-multipart', 'part:1', 'inspect-profile-part', 'input'),
+        createConnection('parse-multipart', 'structure', 'inspect-multipart-structure', 'input'),
+      ],
+    },
+  },
+  {
+    name: 'Example: Data URL Decode',
+    data: {
+      pipes: [
+        createPipeData('data-url-text', 'InputPipe', 40, 100, {
+          text: EXAMPLE_DATA_URL,
+          rawBytes: null,
+        }),
+        createPipeData('decode-data-url', 'DataUrlDecode', 320, 100),
+        createPipeData('inspect-data-url-json', 'JsonParser', 600, 100, {
+          paths: 'message',
+        }),
+      ],
+      connections: [
+        createConnection('data-url-text', 'output', 'decode-data-url', 'input'),
+        createConnection('decode-data-url', 'output', 'inspect-data-url-json', 'input'),
       ],
     },
   },
