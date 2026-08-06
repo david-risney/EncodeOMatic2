@@ -42,6 +42,7 @@
     "brotli-wasm": "^3.0.1",
     "bs58": "^6.0.0",
     "emailjs-mime-codec": "^2.0.9",
+    "emailjs-mime-parser": "^2.0.7",
     "fflate": "^0.8.3",
     "hash-wasm": "^4.12.0",
     "he": "^1.2.0",
