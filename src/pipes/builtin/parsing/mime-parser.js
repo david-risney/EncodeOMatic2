@@ -119,7 +119,7 @@ export class MimeParserPipe extends Pipe {
     try {
       root = parseMime(message);
     } catch (e) {
-      throw new PipeError(`Cannot parse MIME data: ${e.message}`);
+      throw new PipeError(`Cannot parse MIME data: ${e?.message ?? String(e)}`);
     }
 
     const result = new Map();

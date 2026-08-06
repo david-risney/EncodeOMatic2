@@ -20,7 +20,7 @@ function percentEncodeBytes(data) {
   let out = '';
   for (const byte of data) {
     const char = String.fromCharCode(byte);
-    if (/[A-Za-z0-9\-._~!$&'()*+,;=:@/?]/.test(char)) {
+    if (/[A-Za-z0-9\-._~]/.test(char)) {
       out += char;
     } else {
       out += `%${byte.toString(16).toUpperCase().padStart(2, '0')}`;
