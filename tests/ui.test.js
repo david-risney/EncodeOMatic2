@@ -241,7 +241,7 @@ describe('GraphEditor', () => {
     graph.connect(source.id, 'output', target.id, 'input');
     const updateConnections = vi.spyOn(editor, 'updateConnections');
     let runFrame;
-    vi.stubGlobal('requestAnimationFrame', callback => {
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(callback => {
       runFrame = callback;
       return 1;
     });
