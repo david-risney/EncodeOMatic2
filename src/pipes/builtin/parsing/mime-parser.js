@@ -21,20 +21,11 @@
 
 import { Pipe, PipeConfig, PipeError, PortDef } from '../../pipe.js';
 import { parseMime } from '../../../../vendor/mime-parser.js';
+import { bytesToBinaryString } from '../encoding/binary-string.js';
 
 const UTF8_ENCODER = new TextEncoder();
 const MULTIPART_CONTENT_TYPE_PATTERN = /^content-type:\s*multipart\//im;
 const MIME_HEADER_PATTERN = /^(?:mime-version|content-type|content-transfer-encoding|content-disposition):/im;
-
-/** Convert bytes to a binary (latin1) string, which is what the parser expects. */
-function bytesToBinaryString(data) {
-  let binary = '';
-  const chunkSize = 0x8000;
-  for (let i = 0; i < data.length; i += chunkSize) {
-    binary += String.fromCharCode(...data.subarray(i, i + chunkSize));
-  }
-  return binary;
-}
 
 /** Human-readable header value for a parsed header entry. */
 function headerEntryText(entry) {

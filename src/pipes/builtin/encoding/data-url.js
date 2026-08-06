@@ -6,6 +6,7 @@
  */
 
 import { Pipe, PipeConfig, PipeError, PortDef } from '../../pipe.js';
+import { binaryStringToBytes, bytesToBinaryString } from './binary-string.js';
 
 const UTF8_DECODER = new TextDecoder('utf-8', { fatal: true });
 const UTF8_ENCODER = new TextEncoder();
@@ -13,22 +14,6 @@ const UTF8_ENCODER = new TextEncoder();
 // data:[<mediatype>][;base64],<data>
 const DATA_URL_PATTERN = /^data:([^,]*),([\s\S]*)$/i;
 
-function bytesToBinaryString(data) {
-  let binary = '';
-  const chunkSize = 0x8000;
-  for (let i = 0; i < data.length; i += chunkSize) {
-    binary += String.fromCharCode(...data.subarray(i, i + chunkSize));
-  }
-  return binary;
-}
-
-function binaryStringToBytes(binary) {
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i) & 0xff;
-  }
-  return bytes;
-}
 
 /** Percent-encode every byte that is not an RFC 3986 unreserved character. */
 function percentEncodeBytes(data) {

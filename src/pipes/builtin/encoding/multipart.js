@@ -15,6 +15,7 @@
 
 import { Pipe, PipeConfig, PipeError, PortDef } from '../../pipe.js';
 import { encodeQuotedPrintable } from './quoted-printable.js';
+import { bytesToBinaryString } from './binary-string.js';
 
 const UTF8_ENCODER = new TextEncoder();
 const DEFAULT_BOUNDARY = 'EncodeOMaticBoundary';
@@ -33,15 +34,6 @@ function splitList(value) {
 function pickListValue(list, index, fallback) {
   if (list.length === 0) return fallback;
   return list[Math.min(index, list.length - 1)];
-}
-
-function bytesToBinaryString(data) {
-  let binary = '';
-  const chunkSize = 0x8000;
-  for (let i = 0; i < data.length; i += chunkSize) {
-    binary += String.fromCharCode(...data.subarray(i, i + chunkSize));
-  }
-  return binary;
 }
 
 /** Break a Base64 string into 76-character lines as required by RFC 2045. */
@@ -181,6 +173,8 @@ export class MimeMultipartEncodePipe extends Pipe {
         headers += 'Content-Transfer-Encoding: quoted-printable\r\n';
         body = UTF8_ENCODER.encode(encodeQuotedPrintable(payload));
       } else {
+        // A delimiter is CRLF + "--boundary", but lenient parsers also split on
+        // a bare LF, so reject both forms plus a payload that starts with one.
         const binaryPayload = bytesToBinaryString(payload);
         if (binaryPayload.startsWith(`--${boundary}`) || binaryPayload.includes(`\n--${boundary}`)) {
           throw new PipeError(

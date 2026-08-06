@@ -97,6 +97,7 @@ const PRECACHE_URLS = [
   './src/pipes/builtin/parsing/mime-parser.js',
   './src/pipes/builtin/encoding/multipart.js',
   './src/pipes/builtin/encoding/data-url.js',
+  './src/pipes/builtin/encoding/binary-string.js',
   './vendor/iconv-lite.js',
   './vendor/he.js',
   './vendor/mime-codec.js',
