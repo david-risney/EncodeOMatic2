@@ -155,6 +155,8 @@ describe('state persistence', () => {
       { name: 'Example: ABNF HTTP Request Line' },
       { name: 'Example: ASN.1 DER Inspection' },
       { name: 'Example: Fix Mojibake' },
+      { name: 'Example: MIME Multipart Form Data' },
+      { name: 'Example: Data URL Decode' },
     ]);
   });
 
@@ -194,6 +196,9 @@ describe('state persistence', () => {
     ['Example: ABNF HTTP Request Line', 'parse-request-line', 'valid', 'true'],
     ['Example: ASN.1 DER Inspection', 'inspect-asn1-json', 'path:idBlock.tagNumber', '16'],
     ['Example: Fix Mojibake', 'decode-original-text', 'output', 'It’s a café.'],
+    ['Example: MIME Multipart Form Data', 'inspect-profile-part', 'path:user', 'ada'],
+    ['Example: Data URL Decode', 'decode-data-url', 'mediaType', 'application/json'],
+    ['Example: Data URL Decode', 'inspect-data-url-json', 'path:message', 'Hello, data URL!'],
   ])('processes %s without errors', async (name, outputPipeId, outputName, expected) => {
     const graph = new PipeGraph();
     graph.fromJSON(loadDefaultSession(name), registry);
